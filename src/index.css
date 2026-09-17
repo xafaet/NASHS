@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Hind Siliguri", "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  --font-heading: "Hind Siliguri", "Plus Jakarta Sans", system-ui, sans-serif;
+  --color-brand-950: #072615;
+  --color-brand-900: #0f4d2a;
+  --color-brand-800: #135d34;
+  --color-brand-700: #197a45;
+  --color-brand-600: #229957;
+  --color-brand-50: #eef8f2;
+  --color-gold-500: #d4971c;
+  --color-gold-600: #b88210;
+  --color-gold-400: #e5a929;
+  --color-red-accent: #c92a2a;
+}
+
+body {
+  font-family: var(--font-sans);
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #printable-pass, #printable-pass * {
+    visibility: visible;
+  }
+  #printable-pass {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

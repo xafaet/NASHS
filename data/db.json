@@ -1,0 +1,2211 @@
+{
+  "batches": [
+    {
+      "id": "batch-1978",
+      "name_bn": "ব্যাচ ১৯৭৮",
+      "name_en": "Batch 1978",
+      "is_active": true,
+      "batch_number": 37,
+      "passing_year": 1978,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-1979",
+      "name_bn": "ব্যাচ ১৯৭৯",
+      "name_en": "Batch 1979",
+      "is_active": true,
+      "batch_number": 38,
+      "passing_year": 1979,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-1980",
+      "name_bn": "ব্যাচ ১৯৮০",
+      "name_en": "Batch 1980",
+      "is_active": true,
+      "batch_number": 39,
+      "passing_year": 1980,
+      "registration_count": 4,
+      "representative_name": "Engr. Representative 1980",
+      "representative_phone": "01812198000"
+    },
+    {
+      "id": "batch-1981",
+      "name_bn": "ব্যাচ ১৯৮১",
+      "name_en": "Batch 1981",
+      "is_active": true,
+      "batch_number": 40,
+      "passing_year": 1981,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-1982",
+      "name_bn": "ব্যাচ ১৯৮২",
+      "name_en": "Batch 1982",
+      "is_active": true,
+      "batch_number": 41,
+      "passing_year": 1982,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-1983",
+      "name_bn": "ব্যাচ ১৯৮৩",
+      "name_en": "Batch 1983",
+      "is_active": true,
+      "batch_number": 42,
+      "passing_year": 1983,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-1984",
+      "name_bn": "ব্যাচ ১৯৮৪",
+      "name_en": "Batch 1984",
+      "is_active": true,
+      "batch_number": 43,
+      "passing_year": 1984,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-1985",
+      "name_bn": "ব্যাচ ১৯৮৫",
+      "name_en": "Batch 1985",
+      "is_active": true,
+      "batch_number": 44,
+      "passing_year": 1985,
+      "registration_count": 4,
+      "representative_name": "Engr. Representative 1985",
+      "representative_phone": "01812198500"
+    },
+    {
+      "id": "batch-1986",
+      "name_bn": "ব্যাচ ১৯৮৬",
+      "name_en": "Batch 1986",
+      "is_active": true,
+      "batch_number": 45,
+      "passing_year": 1986,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-1987",
+      "name_bn": "ব্যাচ ১৯৮৭",
+      "name_en": "Batch 1987",
+      "is_active": true,
+      "batch_number": 46,
+      "passing_year": 1987,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-1988",
+      "name_bn": "ব্যাচ ১৯৮৮",
+      "name_en": "Batch 1988",
+      "is_active": true,
+      "batch_number": 47,
+      "passing_year": 1988,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-1989",
+      "name_bn": "ব্যাচ ১৯৮৯",
+      "name_en": "Batch 1989",
+      "is_active": true,
+      "batch_number": 48,
+      "passing_year": 1989,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-1990",
+      "name_bn": "ব্যাচ ১৯৯০",
+      "name_en": "Batch 1990",
+      "is_active": true,
+      "batch_number": 49,
+      "passing_year": 1990,
+      "registration_count": 4,
+      "representative_name": "Engr. Representative 1990",
+      "representative_phone": "01812199000"
+    },
+    {
+      "id": "batch-1991",
+      "name_bn": "ব্যাচ ১৯৯১",
+      "name_en": "Batch 1991",
+      "is_active": true,
+      "batch_number": 50,
+      "passing_year": 1991,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-1992",
+      "name_bn": "ব্যাচ ১৯৯২",
+      "name_en": "Batch 1992",
+      "is_active": true,
+      "batch_number": 51,
+      "passing_year": 1992,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-1993",
+      "name_bn": "ব্যাচ ১৯৯৩",
+      "name_en": "Batch 1993",
+      "is_active": true,
+      "batch_number": 52,
+      "passing_year": 1993,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-1994",
+      "name_bn": "ব্যাচ ১৯৯৪",
+      "name_en": "Batch 1994",
+      "is_active": true,
+      "batch_number": 53,
+      "passing_year": 1994,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-1995",
+      "name_bn": "ব্যাচ ১৯৯৫",
+      "name_en": "Batch 1995",
+      "is_active": true,
+      "batch_number": 54,
+      "passing_year": 1995,
+      "registration_count": 4,
+      "representative_name": "Engr. Representative 1995",
+      "representative_phone": "01812199500"
+    },
+    {
+      "id": "batch-1996",
+      "name_bn": "ব্যাচ ১৯৯৬",
+      "name_en": "Batch 1996",
+      "is_active": true,
+      "batch_number": 55,
+      "passing_year": 1996,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-1997",
+      "name_bn": "ব্যাচ ১৯৯৭",
+      "name_en": "Batch 1997",
+      "is_active": true,
+      "batch_number": 56,
+      "passing_year": 1997,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-1998",
+      "name_bn": "ব্যাচ ১৯৯৮",
+      "name_en": "Batch 1998",
+      "is_active": true,
+      "batch_number": 57,
+      "passing_year": 1998,
+      "registration_count": 12
+    },
+    {
+      "id": "batch-1999",
+      "name_bn": "ব্যাচ ১৯৯৯",
+      "name_en": "Batch 1999",
+      "is_active": true,
+      "batch_number": 58,
+      "passing_year": 1999,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-2000",
+      "name_bn": "ব্যাচ ২০০০",
+      "name_en": "Batch 2000",
+      "is_active": true,
+      "batch_number": 59,
+      "passing_year": 2000,
+      "registration_count": 4,
+      "representative_name": "Engr. Representative 2000",
+      "representative_phone": "01812200000"
+    },
+    {
+      "id": "batch-2001",
+      "name_bn": "ব্যাচ ২০০১",
+      "name_en": "Batch 2001",
+      "is_active": true,
+      "batch_number": 60,
+      "passing_year": 2001,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-2002",
+      "name_bn": "ব্যাচ ২০০২",
+      "name_en": "Batch 2002",
+      "is_active": true,
+      "batch_number": 61,
+      "passing_year": 2002,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-2003",
+      "name_bn": "ব্যাচ ২০০৩",
+      "name_en": "Batch 2003",
+      "is_active": true,
+      "batch_number": 62,
+      "passing_year": 2003,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-2004",
+      "name_bn": "ব্যাচ ২০০৪",
+      "name_en": "Batch 2004",
+      "is_active": true,
+      "batch_number": 63,
+      "passing_year": 2004,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-2005",
+      "name_bn": "ব্যাচ ২০০৫",
+      "name_en": "Batch 2005",
+      "is_active": true,
+      "batch_number": 64,
+      "passing_year": 2005,
+      "registration_count": 18,
+      "representative_name": "Engr. Representative 2005",
+      "representative_phone": "01812200500"
+    },
+    {
+      "id": "batch-2006",
+      "name_bn": "ব্যাচ ২০০৬",
+      "name_en": "Batch 2006",
+      "is_active": true,
+      "batch_number": 65,
+      "passing_year": 2006,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-2007",
+      "name_bn": "ব্যাচ ২০০৭",
+      "name_en": "Batch 2007",
+      "is_active": true,
+      "batch_number": 66,
+      "passing_year": 2007,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-2008",
+      "name_bn": "ব্যাচ ২০০৮",
+      "name_en": "Batch 2008",
+      "is_active": true,
+      "batch_number": 67,
+      "passing_year": 2008,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-2009",
+      "name_bn": "ব্যাচ ২০০৯",
+      "name_en": "Batch 2009",
+      "is_active": true,
+      "batch_number": 68,
+      "passing_year": 2009,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-2010",
+      "name_bn": "ব্যাচ ২০১০",
+      "name_en": "Batch 2010",
+      "is_active": true,
+      "batch_number": 69,
+      "passing_year": 2010,
+      "registration_count": 4,
+      "representative_name": "Engr. Representative 2010",
+      "representative_phone": "01812201000"
+    },
+    {
+      "id": "batch-2011",
+      "name_bn": "ব্যাচ ২০১১",
+      "name_en": "Batch 2011",
+      "is_active": true,
+      "batch_number": 70,
+      "passing_year": 2011,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-2012",
+      "name_bn": "ব্যাচ ২০১২",
+      "name_en": "Batch 2012",
+      "is_active": true,
+      "batch_number": 71,
+      "passing_year": 2012,
+      "registration_count": 22
+    },
+    {
+      "id": "batch-2013",
+      "name_bn": "ব্যাচ ২০১৩",
+      "name_en": "Batch 2013",
+      "is_active": true,
+      "batch_number": 72,
+      "passing_year": 2013,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-2014",
+      "name_bn": "ব্যাচ ২০১৪",
+      "name_en": "Batch 2014",
+      "is_active": true,
+      "batch_number": 73,
+      "passing_year": 2014,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-2015",
+      "name_bn": "ব্যাচ ২০১৫",
+      "name_en": "Batch 2015",
+      "is_active": true,
+      "batch_number": 74,
+      "passing_year": 2015,
+      "registration_count": 4,
+      "representative_name": "Engr. Representative 2015",
+      "representative_phone": "01812201500"
+    },
+    {
+      "id": "batch-2016",
+      "name_bn": "ব্যাচ ২০১৬",
+      "name_en": "Batch 2016",
+      "is_active": true,
+      "batch_number": 75,
+      "passing_year": 2016,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-2017",
+      "name_bn": "ব্যাচ ২০১৭",
+      "name_en": "Batch 2017",
+      "is_active": true,
+      "batch_number": 76,
+      "passing_year": 2017,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-2018",
+      "name_bn": "ব্যাচ ২০১৮",
+      "name_en": "Batch 2018",
+      "is_active": true,
+      "batch_number": 77,
+      "passing_year": 2018,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-2019",
+      "name_bn": "ব্যাচ ২০১৯",
+      "name_en": "Batch 2019",
+      "is_active": true,
+      "batch_number": 78,
+      "passing_year": 2019,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-2020",
+      "name_bn": "ব্যাচ ২০২০",
+      "name_en": "Batch 2020",
+      "is_active": true,
+      "batch_number": 79,
+      "passing_year": 2020,
+      "registration_count": 4,
+      "representative_name": "Engr. Representative 2020",
+      "representative_phone": "01812202000"
+    },
+    {
+      "id": "batch-2021",
+      "name_bn": "ব্যাচ ২০২১",
+      "name_en": "Batch 2021",
+      "is_active": true,
+      "batch_number": 80,
+      "passing_year": 2021,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-2022",
+      "name_bn": "ব্যাচ ২০২২",
+      "name_en": "Batch 2022",
+      "is_active": true,
+      "batch_number": 81,
+      "passing_year": 2022,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-2023",
+      "name_bn": "ব্যাচ ২০২৩",
+      "name_en": "Batch 2023",
+      "is_active": true,
+      "batch_number": 82,
+      "passing_year": 2023,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-2024",
+      "name_bn": "ব্যাচ ২০২৪",
+      "name_en": "Batch 2024",
+      "is_active": true,
+      "batch_number": 83,
+      "passing_year": 2024,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-2025",
+      "name_bn": "ব্যাচ ২০২৫",
+      "name_en": "Batch 2025",
+      "is_active": true,
+      "batch_number": 84,
+      "passing_year": 2025,
+      "registration_count": 4,
+      "representative_name": "Engr. Representative 2025",
+      "representative_phone": "01812202500"
+    },
+    {
+      "id": "batch-2026",
+      "name_bn": "ব্যাচ ২০২৬",
+      "name_en": "Batch 2026",
+      "is_active": true,
+      "batch_number": 85,
+      "passing_year": 2026,
+      "registration_count": 4
+    },
+    {
+      "id": "batch-2027",
+      "name_bn": "ব্যাচ ২০২৭",
+      "name_en": "Batch 2027",
+      "is_active": true,
+      "batch_number": 86,
+      "passing_year": 2027,
+      "registration_count": 4
+    }
+  ],
+  "events": [
+    {
+      "id": "event-85th-anniversary",
+      "slug": "85th-anniversary-reunion",
+      "status": "upcoming",
+      "currency": "BDT",
+      "end_time": "09:00 PM",
+      "terms_bn": "প্রবেশদ্বারে অবশ্যই ডিজিটাল প্রবেশ টোকেন দেখাতে হবে। নিবন্ধন ফির মধ্যে স্মরণিকা কিট, প্রাতঃরাশ, মধ্যাহ্নভোজ, সান্ধ্যকালীন নাশতা এবং জমকালো সাংস্কৃতিক অনুষ্ঠান অন্তর্ভুক্ত।",
+      "terms_en": "Entry pass must be presented at the gate. Registration fee includes commemorative kit, breakfast, grand lunch, evening tea, and cultural evening entry.",
+      "title_bn": "৮৫ বছর পূর্তি উৎসব ও প্রাক্তন শিক্ষার্থী পুনর্মিলনী",
+      "title_en": "85th Anniversary Celebration & Grand Alumni Reunion",
+      "venue_bn": "নানুপুর আবু সোবহান উচ্চ বিদ্যালয় প্রাঙ্গণ, ফটিকছড়ি, চট্টগ্রাম",
+      "venue_en": "Nanupur Abu Sobhan High School Premises, Fatikchhari, Chattogram",
+      "event_date": "2027-01-16",
+      "start_time": "08:30 AM",
+      "tagline_bn": "৮৫ বছরের ঐতিহ্য, বন্ধুত্ব ও স্মৃতির মেলবন্ধন",
+      "tagline_en": "85 Years of Heritage, Friendship & Memories",
+      "banner_image": "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1600&q=80",
+      "max_capacity": 5000,
+      "description_bn": "ঐতিহ্যবাহী নানুপুর আবু সোবহান উচ্চ বিদ্যালয়ের গৌরবময় ৮৫ বছর পূর্তি উপলক্ষে প্রিয় প্রাঙ্গণে মিলিত হোন হাজারো প্রাক্তন শিক্ষার্থী ও শিক্ষকদের সাথে।",
+      "description_en": "Celebrate 85 glorious years of Nanupur Abu Sobhan High School with thousands of alumni, teachers, and well-wishers on the historic school premises.",
+      "registration_end": "2026-12-31",
+      "registration_fee": 1000,
+      "registration_start": "2026-01-01"
+    }
+  ],
+  "school_info": {
+    "email": "info@nanupuralumni.org",
+    "phone": "+880 1819-000000",
+    "images": [
+      "https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1000&q=80",
+      "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1000&q=80"
+    ],
+    "name_bn": "নানুপুর আবু সোবহান উচ্চ বিদ্যালয়",
+    "name_en": "Nanupur Abu Sobhan High School",
+    "address_bn": "নানুপুর, ফটিকছড়ি, চট্টগ্রাম ৪৩৫০, বাংলাদেশ",
+    "address_en": "Nanupur, Fatikchhari, Chattogram 4350, Bangladesh",
+    "facilities": [
+      "Science Laboratories",
+      "Computer Lab",
+      "Historic Library",
+      "Large Athletic Playground",
+      "Multi-Purpose Auditorium",
+      "Mosque Complex"
+    ],
+    "history_bn": "১৯৪২ সালে চট্টগ্রামের ফটিকছড়ি উপজেলার নানুপুরে প্রতিষ্ঠিত নানুপুর আবু সোবহান উচ্চ বিদ্যালয় বিগত আট দশক ধরে শিক্ষা বিস্তার, মানবিক মূল্যবোধ ও জ্ঞানচর্চার এক অনন্য বাতিঘর। এখান থেকে শিক্ষা গ্রহণ করে হাজারো প্রাক্তন শিক্ষার্থী দেশ ও বিদেশের নানা ক্ষেত্রে কৃতিত্বের স্বাক্ষর রেখে চলেছেন।",
+    "history_en": "Founded in 1942 in Nanupur, Fatikchhari, Chattogram, Nanupur Abu Sobhan High School has stood as a beacon of academic distinction, discipline, and moral enlightenment for over eight decades. Thousands of alumni have graduated to serve Bangladesh and global society with distinction across administration, medicine, engineering, education, and commerce.",
+    "eiin_number": "104321",
+    "established_year": 1942,
+    "former_headmasters": [
+      {
+        "period": "1942 - 1955",
+        "name_bn": "মরহুম আলহাজ্ব আবু সোবহান (প্রতিষ্ঠাতা)",
+        "name_en": "Late Alhaj Abu Sobhan (Founder)"
+      },
+      {
+        "period": "1955 - 1972",
+        "name_bn": "মৌলভি আব্দুল গফুর",
+        "name_en": "Moulvi Abdul Gafur"
+      },
+      {
+        "period": "1973 - 1994",
+        "name_bn": "মাস্টার নুরুল আবছার",
+        "name_en": "Master Nurul Absar"
+      },
+      {
+        "period": "1995 - 2015",
+        "name_bn": "মোঃ শামসুল আলম",
+        "name_en": "Md. Shamsul Alam"
+      }
+    ],
+    "headmaster_name_bn": "প্রধান শিক্ষকের কার্যালয়",
+    "headmaster_name_en": "Principal / Headmaster Desk",
+    "headmaster_message_bn": "৮৫ বছর পূর্তি উৎসব উপলক্ষে সকল প্রাক্তন শিক্ষার্থীকে উষ্ণ অভিনন্দন। আমাদের বিদ্যালয়ের ঐতিহ্য ও সুনাম রক্ষায় প্রাক্তন শিক্ষার্থীদের অবদান অনস্বীকার্য। ২০২৭ সালের ১৬ জানুয়ারি আপনাদের পদচারণায় মুখরিত হবে প্রিয় ক্যাম্পাস।",
+    "headmaster_message_en": "It is a profound honor to welcome all alumni to the upcoming 85th Anniversary. Our school continues to uphold its rich tradition of academic excellence and integrity. We eagerly anticipate welcoming every batch home on 16 January 2027."
+  },
+  "association_info": {
+    "name_bn": "নানুপুর আবু সোবহান উচ্চ বিদ্যালয় প্রাক্তন শিক্ষার্থী পরিষদ",
+    "name_en": "Nanupur Abu Sobhan High School Alumni Association",
+    "intro_bn": "প্রাক্তন শিক্ষার্থী পরিষদ বিদ্যালয়ের সকল ব্যাচের প্রাক্তন শিক্ষার্থীদের পারস্পরিক সৌহার্দ্য ও মেলবন্ধনের কেন্দ্রীয় প্ল্যাটফর্ম। বিদ্যালয়ের সার্বিক উন্নয়ন ও পুনর্মিলনী আয়োজনে পরিষদ নিরলস কাজ করে যাচ্ছে।",
+    "intro_en": "The Alumni Association brings together alumni across all generations to foster lifelong fellowship, support the continued development of our alma mater, and organize milestone celebrations.",
+    "vision_bn": "একটি শক্তিশালী ও আন্তর্জাতিক প্রাক্তন শিক্ষার্থী নেটওয়ার্ক গঠন যা বিদ্যালয় ও সমাজের কল্যাণে অগ্রণী ভূমিকা রাখবে।",
+    "vision_en": "A vibrant global network of alumni supporting educational transformation and societal welfare.",
+    "address_bn": "প্রাক্তন শিক্ষার্থী পরিষদ কার্যালয়, নানুপুর আবু সোবহান উচ্চ বিদ্যালয়, চট্টগ্রাম",
+    "address_en": "Alumni Association Secretariat, Nanupur Abu Sobhan High School, Chattogram",
+    "mission_bn": "সকল ব্যাচের শিক্ষার্থীদের ঐক্যবদ্ধ করা, শিক্ষার্থীদের বৃত্তি প্রদান ও মেধা সহায়তা এবং বর্ণাঢ্য পুনর্মিলনী উদযাপনের মাধ্যমে ভ্রাতৃত্বের বন্ধন সুদৃঢ় করা।",
+    "mission_en": "Unite all batches, build welfare initiatives for needy students, preserve the institutional legacy, and host inspiring reunions.",
+    "contact_email": "reunion2027@nanupuralumni.org",
+    "contact_phone": "+880 1819-123456",
+    "objectives_bn": [
+      "১৬ জানুয়ারি ২০২৭ তারিখে বিদ্যালয়ের ঐতিহাসিক ৮৫ বছর পূর্তি উৎসব ও পুনর্মিলনী উদযাপন",
+      "মেধাবী শিক্ষার্থীদের জন্য শিক্ষাবৃত্তি ও শিক্ষা উপকরণ সহায়তা প্রদান",
+      "বিদ্যালয়ের বিজ্ঞানাগার ও কম্পিউটার ল্যাব আধুনিকীকরণ",
+      "সকল ব্যাচের প্রাক্তন শিক্ষার্থীদের সমন্বিত ডাটাবেজ সংরক্ষণ"
+    ],
+    "objectives_en": [
+      "Organize milestone reunions including the 85th Anniversary on 16 Jan 2027",
+      "Establish academic scholarships for meritorious school students",
+      "Modernize school science and computer lab facilities",
+      "Maintain a comprehensive database of all school alumni"
+    ],
+    "established_year": 1985
+  },
+  "committee": [
+    {
+      "id": "comm-1",
+      "tenure": "2025 - 2027",
+      "name_bn": "প্রকৌশলী মোহাম্মদ রফিকুল ইসলাম",
+      "name_en": "Engr. Mohammad Rafiqul Islam",
+      "is_active": true,
+      "photo_url": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
+      "batch_year": 1985,
+      "order_index": 1,
+      "designation_bn": "সভাপতি, প্রাক্তন শিক্ষার্থী পরিষদ",
+      "designation_en": "President, Alumni Association"
+    },
+    {
+      "id": "comm-2",
+      "tenure": "2025 - 2027",
+      "name_bn": "অ্যাডভোকেট শামসুদ্দিন আহমেদ",
+      "name_en": "Advocate Shamsuddin Ahmed",
+      "is_active": true,
+      "photo_url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
+      "batch_year": 1982,
+      "order_index": 2,
+      "designation_bn": "আহ্বায়ক, ৮৫ বছর পূর্তি উদযাপন কমিটি",
+      "designation_en": "Convener, 85th Anniversary Committee"
+    },
+    {
+      "id": "comm-3",
+      "tenure": "2025 - 2027",
+      "name_bn": "ড. মোঃ তারিকুল হাসান",
+      "name_en": "Dr. Md. Tariqul Hasan",
+      "is_active": true,
+      "photo_url": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80",
+      "batch_year": 1995,
+      "order_index": 3,
+      "designation_bn": "সাধারণ সম্পাদক",
+      "designation_en": "General Secretary"
+    },
+    {
+      "id": "comm-4",
+      "tenure": "2025 - 2027",
+      "name_bn": "কাজী ফারহান তানভীর",
+      "name_en": "Kazi Farhan Tanvir",
+      "is_active": true,
+      "photo_url": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=400&q=80",
+      "batch_year": 2005,
+      "order_index": 4,
+      "designation_bn": "সদস্য সচিব, নিবন্ধন ও আইটি উপকমিটি",
+      "designation_en": "Member Secretary, Registration & IT Sub-committee"
+    },
+    {
+      "id": "comm-5",
+      "tenure": "2025 - 2027",
+      "name_bn": "নাসরিন আক্তার চৌধুরী",
+      "name_en": "Nasreen Akhtar Chowdhury",
+      "is_active": true,
+      "photo_url": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80",
+      "batch_year": 2002,
+      "order_index": 5,
+      "designation_bn": "অর্থ সম্পাদক",
+      "designation_en": "Finance Secretary"
+    }
+  ],
+  "committees": [
+    {
+      "id": "comm-85-convening",
+      "name_bn": "৮৫ বছর পূর্তি উৎসব উদযাপন আহ্বায়ক কমিটি",
+      "name_en": "85th Anniversary Celebration Convening Committee",
+      "is_active": true,
+      "created_at": "2026-01-10T00:00:00Z",
+      "is_current": true,
+      "tenure_end": "2027-02-28",
+      "order_index": 1,
+      "tenure_label": "2026–2027",
+      "tenure_start": "2026-01-01",
+      "committee_type": "convening",
+      "description_bn": "১৬ জানুয়ারি ২০২৭ অনুষ্ঠিতব্য ঐতিহাসিক ৮৫ বছর পূর্তি উৎসব ও পুনর্মিলনীর সার্বিক প্রস্তুতি ও বাস্তবায়নে গঠিত আহ্বায়ক কমিটি।",
+      "description_en": "Official organizing committee entrusted with coordinating all facets of the historic 85th Anniversary Celebration & Grand Alumni Reunion on 16 January 2027."
+    },
+    {
+      "id": "comm-exec-2024-2026",
+      "name_bn": "কার্যনির্বাহী পরিষদ (২০২৪–২০২৬)",
+      "name_en": "Executive Committee (2024–2026)",
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "is_current": false,
+      "tenure_end": "2026-12-31",
+      "order_index": 2,
+      "tenure_label": "2024–2026",
+      "tenure_start": "2024-01-01",
+      "committee_type": "executive",
+      "description_bn": "নানুপুর আবু সোবহান উচ্চ বিদ্যালয় প্রাক্তন শিক্ষার্থী পরিষদের স্থায়ী পরিচালনা পরিষদ।",
+      "description_en": "Elected leadership managing the permanent affairs of the Nanupur Abu Sobhan High School Alumni Association."
+    },
+    {
+      "id": "comm-advisory",
+      "name_bn": "উপদেষ্টা পরিষদ",
+      "name_en": "Advisory Council",
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "is_current": false,
+      "tenure_end": "2028-12-31",
+      "order_index": 3,
+      "tenure_label": "Permanent Advisory",
+      "tenure_start": "2024-01-01",
+      "committee_type": "advisory",
+      "description_bn": "বিদ্যালয়ের প্রবীণ কৃতি শিক্ষার্থী, শিক্ষাবিদ ও সমাজহিতৈষীদের সমন্বয়ে গঠিত পরামর্শক পরিষদ।",
+      "description_en": "Distinguished senior alumni, veteran educators, and community leaders providing strategic guidance and patronship."
+    }
+  ],
+  "committee_members": [
+    {
+      "id": "cm-1",
+      "email": "safayet@nanupuralumni.org",
+      "phone": "01815-858391",
+      "user_id": "user-super-admin",
+      "is_active": true,
+      "photo_url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
+      "batch_name": "49th Batch (1992)",
+      "batch_year": 1992,
+      "order_index": 1,
+      "committee_id": "comm-85-convening",
+      "custom_name_bn": "প্রকৌশলী সাফায়েত হোসেন",
+      "custom_name_en": "Engr. Safayet Hossain",
+      "designation_bn": "আহ্বায়ক",
+      "designation_en": "Convenor"
+    },
+    {
+      "id": "cm-2",
+      "email": "didar@nanupuralumni.org",
+      "phone": "01817-734794",
+      "is_active": true,
+      "photo_url": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80",
+      "batch_name": "52nd Batch (1995)",
+      "batch_year": 1995,
+      "order_index": 2,
+      "committee_id": "comm-85-convening",
+      "custom_name_bn": "অ্যাডভোকেট দিদারুল আলম",
+      "custom_name_en": "Advocate Didarul Alam",
+      "designation_bn": "সদস্য সচিব",
+      "designation_en": "Member Secretary"
+    },
+    {
+      "id": "cm-3",
+      "email": "nazmul@nanupuralumni.org",
+      "phone": "01816-033880",
+      "is_active": true,
+      "photo_url": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=400&q=80",
+      "batch_name": "50th Batch (1993)",
+      "batch_year": 1993,
+      "order_index": 3,
+      "committee_id": "comm-85-convening",
+      "custom_name_bn": "ডাঃ মোহাম্মদ নাজমুল হুদা",
+      "custom_name_en": "Dr. Mohammad Nazmul Huda",
+      "designation_bn": "যুগ্ম আহ্বায়ক",
+      "designation_en": "Joint Convenor"
+    },
+    {
+      "id": "cm-4",
+      "email": "farhan@nanupuralumni.org",
+      "phone": "01955-550880",
+      "is_active": true,
+      "photo_url": "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=400&q=80",
+      "batch_name": "62nd Batch (2005)",
+      "batch_year": 2005,
+      "order_index": 4,
+      "committee_id": "comm-85-convening",
+      "custom_name_bn": "কাজী ফারহান তানভীর",
+      "custom_name_en": "Kazi Farhan Tanvir",
+      "designation_bn": "অর্থ সম্পাদক",
+      "designation_en": "Finance Secretary"
+    },
+    {
+      "id": "cm-5",
+      "email": "rahim@nanupuralumni.org",
+      "phone": "01819-000005",
+      "is_active": true,
+      "photo_url": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
+      "batch_name": "65th Batch (2008)",
+      "batch_year": 2008,
+      "order_index": 5,
+      "committee_id": "comm-85-convening",
+      "custom_name_bn": "আব্দুর রহিম চৌধুরী",
+      "custom_name_en": "Abdur Rahim Chowdhury",
+      "designation_bn": "ব্যাচ সমন্বয় সম্পাদক",
+      "designation_en": "Batch Coordination Secretary"
+    }
+  ],
+  "committee_designations": [
+    {
+      "id": "desig-1",
+      "title_bn": "আহ্বায়ক",
+      "title_en": "Convenor",
+      "default_order": 1
+    },
+    {
+      "id": "desig-2",
+      "title_bn": "যুগ্ম আহ্বায়ক",
+      "title_en": "Joint Convenor",
+      "default_order": 2
+    },
+    {
+      "id": "desig-3",
+      "title_bn": "সদস্য সচিব",
+      "title_en": "Member Secretary",
+      "default_order": 3
+    },
+    {
+      "id": "desig-4",
+      "title_bn": "যুগ্ম সদস্য সচিব",
+      "title_en": "Joint Member Secretary",
+      "default_order": 4
+    },
+    {
+      "id": "desig-5",
+      "title_bn": "অর্থ সম্পাদক / কোষাধ্যক্ষ",
+      "title_en": "Finance Secretary / Treasurer",
+      "default_order": 5
+    },
+    {
+      "id": "desig-6",
+      "title_bn": "প্রচার ও মিডিয়া সম্পাদক",
+      "title_en": "Publicity & Media Secretary",
+      "default_order": 6
+    },
+    {
+      "id": "desig-7",
+      "title_bn": "ব্যাচ সমন্বয় সম্পাদক",
+      "title_en": "Batch Coordination Secretary",
+      "default_order": 7
+    },
+    {
+      "id": "desig-8",
+      "title_bn": "অভ্যর্থনা সম্পাদক",
+      "title_en": "Reception Secretary",
+      "default_order": 8
+    },
+    {
+      "id": "desig-9",
+      "title_bn": "সাংস্কৃতিক ও অনুষ্ঠান সম্পাদক",
+      "title_en": "Cultural & Event Secretary",
+      "default_order": 9
+    },
+    {
+      "id": "desig-10",
+      "title_bn": "কার্যনির্বাহী সদস্য",
+      "title_en": "Executive Member",
+      "default_order": 10
+    },
+    {
+      "id": "desig-11",
+      "title_bn": "প্রধান উপদেষ্টা",
+      "title_en": "Chief Advisor",
+      "default_order": 11
+    },
+    {
+      "id": "desig-12",
+      "title_bn": "উপদেষ্টা",
+      "title_en": "Advisor",
+      "default_order": 12
+    }
+  ],
+  "offline_centers": [
+    {
+      "id": "off-1",
+      "phone": "01815-858391",
+      "name_bn": "রামকৃষ্ণ ঔষধালয়",
+      "name_en": "Ramkrishna Oushadhalaya",
+      "timings": "Daily 9:00 AM – 8:00 PM",
+      "is_active": true,
+      "address_bn": "নবীদুর রহমান মার্কেট, নানুপুর বাজার, ফটিকছড়ি, চট্টগ্রাম",
+      "address_en": "Nabidur Rahman Market, Nanupur Bazar, Fatikchhari, Chattogram",
+      "order_index": 1,
+      "contact_person": "Subhash Chandra Das"
+    },
+    {
+      "id": "off-2",
+      "phone": "01817-734794",
+      "name_bn": "দিদার এন্ড ব্রাদার্স",
+      "name_en": "Didar & Brothers",
+      "timings": "Daily 9:00 AM – 9:00 PM",
+      "is_active": true,
+      "address_bn": "ইউনিয়ন পরিষদ রোড, নানুপুর বাজার, ফটিকছড়ি, চট্টগ্রাম",
+      "address_en": "UP Road, Nanupur Bazar, Fatikchhari, Chattogram",
+      "order_index": 2,
+      "contact_person": "Didarul Alam"
+    },
+    {
+      "id": "off-3",
+      "phone": "01816-033880",
+      "name_bn": "আল মাতওয়াফ ট্রাভেলস এন্ড ট্যুরস",
+      "name_en": "Al Matwaf Travels & Tours",
+      "timings": "Saturday to Thursday: 10:00 AM – 7:00 PM",
+      "is_active": true,
+      "address_bn": "৮৩ টি এন্ড এস টাওয়ার (৪র্থ তলা/৩য় ফ্লোর), মুরাদপুর, চট্টগ্রাম",
+      "address_en": "83 T&S Tower (3rd Floor), Muradpur, Chattogram",
+      "order_index": 3,
+      "contact_person": "Engr. Safayet"
+    },
+    {
+      "id": "off-4",
+      "phone": "01955-550880",
+      "name_bn": "জেলা শিল্পকলা একাডেমি",
+      "name_en": "District Shilpakala Academy",
+      "timings": "Daily 10:00 AM – 6:00 PM",
+      "is_active": true,
+      "address_bn": "এম এম আলী রোড, দামপাড়া, চট্টগ্রাম",
+      "address_en": "M M Ali Road, Dampara, Chattogram",
+      "order_index": 4,
+      "contact_person": "Cultural Desk"
+    }
+  ],
+  "notices": [
+    {
+      "id": "not-1",
+      "category": "Announcement",
+      "title_bn": "বিজ্ঞপ্তি: আগামী ১৬ জানুয়ারি ২০২৭ তারিখে ৮৫ বছর পূর্তি উৎসব ও পুনর্মিলনীর তারিখ চূড়ান্ত",
+      "title_en": "Official Announcement: 85th Anniversary Reunion Date Finalized on 16 January 2027",
+      "is_active": true,
+      "content_bn": "নানুপুর আবু সোবহান উচ্চ বিদ্যালয় প্রাক্তন শিক্ষার্থী পরিষদের কার্যনির্বাহী কমিটির সিদ্ধান্ত মোতাবেক সকল প্রাক্তন শিক্ষার্থীকে জানানো যাচ্ছে যে, আগামী ১৬ জানুয়ারি ২০২৭, শনিবার বিদ্যালয় প্রাঙ্গণে ৮৫ বছর পূর্তি উৎসব অনুষ্ঠিত হবে। অনলাইন নিবন্ধন আনুষ্ঠানিকভাবে উন্মুক্ত করা হয়েছে।",
+      "content_en": "The Executive Committee of Nanupur Abu Sobhan High School Alumni Association is pleased to inform all alumni that the 85th Anniversary Celebration will take place on Saturday, 16 January 2027 on the school grounds. Online registration is now formally open.",
+      "is_featured": true,
+      "publish_date": "2026-03-01",
+      "attachment_name": "85th_Anniversary_Notice_NASH.pdf"
+    },
+    {
+      "id": "not-2",
+      "category": "Coordination",
+      "title_bn": "ব্যাচ প্রতিনিধিদের মতবিনিময় সভা ও সমন্বয় বিজ্ঞপ্তি",
+      "title_en": "Batch Representative Meeting & Coordination Schedule",
+      "is_active": true,
+      "content_bn": "এসএসসি ১৯৬০ থেকে ২০২৬ সালের সকল ব্যাচের প্রতিনিধিদের পুনর্মিলনী প্রস্তুতি সংক্রান্ত সভায় অংশ নেওয়ার জন্য বিশেষভাবে অনুরোধ করা হচ্ছে।",
+      "content_en": "All batch representatives from SSC 1960 to 2026 are invited to attend the coordination session at the school auditorium or via virtual conference.",
+      "is_featured": false,
+      "publish_date": "2026-02-15"
+    }
+  ],
+  "news": [
+    {
+      "id": "news-1",
+      "slug": "anniversary-registration-launched-online",
+      "views": 1240,
+      "author": "IT & Media Wing",
+      "category": "Event Updates",
+      "title_bn": "৮৫ বছর পূর্তি উৎসবের ডিজিটাল নিবন্ধন পোর্টাল চালু করল প্রাক্তন শিক্ষার্থী পরিষদ",
+      "title_en": "Alumni Association Launches Digital Portal for 85th Anniversary Registration",
+      "content_bn": "নানুপুর আবু সোবহান উচ্চ বিদ্যালয় প্রাক্তন শিক্ষার্থী পরিষদ স্বয়ংক্রিয় ব্যাচ নির্ধারণ, মোবাইল ব্যাংকিং (বিকাশ, নগদ) পেমেন্ট এবং কিউআর কোড সম্বলিত প্রবেশপত্র সহ পূর্ণাঙ্গ ডিজিটাল নিবন্ধন পোর্টাল চালু করেছে।",
+      "content_en": "The Alumni Association of Nanupur Abu Sobhan High School has officially introduced the online registration portal with automated batch verification, instant mobile banking payments (bKash, Nagad), and unique QR-code entry passes.",
+      "is_published": true,
+      "publish_date": "2026-03-05",
+      "featured_image": "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80"
+    },
+    {
+      "id": "news-2",
+      "slug": "school-grounds-renovation-underway",
+      "views": 890,
+      "author": "Press Committee",
+      "category": "Campus News",
+      "title_bn": "৮৫ বছর পূর্তি উপলক্ষে ঐতিহাসিক স্কুল মাঠ ও প্রাঙ্গণ সজ্জিতকরণ",
+      "title_en": "Historic School Pavilion and Sports Grounds Prepared for Grand Celebration",
+      "content_bn": "ঐতিহাসিক দিনটিকে স্মরণীয় করে রাখতে ক্যাম্পাস প্রাঙ্গণ সংস্কার এবং ৪,০০০ এর অধিক প্রাক্তন শিক্ষার্থী ও অতিথিদের বরণ করতে জোর প্রস্তুতি চলছে।",
+      "content_en": "Preparations are actively underway on the campus to welcome over 4,000 alumni and guests for a memorable day of nostalgia, cultural performances, and networking.",
+      "is_published": true,
+      "publish_date": "2026-02-28",
+      "featured_image": "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=800&q=80"
+    }
+  ],
+  "media": [
+    {
+      "id": "med-1",
+      "url": "https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1000&q=80",
+      "name": "nash-school-building.jpg",
+      "size": "1.2 MB",
+      "type": "image",
+      "created_at": "2026-09-09T14:15:09.340Z"
+    },
+    {
+      "id": "med-2",
+      "url": "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1600&q=80",
+      "name": "85th-anniversary-poster.jpg",
+      "size": "2.4 MB",
+      "type": "image",
+      "created_at": "2026-09-09T14:15:09.340Z"
+    }
+  ],
+  "global_settings": {
+    "logo_url": "/assets/nash-logo.png",
+    "address_bn": "নানুপুর, ফটিকছড়ি, চট্টগ্রাম ৪৩৫০, বাংলাদেশ",
+    "address_en": "Nanupur, Fatikchhari, Chattogram 4350, Bangladesh",
+    "robots_txt": "User-agent: *\nAllow: /",
+    "favicon_url": "/favicon.ico",
+    "font_family": "Hind Siliguri, Plus Jakarta Sans, sans-serif",
+    "accent_color": "#b91c1c",
+    "copyright_bn": "© ২০২৭ নানুপুর আবু সোবহান উচ্চ বিদ্যালয় প্রাক্তন শিক্ষার্থী পরিষদ। সর্বস্বত্ব সংরক্ষিত।",
+    "copyright_en": "© 2027 Nanupur Abu Sobhan High School Alumni Association. All rights reserved.",
+    "seo_og_image": "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1200&q=80",
+    "site_name_bn": "নানুপুর আবু সোবহান উচ্চ বিদ্যালয় প্রাক্তন শিক্ষার্থী পরিষদ",
+    "site_name_en": "Nanupur Abu Sobhan High School Alumni Association",
+    "social_links": {
+      "twitter": "https://twitter.com/nashalumni",
+      "youtube": "https://youtube.com/@nashalumni",
+      "facebook": "https://facebook.com/nashalumni",
+      "linkedin": "https://linkedin.com/company/nash-alumni",
+      "instagram": "https://instagram.com/nashalumni"
+    },
+    "contact_email": "info@nanupuralumni.org",
+    "contact_phone": "+880 1819-123456",
+    "primary_color": "#0f4d2a",
+    "google_maps_url": "https://maps.google.com/?q=Nanupur+Abu+Sobhan+High+School",
+    "mobile_logo_url": "/assets/nash-logo-sm.png",
+    "office_hours_bn": "শনিবার থেকে বৃহস্পতিবার: সকাল ৯:০০ টা - বিকাল ৫:০০ টা",
+    "office_hours_en": "Saturday to Thursday: 09:00 AM - 05:00 PM",
+    "secondary_color": "#d4af37",
+    "site_tagline_bn": "৮৫ বছরের ঐতিহ্য, বন্ধুত্ব ও স্মৃতির মেলবন্ধন",
+    "site_tagline_en": "85 Years of Heritage, Friendship & Memories",
+    "background_color": "#f8fafc",
+    "default_language": "bn",
+    "seo_default_title": "NASH Alumni Association & 85th Anniversary Reunion 2027",
+    "available_languages": [
+      "bn",
+      "en"
+    ],
+    "site_description_bn": "নানুপুর আবু সোবহান উচ্চ বিদ্যালয় প্রাক্তন শিক্ষার্থী পরিষদ ও ৮৫ বছর পূর্তি পুনর্মিলনী ২০২৭ এর অফিসিয়াল ডিজিটাল প্ল্যাটফর্ম।",
+    "site_description_en": "Official database-driven alumni management and 85th anniversary celebration portal for Nanupur Abu Sobhan High School, Fatikchhari, Chattogram.",
+    "seo_meta_description": "Register online for the 85th Anniversary Celebration of Nanupur Abu Sobhan High School (16 Jan 2027). Instant bKash/Nagad payment & secure QR entry pass.",
+    "search_engine_indexing": true
+  },
+  "header_config": {
+    "cta_url": "#register",
+    "logo_url": "",
+    "logo_link": "/",
+    "cta_text_bn": "পুনর্মিলনী নিবন্ধন",
+    "cta_text_en": "Register for Reunion",
+    "show_search": false,
+    "show_user_menu": true,
+    "mobile_logo_url": "",
+    "show_cta_button": true,
+    "show_language_switcher": true
+  },
+  "top_bar_config": {
+    "is_enabled": true,
+    "contact_email": "reunion2027@nanupuralumni.org",
+    "contact_phone": "+880 1819-123456",
+    "custom_cta_url": "#register",
+    "announcement_bn": "📢 ৮৫ বছর পূর্তি পুনর্মিলনী: আগামী ১৬ জানুয়ারি ২০২৭, শনিবার — অনলাইন নিবন্ধন চলছে!",
+    "announcement_en": "📢 85th Anniversary Reunion on Saturday, 16 January 2027 — Online Registration is Open!",
+    "show_login_link": true,
+    "show_contact_info": true,
+    "show_social_icons": true,
+    "custom_cta_text_bn": "নিবন্ধন করুন",
+    "custom_cta_text_en": "Register Now",
+    "show_notice_indicator": true,
+    "show_language_selector": true,
+    "show_registration_link": true
+  },
+  "menus": [
+    {
+      "id": "menu-home",
+      "url": "/",
+      "order": 1,
+      "target": "_self",
+      "label_bn": "মূলপাতা",
+      "label_en": "Home",
+      "is_active": true
+    },
+    {
+      "id": "menu-about",
+      "url": "#about",
+      "order": 2,
+      "target": "_self",
+      "children": [
+        {
+          "id": "menu-about-school",
+          "url": "#school",
+          "order": 1,
+          "target": "_self",
+          "label_bn": "বিদ্যালয়ের ঐতিহ্য",
+          "label_en": "School Heritage",
+          "is_active": true,
+          "parent_id": "menu-about"
+        },
+        {
+          "id": "menu-about-association",
+          "url": "#association",
+          "order": 2,
+          "target": "_self",
+          "label_bn": "প্রাক্তন শিক্ষার্থী পরিষদ",
+          "label_en": "Alumni Association",
+          "is_active": true,
+          "parent_id": "menu-about"
+        },
+        {
+          "id": "menu-about-committee",
+          "url": "#committee",
+          "order": 3,
+          "target": "_self",
+          "label_bn": "কার্যনির্বাহী পরিষদ",
+          "label_en": "Executive Committee",
+          "is_active": true,
+          "parent_id": "menu-about"
+        },
+        {
+          "id": "menu-about-history",
+          "url": "#history",
+          "order": 4,
+          "target": "_self",
+          "label_bn": "পুনর্মিলনীর ইতিহাস",
+          "label_en": "Reunion History",
+          "is_active": true,
+          "parent_id": "menu-about"
+        }
+      ],
+      "label_bn": "পরিচিতি",
+      "label_en": "About",
+      "is_active": true
+    },
+    {
+      "id": "menu-notices",
+      "url": "#notices",
+      "order": 3,
+      "target": "_self",
+      "label_bn": "বিজ্ঞপ্তি",
+      "label_en": "Notices & Circulars",
+      "is_active": true
+    },
+    {
+      "id": "menu-news",
+      "url": "#news",
+      "order": 4,
+      "target": "_self",
+      "label_bn": "খবর ও আপডেট",
+      "label_en": "News & Updates",
+      "is_active": true
+    },
+    {
+      "id": "menu-contact",
+      "url": "#contact",
+      "order": 5,
+      "target": "_self",
+      "label_bn": "যোগাযোগ",
+      "label_en": "Contact",
+      "is_active": true
+    }
+  ],
+  "footer_config": {
+    "email": "info@nanupuralumni.org",
+    "phone": "+880 1819-123456",
+    "columns": [
+      {
+        "id": "col-explore",
+        "links": [
+          {
+            "id": "link-1",
+            "url": "#school",
+            "order": 1,
+            "target": "_self",
+            "label_bn": "বিদ্যালয় পরিচিতি",
+            "label_en": "About School",
+            "is_active": true
+          },
+          {
+            "id": "link-2",
+            "url": "#association",
+            "order": 2,
+            "target": "_self",
+            "label_bn": "প্রাক্তন শিক্ষার্থী পরিষদ",
+            "label_en": "Alumni Association",
+            "is_active": true
+          },
+          {
+            "id": "link-3",
+            "url": "#committee",
+            "order": 3,
+            "target": "_self",
+            "label_bn": "কার্যনির্বাহী পরিষদ",
+            "label_en": "Executive Committee",
+            "is_active": true
+          },
+          {
+            "id": "link-4",
+            "url": "#event-details",
+            "order": 4,
+            "target": "_self",
+            "label_bn": "৮৫ বছর পূর্তি উৎসব",
+            "label_en": "85th Anniversary Event",
+            "is_active": true
+          }
+        ],
+        "order": 1,
+        "title_bn": "অনুসন্ধান",
+        "title_en": "Explore NASH",
+        "is_active": true
+      },
+      {
+        "id": "col-services",
+        "links": [
+          {
+            "id": "link-5",
+            "url": "#register",
+            "order": 1,
+            "target": "_self",
+            "label_bn": "পুনর্মিলনী নিবন্ধন",
+            "label_en": "Reunion Registration",
+            "is_active": true
+          },
+          {
+            "id": "link-6",
+            "url": "#verify",
+            "order": 2,
+            "target": "_self",
+            "label_bn": "প্রবেশ পাস যাচাই",
+            "label_en": "Verify Entry Pass",
+            "is_active": true
+          },
+          {
+            "id": "link-7",
+            "url": "#batches",
+            "order": 3,
+            "target": "_self",
+            "label_bn": "ব্যাচ ডিরেক্টরি",
+            "label_en": "Batch Directory",
+            "is_active": true
+          },
+          {
+            "id": "link-8",
+            "url": "#notices",
+            "order": 4,
+            "target": "_self",
+            "label_bn": "অফিসিয়াল বিজ্ঞপ্তি",
+            "label_en": "Official Circulars",
+            "is_active": true
+          }
+        ],
+        "order": 2,
+        "title_bn": "সেবাসমূহ",
+        "title_en": "Alumni Services",
+        "is_active": true
+      },
+      {
+        "id": "col-help",
+        "links": [
+          {
+            "id": "link-9",
+            "url": "#faq",
+            "order": 1,
+            "target": "_self",
+            "label_bn": "সাধারণ জিজ্ঞাসা (FAQ)",
+            "label_en": "Frequently Asked Questions",
+            "is_active": true
+          },
+          {
+            "id": "link-10",
+            "url": "#contact",
+            "order": 2,
+            "target": "_self",
+            "label_bn": "পেমেন্ট হেল্পডেস্ক",
+            "label_en": "Payment Helpdesk",
+            "is_active": true
+          },
+          {
+            "id": "link-11",
+            "url": "#terms",
+            "order": 3,
+            "target": "_self",
+            "label_bn": "শর্তাবলী ও নীতিমালা",
+            "label_en": "Terms & Conditions",
+            "is_active": true
+          },
+          {
+            "id": "link-12",
+            "url": "#contact",
+            "order": 4,
+            "target": "_self",
+            "label_bn": "সচিবালয়ে যোগাযোগ",
+            "label_en": "Contact Secretariat",
+            "is_active": true
+          }
+        ],
+        "order": 3,
+        "title_bn": "সহায়তা ও যোগাযোগ",
+        "title_en": "Help & Support",
+        "is_active": true
+      }
+    ],
+    "logo_url": "",
+    "address_bn": "নানুপুর, ফটিকছড়ি, চট্টগ্রাম ৪৩৫০, বাংলাদেশ",
+    "address_en": "Nanupur, Fatikchhari, Chattogram 4350, Bangladesh",
+    "copyright_bn": "© ২০২৭ নানুপুর আবু সোবহান উচ্চ বিদ্যালয় প্রাক্তন শিক্ষার্থী পরিষদ। সর্বস্বত্ব সংরক্ষিত।",
+    "copyright_en": "© 2027 Nanupur Abu Sobhan High School Alumni Association. All rights reserved.",
+    "social_links": {
+      "twitter": "https://twitter.com/nashalumni",
+      "youtube": "https://youtube.com/@nashalumni",
+      "facebook": "https://facebook.com/nashalumni",
+      "linkedin": "https://linkedin.com/company/nash-alumni"
+    },
+    "description_bn": "নানুপুর আবু সোবহান উচ্চ বিদ্যালয় প্রাক্তন শিক্ষার্থী পরিষদ—বিশ্বজুড়ে সকল প্রাক্তন শিক্ষার্থীদের ঐক্য ও মেলবন্ধনের কেন্দ্রীয় প্ল্যাটফর্ম।",
+    "description_en": "Nanupur Abu Sobhan High School Alumni Association connects thousands of proud alumni worldwide, uniting generations in celebration of our heritage."
+  },
+  "pages": [
+    {
+      "id": "page-about",
+      "slug": "about",
+      "status": "published",
+      "sections": [
+        {
+          "id": "sec-about-hero",
+          "type": "hero",
+          "order": 1,
+          "title_bn": "৮৫ বছরের গৌরবময় ঐতিহ্যের ঐতিহাসিক পুনর্মিলনী",
+          "title_en": "Celebrating 85 Years of Glorious Heritage",
+          "image_url": "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1200&q=80",
+          "is_active": true,
+          "subtitle_bn": "১৯৪২ – ২০২৭ • নানুপুর আবু সোবহান উচ্চ বিদ্যালয় প্রাক্তন শিক্ষার্থী পরিষদ",
+          "subtitle_en": "1942 – 2027 • Nanupur Abu Sobhan High School Alumni Grand Gathering"
+        },
+        {
+          "id": "sec-about-vision",
+          "type": "text",
+          "order": 2,
+          "title_bn": "১৬ জানুয়ারি ২০২৭-এর ঐতিহাসিক মিলনমেলা",
+          "title_en": "The Grand Gathering on 16 January 2027",
+          "is_active": true,
+          "content_bn": "আগামী ১৬ জানুয়ারি ২০২৭, শনিবার বিদ্যালয়ের চিরসবুজ ক্যাম্পাসে অনুষ্ঠিত হতে যাচ্ছে বহুল প্রতীক্ষিত ৮৫ বছর পূর্তি উৎসব ও মহা পুনর্মিলনী। দেশ-বিদেশের হাজারো প্রাক্তন শিক্ষার্থীর অংশগ্রহণে এই দিনটি হবে স্মৃতিচারণ, সৌহার্দ্য ও ঐক্যের অনন্য মাহেন্দ্রক্ষণ।",
+          "content_en": "On Saturday, 16 January 2027, generations of alumni spanning 85 glorious years will reunite on our beloved campus. From the foundational batches of the 1940s to our latest graduates, this historic celebration brings thousands together to rekindle old bonds, honor legendary teachers, and pledge support for the next century of students."
+        },
+        {
+          "id": "sec-about-stats",
+          "meta": {
+            "stats": [
+              {
+                "value": "85 Years",
+                "label_bn": "ঐতিহ্যের বছর",
+                "label_en": "Years of Heritage"
+              },
+              {
+                "value": "85+",
+                "label_bn": "সম্মানিত ব্যাচ",
+                "label_en": "Honored Batches"
+              },
+              {
+                "value": "5,000+",
+                "label_bn": "প্রত্যাশিত উপস্থিতি",
+                "label_en": "Expected Alumni"
+              },
+              {
+                "value": "16 Jan 2027",
+                "label_bn": "পুনর্মিলনী তারিখ",
+                "label_en": "Grand Event Date"
+              }
+            ]
+          },
+          "type": "stats",
+          "order": 3,
+          "title_bn": "এক নজরে মহা সম্মেলন",
+          "title_en": "Anniversary Highlights",
+          "is_active": true
+        },
+        {
+          "id": "sec-about-cta",
+          "type": "cta",
+          "order": 4,
+          "title_bn": "আজই নিবন্ধন সম্পন্ন করে ডিজিটাল পাস সংগ্রহ করুন",
+          "title_en": "Register Today and Secure Your Entry Token",
+          "is_active": true,
+          "button_url": "#register",
+          "button_text_bn": "অনলাইন নিবন্ধন সম্পন্ন করুন",
+          "button_text_en": "Complete Online Registration"
+        }
+      ],
+      "title_bn": "৮৫ বছর পূর্তি উৎসব ও মহা পুনর্মিলনী ২০২৭ সম্পর্কে",
+      "title_en": "About 85th Anniversary & Grand Reunion 2027",
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-03-01T00:00:00Z"
+    },
+    {
+      "id": "page-school",
+      "slug": "school-heritage",
+      "status": "published",
+      "sections": [
+        {
+          "id": "sec-1",
+          "type": "hero",
+          "order": 1,
+          "title_bn": "নানুপুর আবু সোবহান উচ্চ বিদ্যালয়",
+          "title_en": "Nanupur Abu Sobhan High School",
+          "image_url": "https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1200&q=80",
+          "is_active": true,
+          "subtitle_bn": "স্থাপিত: ১৯৪২ খ্রি. • ইআইআইএন: ১০৪৩২১ • ফটিকছড়ি, চট্টগ্রাম",
+          "subtitle_en": "Established in 1942 • EIIN: 104321 • Fatikchhari, Chattogram"
+        },
+        {
+          "id": "sec-2",
+          "type": "text",
+          "order": 2,
+          "title_bn": "ঐতিহাসিক পটভূমি",
+          "title_en": "Historical Background",
+          "is_active": true,
+          "content_bn": "১৯৪২ সালে প্রখ্যাত সমাজসেবী মরহুম আলহাজ্ব আবু সোবহানের মহতী উদ্যোগে এই বিদ্যাপীঠ প্রতিষ্ঠিত হয়। উত্তর চট্টগ্রামের শিক্ষা ও সংস্কৃতির অগ্রগতিতে বিদ্যালয়টি বিগত ৮৫ বছর ধরে আলোকবর্তিকা হিসেবে কাজ করে আসছে।",
+          "content_en": "Founded in 1942 by the visionary philanthropist Late Alhaj Abu Sobhan, the school was born out of a profound commitment to enlighten the youth of northern Chattogram. Over eighty-five years, it has transformed into a prestigious seat of learning with over 2,000 active students and thousands of proud alumni across the world."
+        },
+        {
+          "id": "sec-3",
+          "meta": {
+            "stats": [
+              {
+                "value": "1942",
+                "label_bn": "প্রতিষ্ঠা",
+                "label_en": "Established"
+              },
+              {
+                "value": "85+",
+                "label_bn": "ব্যাচ সংখ্যা",
+                "label_en": "Alumni Batches"
+              },
+              {
+                "value": "2,200+",
+                "label_bn": "বর্তমান শিক্ষার্থী",
+                "label_en": "Current Students"
+              },
+              {
+                "value": "5 Acres",
+                "label_bn": "ক্যাম্পাস আয়তন",
+                "label_en": "Campus Area"
+              }
+            ]
+          },
+          "type": "stats",
+          "order": 3,
+          "title_bn": "এক নজরে বিদ্যালয়",
+          "title_en": "School at a Glance",
+          "is_active": true
+        },
+        {
+          "id": "sec-4",
+          "type": "gallery",
+          "order": 4,
+          "images": [
+            "https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=600&q=80",
+            "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=600&q=80",
+            "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=600&q=80"
+          ],
+          "title_bn": "ক্যাম্পাস ও সুযোগ-সুবিধা",
+          "title_en": "Campus Facilities & Memorabilia",
+          "is_active": true
+        }
+      ],
+      "title_bn": "বিদ্যালয়ের গৌরবময় ঐতিহ্য ও ইতিবৃত্ত",
+      "title_en": "School Heritage & Academic Legacy",
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-03-01T00:00:00Z"
+    },
+    {
+      "id": "page-association",
+      "slug": "alumni-association",
+      "status": "published",
+      "sections": [
+        {
+          "id": "sec-assoc-1",
+          "type": "hero",
+          "order": 1,
+          "title_bn": "নানুপুর আবু সোবহান উচ্চ বিদ্যালয় প্রাক্তন শিক্ষার্থী পরিষদ",
+          "title_en": "NASH Alumni Association",
+          "image_url": "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80",
+          "is_active": true,
+          "subtitle_bn": "ভ্রাতৃত্ব, সৌহার্দ্য ও প্রাতিষ্ঠানিক উন্নয়নে ৮৫ প্রজন্মের মেলবন্ধন",
+          "subtitle_en": "Uniting 85 Generations of Alumni in Service & Fellowship"
+        },
+        {
+          "id": "sec-assoc-2",
+          "type": "text",
+          "order": 2,
+          "title_bn": "মূল উদ্দেশ্যসমূহ",
+          "title_en": "Objectives & Core Mandate",
+          "is_active": true,
+          "content_bn": "প্রাক্তন শিক্ষার্থী পরিষদ বিদ্যালয়ের টেকসই উন্নয়ন, শিক্ষার্থীদের শিক্ষাবৃত্তি প্রদান এবং সকল ব্যাচের মাঝে আজীবন ভ্রাতৃত্বপূর্ণ যোগাযোগ রক্ষায় কাজ করে যাচ্ছে।",
+          "content_en": "The Alumni Association operates as the sovereign liaison between alumni, current faculty, and the school managing committee. Its pillars include: 1. Unifying all batches into a unified digital ecosystem. 2. Endowing scholarships for underprivileged students. 3. Upgrading science, language, and technology labs. 4. Organizing milestone reunions."
+        },
+        {
+          "id": "sec-assoc-3",
+          "type": "cta",
+          "order": 3,
+          "title_bn": "আপনার ব্যাচের সাথে যুক্ত হোন",
+          "title_en": "Join Your Batch Community Today",
+          "is_active": true,
+          "button_url": "#register",
+          "button_text_bn": "৮৫ বছর পূর্তিতে নিবন্ধন করুন",
+          "button_text_en": "Register for 85th Anniversary"
+        }
+      ],
+      "title_bn": "প্রাক্তন শিক্ষার্থী পরিষদের লক্ষ্য ও উদ্দেশ্য",
+      "title_en": "Alumni Association Mission & Vision",
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-03-01T00:00:00Z"
+    }
+  ],
+  "faqs": [
+    {
+      "id": "faq-1",
+      "order": 1,
+      "category": "Registration & Fees",
+      "answer_bn": "প্রতিজন প্রাক্তন শিক্ষার্থীর নিবন্ধন ফি ১,০০০ টাকা। এর মধ্যে রয়েছে স্মরণিকা ব্যাগ, মেডেল/ব্যাজ, স্মরণিকা বই, প্রাতঃরাশ, মধ্যাহ্নভোজ, সান্ধ্যকালীন নাশতা এবং জমকালো সাংস্কৃতিক অনুষ্ঠান।",
+      "answer_en": "The registration fee is BDT 1,000 per alumnus. It covers the commemorative anniversary bag, registration kit, celebration badge, souvenir book, breakfast, grand luncheon banquet, evening tea, and cultural event entry.",
+      "is_active": true,
+      "question_bn": "৮৫ বছর পূর্তি উৎসব ও পুনর্মিলনীর নিবন্ধন ফি কত?",
+      "question_en": "How much is the registration fee for the 85th Anniversary Celebration?"
+    },
+    {
+      "id": "faq-2",
+      "order": 2,
+      "category": "Batch Information",
+      "answer_bn": "আপনার এসএসসি / ম্যাট্রিকুলেশন পাসের সাল অনুযায়ী বিদ্যালয়ের প্রাতিষ্ঠানিক রেকর্ড মোতাবেক আপনার সংশ্লিষ্ট ব্যাচ নির্ধারিত হয়। প্রতিটি পাসের সাল একটি স্বতন্ত্র সম্মানিত ব্যাচ হিসেবে পরিগণিত।",
+      "answer_en": "Your batch is automatically assigned based on your SSC / Matriculation passing year as recorded in the official school archives. Each passing year corresponds to an honored alumni batch.",
+      "is_active": true,
+      "question_bn": "আমার ব্যাচ নম্বর কীভাবে নির্ধারিত হবে?",
+      "question_en": "How is my batch number determined?"
+    },
+    {
+      "id": "faq-3",
+      "order": 3,
+      "category": "Payments",
+      "answer_bn": "বিকাশ, নগদ, রকেটের মতো মোবাইল ব্যাংকিং এবং ভিসা, মাস্টারকার্ড ও অনলাইন ব্যাংকিংয়ের মাধ্যমে নিরাপদে ফি পরিশোধ করা যাবে। পেমেন্ট সম্পন্ন হওয়ার সাথে সাথেই ডিজিটাল পাস ইস্যু হবে।",
+      "answer_en": "We accept instant mobile banking via bKash, Nagad, and Rocket, as well as Visa, Mastercard, and internet banking via SSLCommerz. All transactions are securely verified with instant token issuance.",
+      "is_active": true,
+      "question_bn": "অনলাইন নিবন্ধনের জন্য কোন কোন পেমেন্ট মাধ্যম ব্যবহার করা যাবে?",
+      "question_en": "Which payment methods are accepted for online registration?"
+    },
+    {
+      "id": "faq-4",
+      "order": 4,
+      "category": "Entry Pass & Token",
+      "answer_bn": "পেমেন্ট সম্পন্ন হওয়ামাত্রই ইউনিক কিউআর কোড সম্বলিত একটি নিরাপদ ডিজিটাল প্রবেশ পাস তৈরি হবে। আপনি এটি ফোনে সংরক্ষণ করতে পারবেন, প্রিন্ট করতে পারবেন অথবা সদস্য পোর্টালে লগইন করে দেখতে পারবেন।",
+      "answer_en": "Upon successful fee payment, a cryptographically secure, high-entropy Entry Pass with a unique QR code is generated instantly. You can download it to your mobile, print it, or view it at any time in the Member Portal.",
+      "is_active": true,
+      "question_bn": "ডিজিটাল প্রবেশ পাস কী এবং আমি এটি কীভাবে পাব?",
+      "question_en": "What is the digital entry pass and how do I receive it?"
+    },
+    {
+      "id": "faq-5",
+      "order": 5,
+      "category": "Event Day",
+      "answer_bn": "উৎসবটি আগামী ১৬ জানুয়ারি ২০২৭, শনিবার সকাল ৮:৩০ টা থেকে রাত ৯:০০ টা পর্যন্ত নানুপুর আবু সোবহান উচ্চ বিদ্যালয় প্রাঙ্গণে অনুষ্ঠিত হবে।",
+      "answer_en": "The event will take place on Saturday, 16 January 2027 from 08:30 AM to 09:00 PM at the Nanupur Abu Sobhan High School premises in Fatikchhari, Chattogram.",
+      "is_active": true,
+      "question_bn": "অনুষ্ঠানটি কখন ও কোথায় অনুষ্ঠিত হবে?",
+      "question_en": "When and where will the celebration take place?"
+    }
+  ],
+  "payment_gateways": [
+    {
+      "id": "gw-bkash",
+      "code": "bkash",
+      "name": "bKash MFS",
+      "currency": "BDT",
+      "icon_url": "https://images.unsplash.com/photo-1556742049-0a67c5574f73?auto=format&fit=crop&w=100&q=80",
+      "store_id": "BKASH_STORE_101",
+      "is_enabled": true,
+      "sort_order": 1,
+      "merchant_id": "NASH_BKASH_01",
+      "is_test_mode": true,
+      "display_name_bn": "বিকাশ পেমেন্ট",
+      "display_name_en": "bKash Payment",
+      "instructions_bn": "বিকাশ মোবাইল ব্যাংকিংয়ের মাধ্যমে তাৎক্ষণিক পেমেন্ট সম্পন্ন করুন।",
+      "instructions_en": "Instant checkout via bKash mobile financial services.",
+      "transaction_prefix": "BK"
+    },
+    {
+      "id": "gw-nagad",
+      "code": "nagad",
+      "name": "Nagad Digital Financial Service",
+      "currency": "BDT",
+      "is_enabled": true,
+      "sort_order": 2,
+      "merchant_id": "NASH_NAGAD_01",
+      "is_test_mode": true,
+      "display_name_bn": "নগদ পেমেন্ট",
+      "display_name_en": "Nagad Payment",
+      "instructions_bn": "ডাক বিভাগের ডিজিটাল লেনদেন নগদ-এর মাধ্যমে পেমেন্ট সম্পন্ন করুন।",
+      "instructions_en": "Pay via Nagad digital payment system.",
+      "transaction_prefix": "NG"
+    },
+    {
+      "id": "gw-rocket",
+      "code": "rocket",
+      "name": "Rocket (Dutch-Bangla Bank)",
+      "currency": "BDT",
+      "is_enabled": true,
+      "sort_order": 3,
+      "is_test_mode": true,
+      "display_name_bn": "রকেট পেমেন্ট",
+      "display_name_en": "Rocket Mobile Banking",
+      "instructions_bn": "ডাচ-বাংলা ব্যাংক রকেটের মাধ্যমে ফি প্রদান করুন।",
+      "instructions_en": "Pay securely using DBBL Rocket account.",
+      "transaction_prefix": "RK"
+    },
+    {
+      "id": "gw-sslcommerz",
+      "code": "sslcommerz",
+      "name": "SSLCommerz Gateway",
+      "currency": "BDT",
+      "store_id": "nash_ssl_store",
+      "is_enabled": true,
+      "sort_order": 4,
+      "is_test_mode": true,
+      "display_name_bn": "কার্ড ও ইন্টারনেট ব্যাংকিং (SSLCommerz)",
+      "display_name_en": "Debit/Credit Cards & NetBanking",
+      "instructions_bn": "ভিসা, মাস্টারকার্ড বা অন্যান্য কার্ডের মাধ্যমে অনলাইনে ফি দিন।",
+      "instructions_en": "Visa, MasterCard, Amex, and internet banking channels.",
+      "transaction_prefix": "SSL"
+    }
+  ],
+  "registration_config": {
+    "fields": [
+      {
+        "name": "full_name",
+        "type": "text",
+        "order": 1,
+        "label_bn": "পূর্ণ নাম",
+        "label_en": "Full Name",
+        "is_enabled": true,
+        "is_required": true
+      },
+      {
+        "name": "dob",
+        "type": "date",
+        "order": 2,
+        "label_bn": "জন্ম তারিখ",
+        "label_en": "Date of Birth",
+        "is_enabled": true,
+        "is_required": true
+      },
+      {
+        "name": "gender",
+        "type": "select",
+        "order": 3,
+        "options": [
+          "male",
+          "female",
+          "other"
+        ],
+        "label_bn": "লিঙ্গ",
+        "label_en": "Gender",
+        "is_enabled": true,
+        "is_required": true
+      },
+      {
+        "name": "passing_year",
+        "type": "text",
+        "order": 4,
+        "label_bn": "পরীক্ষার / পাসের সাল",
+        "label_en": "Passing / SSC Year",
+        "is_enabled": true,
+        "is_required": true
+      },
+      {
+        "name": "blood_group",
+        "type": "select",
+        "order": 5,
+        "options": [
+          "A+",
+          "A-",
+          "B+",
+          "B-",
+          "AB+",
+          "AB-",
+          "O+",
+          "O-"
+        ],
+        "label_bn": "রক্তের গ্রুপ",
+        "label_en": "Blood Group",
+        "is_enabled": true,
+        "is_required": false
+      },
+      {
+        "name": "phone",
+        "type": "tel",
+        "order": 6,
+        "label_bn": "মোবাইল নম্বর",
+        "label_en": "Mobile Number",
+        "is_enabled": true,
+        "is_required": true
+      },
+      {
+        "name": "email",
+        "type": "email",
+        "order": 7,
+        "label_bn": "ইমেইল ঠিকানা",
+        "label_en": "Email Address",
+        "is_enabled": true,
+        "is_required": false
+      },
+      {
+        "name": "address",
+        "type": "text",
+        "order": 8,
+        "label_bn": "বর্তমান ঠিকানা / কর্মস্থল",
+        "label_en": "Current Address / City",
+        "is_enabled": true,
+        "is_required": false
+      },
+      {
+        "name": "occupation",
+        "type": "text",
+        "order": 9,
+        "label_bn": "পেশা / পদবি",
+        "label_en": "Profession / Occupation",
+        "is_enabled": true,
+        "is_required": false
+      }
+    ],
+    "currency": "BDT",
+    "end_date": "2026-12-31",
+    "event_id": "event-85th-anniversary",
+    "terms_bn": "আমি প্রত্যয়ন করছি যে প্রদত্ত তথ্য সত্য ও সঠিক এবং উৎসব চলাকালে শৃঙ্খলা বজায় রাখতে অঙ্গীকারাবদ্ধ।",
+    "terms_en": "I certify that the information provided is accurate and I agree to adhere to the code of conduct during the celebration.",
+    "fee_amount": 1000,
+    "is_enabled": true,
+    "start_date": "2026-01-01",
+    "max_capacity": 5000,
+    "instructions_bn": "আপনার পূর্ণ নাম, জন্ম তারিখ, লিঙ্গ ও পাসের সাল লিখুন। আপনার ব্যাচ স্বয়ংক্রিয়ভাবে নির্ধারিত হবে।",
+    "instructions_en": "Fill in your name, date of birth, gender, and passing year. Your batch will be computed automatically.",
+    "success_message_bn": "আপনার নিবন্ধন সফল হয়েছে! নিচে আপনার ডিজিটাল প্রবেশ পাস ডাউনলোড করুন।",
+    "success_message_en": "Your registration is confirmed! Download your Entry Pass below."
+  },
+  "batch_config": {
+    "overrides": [],
+    "naming_format": "batch_number",
+    "reference_year": 1942,
+    "reference_batch": 65,
+    "formula_description": "Standard School Batch Calculation (Internal)"
+  },
+  "roles": [
+    {
+      "id": "role-super-admin",
+      "name": "Super Admin",
+      "is_system": true,
+      "created_at": "2026-01-01T00:00:00Z",
+      "description": "Full uninhibited system and administrative control.",
+      "permissions": [
+        "pages.view",
+        "pages.create",
+        "pages.edit",
+        "pages.delete",
+        "users.view",
+        "users.create",
+        "users.edit",
+        "users.delete",
+        "events.view",
+        "events.create",
+        "events.edit",
+        "events.delete",
+        "registrations.view",
+        "registrations.edit",
+        "registrations.export",
+        "payments.view",
+        "payments.manage",
+        "payments.refund",
+        "tokens.view",
+        "tokens.verify",
+        "tokens.revoke",
+        "settings.view",
+        "settings.manage",
+        "menus.view",
+        "menus.manage",
+        "faq.view",
+        "faq.manage"
+      ]
+    },
+    {
+      "id": "role-admin",
+      "name": "Administrator",
+      "is_system": true,
+      "created_at": "2026-01-01T00:00:00Z",
+      "description": "Day-to-day administrative management access.",
+      "permissions": [
+        "pages.view",
+        "pages.create",
+        "pages.edit",
+        "users.view",
+        "users.edit",
+        "events.view",
+        "events.edit",
+        "registrations.view",
+        "registrations.edit",
+        "registrations.export",
+        "payments.view",
+        "payments.manage",
+        "tokens.view",
+        "tokens.verify",
+        "settings.view",
+        "menus.view",
+        "menus.manage",
+        "faq.view",
+        "faq.manage"
+      ]
+    },
+    {
+      "id": "role-content-manager",
+      "name": "Content Manager",
+      "is_system": true,
+      "created_at": "2026-01-01T00:00:00Z",
+      "description": "Manages website content: pages, notices, news, media, FAQ, and menus.",
+      "permissions": [
+        "pages.view",
+        "pages.create",
+        "pages.edit",
+        "pages.delete",
+        "menus.view",
+        "menus.manage",
+        "faq.view",
+        "faq.manage",
+        "settings.view"
+      ]
+    },
+    {
+      "id": "role-event-manager",
+      "name": "Event Manager",
+      "is_system": true,
+      "created_at": "2026-01-01T00:00:00Z",
+      "description": "Oversees registration records, batch quotas, entry tokens, and gate check-in.",
+      "permissions": [
+        "events.view",
+        "events.edit",
+        "registrations.view",
+        "registrations.edit",
+        "registrations.export",
+        "tokens.view",
+        "tokens.verify"
+      ]
+    },
+    {
+      "id": "role-finance-manager",
+      "name": "Finance & Payment Manager",
+      "is_system": true,
+      "created_at": "2026-01-01T00:00:00Z",
+      "description": "Monitors transactions, gateway statuses, reconciliations, and financial audits.",
+      "permissions": [
+        "payments.view",
+        "payments.manage",
+        "registrations.view"
+      ]
+    },
+    {
+      "id": "role-moderator",
+      "name": "Moderator",
+      "is_system": true,
+      "created_at": "2026-01-01T00:00:00Z",
+      "description": "Community moderation and entry pass scanning privileges.",
+      "permissions": [
+        "tokens.view",
+        "tokens.verify",
+        "registrations.view"
+      ]
+    },
+    {
+      "id": "role-alumni-member",
+      "name": "Alumni Member",
+      "is_system": true,
+      "created_at": "2026-01-01T00:00:00Z",
+      "description": "Standard alumnus with personal profile, registration, and entry token access.",
+      "permissions": []
+    }
+  ],
+  "settings": {
+    "currency": "BDT",
+    "logo_url": "/assets/nash-logo.png",
+    "address_bn": "নানুপুর, ফটিকছড়ি, চট্টগ্রাম ৪৩৫০, বাংলাদেশ",
+    "address_en": "Nanupur, Fatikchhari, Chattogram 4350, Bangladesh",
+    "robots_txt": "User-agent: *\nAllow: /",
+    "favicon_url": "/favicon.ico",
+    "font_family": "Hind Siliguri, Plus Jakarta Sans, sans-serif",
+    "youtube_url": "https://youtube.com",
+    "accent_color": "#b91c1c",
+    "copyright_bn": "© ২০২৭ নানুপুর আবু সোবহান উচ্চ বিদ্যালয় প্রাক্তন শিক্ষার্থী পরিষদ। সর্বস্বত্ব সংরক্ষিত।",
+    "copyright_en": "© 2027 Nanupur Abu Sobhan High School Alumni Association. All rights reserved.",
+    "facebook_url": "https://facebook.com",
+    "seo_og_image": "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1200&q=80",
+    "site_name_bn": "নানুপুর আবু সোবহান উচ্চ বিদ্যালয় প্রাক্তন শিক্ষার্থী পরিষদ",
+    "site_name_en": "Nanupur Abu Sobhan High School Alumni Association",
+    "social_links": {
+      "twitter": "https://twitter.com/nashalumni",
+      "youtube": "https://youtube.com/@nashalumni",
+      "facebook": "https://facebook.com/nashalumni",
+      "linkedin": "https://linkedin.com/company/nash-alumni",
+      "instagram": "https://instagram.com/nashalumni"
+    },
+    "contact_email": "info@nanupuralumni.org",
+    "contact_phone": "+880 1819-123456",
+    "primary_color": "#0f4d2a",
+    "batch_base_year": 1942,
+    "batch_calc_rule": "passing_year_only",
+    "google_maps_url": "https://maps.google.com/?q=Nanupur+Abu+Sobhan+High+School",
+    "mobile_logo_url": "/assets/nash-logo-sm.png",
+    "office_hours_bn": "শনিবার থেকে বৃহস্পতিবার: সকাল ৯:০০ টা - বিকাল ৫:০০ টা",
+    "office_hours_en": "Saturday to Thursday: 09:00 AM - 05:00 PM",
+    "secondary_color": "#d4af37",
+    "site_tagline_bn": "৮৫ বছরের ঐতিহ্য, বন্ধুত্ব ও স্মৃতির মেলবন্ধন",
+    "site_tagline_en": "85 Years of Heritage, Friendship & Memories",
+    "background_color": "#f8fafc",
+    "current_event_id": "event-85th-anniversary",
+    "default_language": "bn",
+    "registration_fee": 1000,
+    "payment_test_mode": false,
+    "registration_open": true,
+    "seo_default_title": "NASH Alumni Association & 85th Anniversary Reunion 2027",
+    "available_languages": [
+      "bn",
+      "en"
+    ],
+    "site_description_bn": "নানুপুর আবু সোবহান উচ্চ বিদ্যালয় প্রাক্তন শিক্ষার্থী পরিষদ ও ৮৫ বছর পূর্তি পুনর্মিলনী ২০২৭ এর অফিসিয়াল ডিজিটাল প্ল্যাটফর্ম।",
+    "site_description_en": "Official database-driven alumni management and 85th anniversary celebration portal for Nanupur Abu Sobhan High School, Fatikchhari, Chattogram.",
+    "seo_meta_description": "Register online for the 85th Anniversary Celebration of Nanupur Abu Sobhan High School (16 Jan 2027). Instant bKash/Nagad payment & secure QR entry pass.",
+    "payment_bkash_enabled": true,
+    "payment_nagad_enabled": true,
+    "registration_deadline": "2026-12-31",
+    "search_engine_indexing": true,
+    "payment_sslcommerz_enabled": true
+  },
+  "users": [
+    {
+      "id": "user-super-admin",
+      "name": "Safaet H. Dhrubo",
+      "role": "super_admin",
+      "batch": "Batch 1995",
+      "email": "admin@nanupuralumni.org",
+      "phone": "01670422288",
+      "status": "active",
+      "username": "safaet",
+      "created_at": "2026-01-01T00:00:00Z",
+      "passing_year": 1995
+    }
+  ],
+  "registrations": [
+    {
+      "id": "REG-85-910276",
+      "dob": "1985-05-15",
+      "email": "tariqul@alumni.edu",
+      "phone": "+8801812345678",
+      "gender": "male",
+      "address": "Nanupur, Fatikchhari, Chattogram",
+      "batch_id": "batch-2002",
+      "currency": "BDT",
+      "event_id": "event-85th-anniversary",
+      "full_name": "Dr. Tariqul Islam",
+      "batch_name": "125th Batch (2002)",
+      "checked_in": false,
+      "created_at": "2026-09-15T10:27:29.102Z",
+      "fee_amount": 1000,
+      "occupation": "Surgeon & Academician",
+      "updated_at": "2026-09-15T10:27:29.102Z",
+      "blood_group": "A+",
+      "passing_year": 2002,
+      "batch_name_bn": "১২৫তম ব্যাচ (২০০২)",
+      "payment_status": "pending",
+      "registration_status": "pending"
+    },
+    {
+      "id": "REG-85-1001",
+      "dob": "1989-04-15",
+      "email": "farhan@example.com",
+      "phone": "01819000002",
+      "gender": "male",
+      "user_id": "user-alumni-1",
+      "batch_id": "batch-2005",
+      "currency": "BDT",
+      "event_id": "event-85th-anniversary",
+      "token_id": "tok-1001",
+      "full_name": "Kazi Farhan Tanvir",
+      "batch_name": "Batch 2005",
+      "checked_in": true,
+      "created_at": "2026-03-01T10:15:00Z",
+      "fee_amount": 1000,
+      "token_code": "NASH-85-2027-A9F4K2",
+      "updated_at": "2026-03-01T10:18:00Z",
+      "blood_group": "B+",
+      "passing_year": 2005,
+      "batch_name_bn": "ব্যাচ ২০০৫",
+      "checked_in_at": "2026-09-09T14:15:30.221Z",
+      "payment_status": "paid",
+      "registration_status": "confirmed",
+      "notes": "[User @undefined deleted on 2026-09-15]"
+    },
+    {
+      "id": "REG-85-1002",
+      "dob": "1979-08-20",
+      "email": "tariqul@example.com",
+      "phone": "01711223344",
+      "gender": "male",
+      "batch_id": "batch-1995",
+      "currency": "BDT",
+      "event_id": "event-85th-anniversary",
+      "token_id": "tok-1002",
+      "full_name": "Dr. Md. Tariqul Hasan",
+      "batch_name": "Batch 1995",
+      "checked_in": true,
+      "created_at": "2026-03-02T14:20:00Z",
+      "fee_amount": 1000,
+      "token_code": "NASH-85-2027-H7M3P1",
+      "updated_at": "2026-03-02T14:25:00Z",
+      "blood_group": "O+",
+      "passing_year": 1995,
+      "batch_name_bn": "ব্যাচ ১৯৯৫",
+      "checked_in_at": "2026-03-08T09:30:00Z",
+      "payment_status": "paid",
+      "registration_status": "confirmed"
+    },
+    {
+      "id": "REG-85-1003",
+      "dob": "1996-11-05",
+      "email": "shafiq@example.com",
+      "phone": "01912345678",
+      "gender": "male",
+      "batch_id": "batch-2012",
+      "currency": "BDT",
+      "event_id": "event-85th-anniversary",
+      "full_name": "Md. Shafiqul Alam",
+      "batch_name": "Batch 2012",
+      "checked_in": false,
+      "created_at": "2026-03-07T18:40:00Z",
+      "fee_amount": 1000,
+      "updated_at": "2026-03-07T18:40:00Z",
+      "blood_group": "A+",
+      "passing_year": 2012,
+      "batch_name_bn": "ব্যাচ ২০১২",
+      "payment_status": "pending",
+      "registration_status": "pending"
+    }
+  ],
+  "payments": [
+    {
+      "id": "pay-1001",
+      "amount": 1000,
+      "method": "bKash Mobile App",
+      "status": "paid",
+      "gateway": "bkash",
+      "currency": "BDT",
+      "created_at": "2026-03-01T10:18:00Z",
+      "gateway_ref": "BKASH_REF_981721",
+      "transaction_id": "TRX-BKASH-891234",
+      "registration_id": "REG-85-1001"
+    },
+    {
+      "id": "pay-1002",
+      "amount": 1000,
+      "method": "Nagad Gateway",
+      "status": "paid",
+      "gateway": "nagad",
+      "currency": "BDT",
+      "created_at": "2026-03-02T14:25:00Z",
+      "gateway_ref": "NAGAD_REF_110292",
+      "transaction_id": "TRX-NAGAD-441209",
+      "registration_id": "REG-85-1002"
+    }
+  ],
+  "tokens": [
+    {
+      "id": "tok-1001",
+      "status": "used",
+      "event_id": "event-85th-anniversary",
+      "batch_name": "Batch 2005",
+      "checked_in": true,
+      "created_at": "2026-03-01T10:18:00Z",
+      "token_code": "NASH-85-2027-A9F4K2",
+      "member_name": "Kazi Farhan Tanvir",
+      "qr_code_svg": "",
+      "batch_name_bn": "ব্যাচ ২০০৫",
+      "checked_in_at": "2026-09-09T14:15:30.221Z",
+      "registration_id": "REG-85-1001"
+    },
+    {
+      "id": "tok-1002",
+      "status": "used",
+      "event_id": "event-85th-anniversary",
+      "batch_name": "Batch 1995",
+      "checked_in": true,
+      "created_at": "2026-03-02T14:25:00Z",
+      "token_code": "NASH-85-2027-H7M3P1",
+      "member_name": "Dr. Md. Tariqul Hasan",
+      "qr_code_svg": "",
+      "batch_name_bn": "ব্যাচ ১৯৯৫",
+      "checked_in_at": "2026-03-08T09:30:00Z",
+      "registration_id": "REG-85-1002"
+    }
+  ],
+  "audit_logs": [
+    {
+      "id": "log-1789472174905-bmv7",
+      "user_name": "Safaet H. Dhrubo",
+      "user_email": "admin@nanupuralumni.org",
+      "action": "UPDATE_MENU_ITEM",
+      "entity": "Menus",
+      "details": "Updated menu: School Heritage",
+      "ip": "127.0.0.1",
+      "created_at": "2026-09-15T11:36:14.905Z"
+    },
+    {
+      "id": "log-1789471702662-crs8",
+      "user_name": "Safaet H. Dhrubo",
+      "user_email": "admin@nanupuralumni.org",
+      "action": "DELETE_USER",
+      "entity": "Users",
+      "details": "Deleted user account @alumni_345678 (Dr. Tariqul Islam, role: alumni_member). Historical alumni registration and financial records have been preserved.",
+      "ip": "127.0.0.1",
+      "created_at": "2026-09-15T11:28:22.662Z"
+    },
+    {
+      "id": "log-1789471700164-agvz",
+      "user_name": "Safaet H. Dhrubo",
+      "user_email": "admin@nanupuralumni.org",
+      "action": "DELETE_USER",
+      "entity": "Users",
+      "details": "Deleted user account @undefined (Kazi Farhan Tanvir, role: alumni_member). Historical alumni registration and financial records have been preserved.",
+      "ip": "127.0.0.1",
+      "created_at": "2026-09-15T11:28:20.164Z"
+    },
+    {
+      "id": "log-1789468283212-uy24",
+      "ip": "127.0.0.1",
+      "action": "DELETE_MENU_ITEM",
+      "entity": "Menus",
+      "details": "Permanently deleted menu item menu-faq",
+      "user_name": "Safaet H. Dhrubo",
+      "created_at": "2026-09-15T10:31:23.212Z",
+      "user_email": "admin@nanupuralumni.org"
+    },
+    {
+      "id": "log-1789468049107-2tuy",
+      "ip": "127.0.0.1",
+      "action": "REGISTRATION_SUBMITTED",
+      "entity": "Registration",
+      "details": "Initiated registration for 125th Batch (2002) (Fee: ৳1000)",
+      "user_name": "Dr. Tariqul Islam",
+      "created_at": "2026-09-15T10:27:29.107Z",
+      "user_email": "tariqul@alumni.edu"
+    },
+    {
+      "id": "log-1789327282090-8v0b",
+      "ip": "127.0.0.1",
+      "action": "UPDATE_SETTINGS",
+      "entity": "Settings",
+      "details": "Updated registration settings: Fee ৳1000, Open: true",
+      "user_name": "Safaet H. Dhrubo",
+      "created_at": "2026-09-13T19:21:22.090Z",
+      "user_email": "admin@nanupuralumni.org"
+    },
+    {
+      "id": "log-1789327118735-duam",
+      "ip": "127.0.0.1",
+      "action": "UPDATE_MENU_ITEM",
+      "entity": "Menus",
+      "details": "Updated menu: FAQ",
+      "user_name": "Safaet H. Dhrubo",
+      "created_at": "2026-09-13T19:18:38.735Z",
+      "user_email": "admin@nanupuralumni.org"
+    },
+    {
+      "id": "log-1789062492909-6rqm",
+      "ip": "127.0.0.1",
+      "action": "DELETE_MENU_ITEM",
+      "entity": "Menus",
+      "details": "Deleted menu item menu-1789062492901",
+      "user_name": "Safaet H. Dhrubo",
+      "created_at": "2026-09-10T17:48:12.909Z",
+      "user_email": "admin@nanupuralumni.org"
+    },
+    {
+      "id": "log-1789062492901-npj5",
+      "ip": "127.0.0.1",
+      "action": "CREATE_MENU_ITEM",
+      "entity": "Menus",
+      "details": "Added menu: Test Delete",
+      "user_name": "Safaet H. Dhrubo",
+      "created_at": "2026-09-10T17:48:12.901Z",
+      "user_email": "admin@nanupuralumni.org"
+    },
+    {
+      "id": "log-1789061310527-lbcp",
+      "ip": "127.0.0.1",
+      "action": "UPDATE_USER",
+      "entity": "Users",
+      "details": "Updated user: Safaet H. Dhrubo (safaet)",
+      "user_name": "Safaet H. Dhrubo",
+      "created_at": "2026-09-10T17:28:30.527Z",
+      "user_email": "admin@nanupuralumni.org"
+    },
+    {
+      "id": "log-1789061309975-ms8p",
+      "ip": "127.0.0.1",
+      "action": "UPDATE_USER",
+      "entity": "Users",
+      "details": "Updated user: Safaet H. Dhrubo (safaet)",
+      "user_name": "Chief Admin (NASH IT)",
+      "created_at": "2026-09-10T17:28:29.975Z",
+      "user_email": "admin@nanupuralumni.org"
+    },
+    {
+      "id": "log-1788963718034-ttfq",
+      "ip": "127.0.0.1",
+      "action": "UPDATE_SETTINGS",
+      "entity": "Settings",
+      "details": "Updated site settings. Registration fee: ৳1000, Open: true",
+      "user_name": "Chief Admin (NASH IT)",
+      "created_at": "2026-09-09T14:21:58.034Z",
+      "user_email": "admin@nanupuralumni.org"
+    },
+    {
+      "id": "log-1788963705436-e3tg",
+      "ip": "127.0.0.1",
+      "action": "UPDATE_SETTINGS",
+      "entity": "Settings",
+      "details": "Updated site settings. Registration fee: ৳1000, Open: true",
+      "user_name": "Chief Admin (NASH IT)",
+      "created_at": "2026-09-09T14:21:45.436Z",
+      "user_email": "admin@nanupuralumni.org"
+    },
+    {
+      "id": "log-1788963330222-32ak",
+      "ip": "127.0.0.1",
+      "action": "CHECK_IN",
+      "entity": "EntryToken",
+      "details": "Checked in Kazi Farhan Tanvir (Batch 2005) with token NASH-85-2027-A9F4K2",
+      "user_name": "Gate Officer 1",
+      "created_at": "2026-09-09T14:15:30.222Z",
+      "user_email": "gatekeeper@nanupuralumni.org"
+    },
+    {
+      "id": "log-1",
+      "ip": "127.0.0.1",
+      "action": "INITIALIZE_SYSTEM",
+      "entity": "System",
+      "details": "Initialized 85th Anniversary Registration System with initial fee of 1,000 BDT",
+      "user_name": "Chief Admin (NASH IT)",
+      "created_at": "2026-01-01T00:00:00Z",
+      "user_email": "admin@nanupuralumni.org"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Nanupur Abu Sobhan High School Alumni Association",
+  "description": "Official bilingual platform for Nanupur Abu Sobhan High School Alumni Association and the 85th Anniversary Celebration & Alumni Reunion (16 January 2027), featuring registration, payments, secure entry tokens, member portal, and WordPress-style CMS.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
