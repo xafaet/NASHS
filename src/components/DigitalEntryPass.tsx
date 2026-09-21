@@ -1,5 +1,5 @@
-import React, { useRef } from 'react';
-import { Printer, Download, ShieldCheck, Calendar, MapPin, Award, CheckCircle2 } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { Printer, Download, ShieldCheck, Calendar, MapPin, Award, CheckCircle2, FileText, Loader2 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 interface DigitalEntryPassProps {
@@ -42,35 +42,42 @@ export const DigitalEntryPass: React.FC<DigitalEntryPassProps> = ({
   const { language, t } = useLanguage();
   const passRef = useRef<HTMLDivElement>(null);
 
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+
   const handlePrint = () => {
     window.print();
   };
 
-  const handleDownload = () => {
-    // Generate simple downloadable text / pass representation
-    const textContent = `
-=====================================================
-NANUPUR ABU SOBHAN HIGH SCHOOL ALUMNI ASSOCIATION
-85th Anniversary Celebration & Alumni Reunion 2027
-=====================================================
-ENTRY PASS TOKEN: ${tokenCode}
-ATTENDEE: ${fullName}
-PASSING YEAR: ${passingYear} (${language === 'bn' && batchNameBn ? batchNameBn : batchName})
-EVENT DATE: ${eventDate}
-VENUE: ${venue}
-STATUS: ${(status || 'ACTIVE').toUpperCase()}
-CHECKED IN: ${checkedIn ? `YES (${checkedInAt})` : 'NO'}
-=====================================================
-Present this pass at the gate on 16 January 2027.
-    `.trim();
+  const handleDownload = async () => {
+    try {
+      setDownloadingPdf(true);
+      const res = await fetch(`/api/tokens/${encodeURIComponent(tokenCode)}/pdf`);
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `NASH-85-Pass-${tokenCode}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        return;
+      }
+    } catch (e) {
+      console.warn('Direct PDF stream fetch failed, falling back to window open / text:', e);
+    } finally {
+      setDownloadingPdf(false);
+    }
 
-    const element = document.createElement('a');
-    const file = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
-    element.href = URL.createObjectURL(file);
-    element.download = `NASH-85-Pass-${tokenCode}.txt`;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
+    // Direct link fallback
+    const fallbackLink = document.createElement('a');
+    fallbackLink.href = `/api/tokens/${encodeURIComponent(tokenCode)}/pdf`;
+    fallbackLink.target = '_blank';
+    fallbackLink.rel = 'noopener noreferrer';
+    document.body.appendChild(fallbackLink);
+    fallbackLink.click();
+    document.body.removeChild(fallbackLink);
   };
 
   return (
@@ -258,10 +265,15 @@ Present this pass at the gate on 16 January 2027.
 
         <button
           onClick={handleDownload}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 transition cursor-pointer"
+          disabled={downloadingPdf}
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-slate-950 shadow-lg shadow-amber-500/20 transition cursor-pointer"
         >
-          <Download className="w-4 h-4 text-slate-950" />
-          {t('token.download', 'Download Pass')}
+          {downloadingPdf ? (
+            <Loader2 className="w-4 h-4 text-slate-950 animate-spin" />
+          ) : (
+            <Download className="w-4 h-4 text-slate-950" />
+          )}
+          <span>{downloadingPdf ? (language === 'bn' ? 'ডাউনলোড হচ্ছে...' : 'Downloading...') : (language === 'bn' ? 'অফিসিয়াল PDF পাস' : 'Download Official PDF')}</span>
         </button>
 
         {onClose && (

@@ -164,19 +164,21 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenL
     }, 150);
   };
 
-  const isVerifyUrl = (url?: string) => {
+  const isVerifyUrl = (url?: string, labelEn?: string, labelBn?: string) => {
+    if ((labelEn || '').toLowerCase().includes('verify pass')) return true;
+    if ((labelBn || '').includes('পাস যাচাই')) return true;
     if (!url) return false;
     const clean = url.replace(/^[/#]+/, '').toLowerCase();
     return clean === 'verify' || clean === 'verify-token' || clean === 'token-verification';
   };
 
   const topLevelMenus = menus
-    .filter(m => !m.parent_id && m.is_active && !isVerifyUrl(m.url))
+    .filter(m => !m.parent_id && m.is_active && !isVerifyUrl(m.url, m.label_en, m.label_bn))
     .sort((a, b) => a.order - b.order);
 
   const getSubMenus = (parentId: string) =>
     menus
-      .filter(m => m.parent_id === parentId && m.is_active && !isVerifyUrl(m.url))
+      .filter(m => m.parent_id === parentId && m.is_active)
       .sort((a, b) => a.order - b.order);
 
   const siteName =
@@ -299,11 +301,101 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenL
               {(topbar?.show_login_link ?? true) && !user && (
                 <button
                   onClick={onOpenLogin}
-                  className="text-emerald-100 hover:text-amber-300 font-semibold transition cursor-pointer flex items-center gap-1.5 hover:underline"
+                  className="inline-flex items-center justify-center gap-1.5 px-3 py-1 sm:px-3.5 sm:py-1 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-slate-950 hover:brightness-105 font-extrabold text-xs tracking-wide shadow-xs hover:shadow transition-all duration-200 cursor-pointer border border-amber-300 active:scale-95 group"
                 >
-                  <UserIcon className="w-3 h-3 text-amber-400" />
-                  <span>{t('nav.login', 'Login')}</span>
+                  <UserIcon className="w-3.5 h-3.5 text-slate-950 group-hover:scale-110 transition-transform shrink-0" />
+                  <span>{language === 'bn' ? 'লগইন' : 'Login'}</span>
                 </button>
+              )}
+
+              {user && (
+                <div ref={userMenuRef} className="relative">
+                  <button
+                    onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-900/90 hover:bg-emerald-800 text-amber-300 font-bold text-xs border border-emerald-700/70 transition cursor-pointer shadow-xs active:scale-95"
+                    title={user.name}
+                  >
+                    <div className="w-4 h-4 rounded-full bg-amber-400 text-emerald-950 flex items-center justify-center font-black text-[10px]">
+                      {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                    <span className="max-w-[85px] sm:max-w-[120px] truncate">{user.name}</span>
+                    <ChevronDown
+                      className={`w-3 h-3 text-amber-400/80 transition-transform duration-200 ${
+                        userDropdownOpen ? 'rotate-180 text-amber-300' : ''
+                      }`}
+                    />
+                  </button>
+
+                  {userDropdownOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-2 z-50 animate-in fade-in zoom-in-95 duration-150 ring-1 ring-black/5 text-slate-900">
+                      <div className="px-3.5 py-2.5 border-b border-slate-100">
+                        <span className="font-bold text-slate-900 text-xs block truncate">
+                          {user.name}
+                        </span>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 uppercase tracking-wider">
+                            {user.role}
+                          </span>
+                          {user.passing_year && (
+                            <span className="text-[10px] font-mono text-slate-500 font-semibold">
+                              Batch {user.passing_year}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="py-1 space-y-0.5">
+                        <button
+                          onClick={() => {
+                            setUserDropdownOpen(false);
+                            handleNavClick('member');
+                          }}
+                          className="w-full px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-[#0f4d2a] rounded-xl transition flex items-center gap-2.5 cursor-pointer"
+                        >
+                          <UserIcon className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>{t('nav.member_portal', 'Member Portal / Dashboard')}</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setUserDropdownOpen(false);
+                            handleNavClick('profile');
+                          }}
+                          className="w-full px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-[#0f4d2a] rounded-xl transition flex items-center gap-2.5 cursor-pointer"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>{language === 'bn' ? 'আমার প্রোফাইল' : 'My Profile'}</span>
+                        </button>
+
+                        {isAdmin && (
+                          <button
+                            onClick={() => {
+                              setUserDropdownOpen(false);
+                              handleNavClick('admin');
+                            }}
+                            className="w-full px-3 py-2 text-left text-xs font-bold text-emerald-900 hover:bg-emerald-50 rounded-xl transition flex items-center gap-2.5 cursor-pointer"
+                          >
+                            <School className="w-3.5 h-3.5 text-amber-600" />
+                            <span>{t('nav.admin_portal', 'Admin Portal')}</span>
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="border-t border-slate-100 pt-1">
+                        <button
+                          onClick={() => {
+                            setUserDropdownOpen(false);
+                            logout();
+                          }}
+                          className="w-full px-3 py-2 text-left text-xs font-semibold text-red-600 hover:bg-red-50 rounded-xl transition flex items-center gap-2.5 cursor-pointer"
+                        >
+                          <LogOut className="w-3.5 h-3.5 text-red-500" />
+                          <span>{t('nav.logout', 'Logout')}</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
 
               {(topbar?.show_language_selector ?? true) && (
@@ -497,6 +589,22 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenL
 
           {/* Right Action Tools: Search, Register CTA, User Account */}
           <div className="hidden lg:flex items-center gap-2.5">
+            {/* Verify Pass Action Button */}
+            <button
+              onClick={() => handleNavClick('verify')}
+              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer border ${
+                currentView === 'verify'
+                  ? 'bg-emerald-800 text-white border-emerald-900 shadow-xs'
+                  : 'bg-emerald-50/90 hover:bg-emerald-100 text-[#0f4d2a] border-emerald-200/90 shadow-2xs hover:shadow-xs'
+              }`}
+              title={language === 'bn' ? 'ডিজিটাল এন্ট্রি পাস ও কিউআর কোড যাচাই' : 'Verify Digital Entry Pass & QR'}
+            >
+              <QrCode className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+              <span className="font-semibold whitespace-nowrap">
+                {language === 'bn' ? 'পাস যাচাই' : 'Verify Pass'}
+              </span>
+            </button>
+
             {/* Quick Search Spotlight Button */}
             {(header?.show_search ?? true) && (
               <button
@@ -518,101 +626,14 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenL
             {(header?.show_cta_button ?? true) && (
               <button
                 onClick={() => handleNavClick(header?.cta_url || 'register')}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs uppercase tracking-wider bg-gradient-to-r from-[#0f4d2a] via-[#135d34] to-[#0f4d2a] hover:from-[#135d34] hover:to-[#176e3d] text-white shadow-sm hover:shadow active:scale-95 transition-all cursor-pointer border border-emerald-700/60 group"
+                className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl font-bold text-xs uppercase tracking-wide bg-gradient-to-r from-[#0f4d2a] via-[#135d34] to-[#0f4d2a] hover:from-[#135d34] hover:to-[#176e3d] text-white shadow-sm hover:shadow active:scale-95 transition-all cursor-pointer border border-emerald-700/60 group max-w-[175px] text-center"
               >
-                <Sparkles className="w-3.5 h-3.5 text-amber-300 group-hover:rotate-12 transition-transform duration-300" />
-                <span>
+                <Sparkles className="w-3.5 h-3.5 text-amber-300 shrink-0 group-hover:rotate-12 transition-transform duration-300" />
+                <span className="leading-tight line-clamp-2">
                   {language === 'bn'
                     ? header?.cta_text_bn || 'পুনর্মিলনী নিবন্ধন'
                     : header?.cta_text_en || 'Register for Reunion'}
                 </span>
-              </button>
-            )}
-
-            {/* User Account / Profile Menu */}
-            {user ? (
-              <div ref={userMenuRef} className="relative">
-                <button
-                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center gap-2 px-3 py-2 bg-slate-100/90 hover:bg-slate-200/80 rounded-xl transition cursor-pointer text-xs font-bold text-slate-800 border border-slate-200 shadow-2xs"
-                >
-                  <div className="w-6 h-6 rounded-full bg-[#0f4d2a] text-amber-300 flex items-center justify-center font-bold text-[11px] shadow-2xs">
-                    {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
-                  </div>
-                  <span className="max-w-[110px] truncate">{user.name}</span>
-                  <ChevronDown
-                    className={`w-3.5 h-3.5 text-slate-500 transition-transform duration-200 ${
-                      userDropdownOpen ? 'rotate-180 text-emerald-700' : ''
-                    }`}
-                  />
-                </button>
-
-                {userDropdownOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-60 bg-white rounded-2xl shadow-xl shadow-slate-900/10 border border-slate-200/90 p-2 z-50 animate-in fade-in zoom-in-95 duration-150 ring-1 ring-black/5">
-                    <div className="px-3.5 py-2.5 border-b border-slate-100">
-                      <span className="font-bold text-slate-900 text-xs block truncate">
-                        {user.name}
-                      </span>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 uppercase tracking-wider">
-                          {user.role}
-                        </span>
-                        {user.passing_year && (
-                          <span className="text-[10px] font-mono text-slate-500 font-semibold">
-                            Batch {user.passing_year}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="py-1 space-y-0.5">
-                      <button
-                        onClick={() => {
-                          setUserDropdownOpen(false);
-                          handleNavClick('member');
-                        }}
-                        className="w-full px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-[#0f4d2a] rounded-xl transition flex items-center gap-2.5 cursor-pointer"
-                      >
-                        <UserIcon className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>{t('nav.member_portal', 'Member Portal')}</span>
-                      </button>
-
-                      {isAdmin && (
-                        <button
-                          onClick={() => {
-                            setUserDropdownOpen(false);
-                            handleNavClick('admin');
-                          }}
-                          className="w-full px-3 py-2 text-left text-xs font-bold text-emerald-900 hover:bg-emerald-50 rounded-xl transition flex items-center gap-2.5 cursor-pointer"
-                        >
-                          <School className="w-3.5 h-3.5 text-amber-600" />
-                          <span>{t('nav.admin_portal', 'Admin Portal')}</span>
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="border-t border-slate-100 pt-1">
-                      <button
-                        onClick={() => {
-                          setUserDropdownOpen(false);
-                          logout();
-                        }}
-                        className="w-full px-3 py-2 text-left text-xs font-semibold text-red-600 hover:bg-red-50 rounded-xl transition flex items-center gap-2.5 cursor-pointer"
-                      >
-                        <LogOut className="w-3.5 h-3.5 text-red-500" />
-                        <span>{t('nav.logout', 'Logout')}</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <button
-                onClick={onOpenLogin}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-[#0f4d2a] hover:bg-emerald-50/70 border border-slate-200 transition cursor-pointer shadow-2xs"
-              >
-                <UserIcon className="w-3.5 h-3.5 text-[#0f4d2a]" />
-                <span>{t('nav.login', 'Login')}</span>
               </button>
             )}
           </div>
@@ -785,6 +806,20 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenL
               {/* Quick Action Shortcuts */}
               <div className="pt-2 border-t border-slate-100 space-y-2">
                 <button
+                  onClick={() => handleNavClick('verify')}
+                  className={`w-full py-2.5 rounded-xl font-bold text-center text-sm flex items-center justify-center gap-2 cursor-pointer transition border ${
+                    currentView === 'verify'
+                      ? 'bg-emerald-800 text-white border-emerald-900 shadow-sm'
+                      : 'bg-emerald-50 hover:bg-emerald-100 text-[#0f4d2a] border-emerald-200 shadow-2xs'
+                  }`}
+                >
+                  <QrCode className="w-4 h-4 text-emerald-700" />
+                  <span>
+                    {language === 'bn' ? 'ডিজিটাল এন্ট্রি পাস যাচাই' : 'Verify Entry Pass & QR'}
+                  </span>
+                </button>
+
+                <button
                   onClick={() => handleNavClick(header?.cta_url || 'register')}
                   className="w-full py-3 bg-gradient-to-r from-[#0f4d2a] to-[#135d34] text-white rounded-xl font-bold text-center text-sm shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-98 transition-transform"
                 >
@@ -825,16 +860,18 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenL
                     </button>
                   </div>
                 ) : (
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      onOpenLogin();
-                    }}
-                    className="w-full py-2.5 text-center text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <UserIcon className="w-3.5 h-3.5 text-emerald-700" />
-                    <span>{t('nav.login', 'Login to Member Account')}</span>
-                  </button>
+                  <div className="pt-2">
+                    <button
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        onOpenLogin();
+                      }}
+                      className="w-full py-2.5 text-center text-xs font-bold text-slate-800 bg-slate-100 hover:bg-emerald-50 rounded-xl flex items-center justify-center gap-2 cursor-pointer border border-slate-200 transition"
+                    >
+                      <UserIcon className="w-4 h-4 text-emerald-700" />
+                      <span>{language === 'bn' ? 'অ্যাকাউন্টে লগইন করুন' : 'Member / Admin Login'}</span>
+                    </button>
+                  </div>
                 )}
               </div>
             </div>

@@ -81,17 +81,46 @@ export class InstallerService {
       }
     }
 
-    const currentConfig = getDatabaseConfig();
     const portableStatus = portableDb.getStatus();
-    const siteSettings = db.get('settings') || db.get('global_settings') as any;
+    const siteSettings = (db.get('settings') || db.get('global_settings') || {}) as any;
+
+    // Permanent installation recovery: Check if already configured via DB or super_admin
+    if (!isInstalled) {
+      const users = db.get('users') || [];
+      const hasSuperAdmin = users.some(u => u.role === 'super_admin');
+      const hasConfiguredDb = Boolean(process.env.DATABASE_URL || (process.env.DB_HOST && process.env.DB_DATABASE));
+
+      if (hasSuperAdmin || (hasConfiguredDb && portableStatus.isConnected)) {
+        isInstalled = true;
+        installedData = {
+          is_installed: true,
+          installed_at: new Date().toISOString(),
+          driver: portableStatus.driver,
+          site_name: siteSettings?.site_name_en || 'Nanupur Abu Sobhan High School Alumni Association',
+          site_url: siteSettings?.site_url || 'https://nanupuralumni.org',
+          admin_email: users.find(u => u.role === 'super_admin')?.email || 'admin@nanupuralumni.org',
+          version: '2.0.0-PROD',
+        };
+
+        try {
+          if (!fs.existsSync(DATA_DIR)) {
+            fs.mkdirSync(DATA_DIR, { recursive: true });
+          }
+          fs.writeFileSync(INSTALLED_FILE, JSON.stringify(installedData, null, 2), 'utf-8');
+        } catch (fErr) {
+          console.warn('Could not write installed.json recovery file:', fErr);
+        }
+      }
+    }
 
     return {
       is_installed: isInstalled,
       database_connected: portableStatus.isConnected,
       driver: portableStatus.driver,
-      site_name: siteSettings?.association_name_en || installedData?.site_name || 'Nanupur Abu Sobhan High School Alumni Association',
+      site_name: siteSettings?.association_name_en || siteSettings?.site_name_en || installedData?.site_name || 'Nanupur Abu Sobhan High School Alumni Association',
       site_url: siteSettings?.site_url || installedData?.site_url || 'https://nanupuralumni.org',
       installed_at: installedData?.installed_at,
+      db_error: portableStatus.lastError || undefined,
     };
   }
 
@@ -400,6 +429,15 @@ export class InstallerService {
     };
 
     fs.writeFileSync(INSTALLED_FILE, JSON.stringify(installationInfo, null, 2), 'utf-8');
+
+    // Also persist installation flag to persistent database storage
+    try {
+      await portableDb.saveSetting('app_installed', installationInfo);
+      await portableDb.saveSetting('installation_info', installationInfo);
+      await db.persistKeyToSupabase('app_installed', installationInfo);
+    } catch (dbErr) {
+      console.warn('Could not persist app_installed to database setting:', dbErr);
+    }
 
     return {
       success: true,

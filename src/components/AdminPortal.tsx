@@ -66,6 +66,7 @@ import { AdminSchedule } from './admin/AdminSchedule';
 import { AdminRegistrationForm } from './admin/AdminRegistrationForm';
 import { AdminDatabase } from './admin/AdminDatabase';
 import { AdminGateScanner } from './admin/AdminGateScanner';
+import { AdminNews } from './admin/AdminNews';
 import { apiFetch } from '../utils/api';
 
 type AdminTab =
@@ -556,6 +557,16 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
             >
               <Bell className="w-4 h-4 text-emerald-400" />
               <span>Notices</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('news')}
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition cursor-pointer ${
+                activeTab === 'news' ? 'bg-[#0f4d2a] text-white shadow' : 'hover:bg-slate-700 text-slate-300'
+              }`}
+            >
+              <Newspaper className="w-4 h-4 text-amber-400" />
+              <span>News & Updates</span>
             </button>
 
             <button
@@ -1140,6 +1151,10 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
 
           {activeTab === 'pages' && (
             <AdminPages showToast={showToast} getHeaders={getHeaders} />
+          )}
+
+          {activeTab === 'news' && (
+            <AdminNews />
           )}
 
           {activeTab === 'faq' && (

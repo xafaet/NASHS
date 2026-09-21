@@ -12,6 +12,7 @@ import { SchoolView } from './components/SchoolView';
 import { AssociationView } from './components/AssociationView';
 import { NoticesView } from './components/NoticesView';
 import { ContactView } from './components/ContactView';
+import { NewsView } from './components/NewsView';
 import { CMSPageView } from './components/CMSPageView';
 import { LoginModal } from './components/LoginModal';
 import { SetupWizard } from './components/SetupWizard';
@@ -127,6 +128,7 @@ function MainLayout() {
         {currentView === 'association' && <AssociationView />}
         {currentView === 'committee' && <AssociationView />}
         {currentView === 'notices' && <NoticesView />}
+        {currentView === 'news' && <NewsView onNavigate={navigateTo} />}
         {currentView === 'contact' && <ContactView />}
         {![
           'home',
@@ -137,6 +139,7 @@ function MainLayout() {
           'association',
           'committee',
           'notices',
+          'news',
           'contact',
           'admin'
         ].includes(currentView) && (

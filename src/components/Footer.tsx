@@ -35,7 +35,7 @@ export const Footer: React.FC<{ onNavigate: (view: string) => void }> = ({ onNav
   return (
     <footer className="bg-[#072615] text-white border-t-4 border-amber-400 no-print">
       {/* Upper Footer */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
         {/* Col 1: Identity & Heritage */}
         <div className="space-y-4">
           <div className="flex items-center gap-3">
@@ -173,34 +173,6 @@ export const Footer: React.FC<{ onNavigate: (view: string) => void }> = ({ onNav
             </div>
           </>
         )}
-
-        {/* Contact & Secretariat Info */}
-        <div className="space-y-3">
-          <h4 className="text-sm font-bold uppercase tracking-wider text-amber-400 border-b border-emerald-900 pb-2">
-            {language === 'bn' ? 'ঠিকানা ও যোগাযোগ' : 'Secretariat Address'}
-          </h4>
-          <div className="space-y-2.5 text-xs text-emerald-200">
-            <div className="flex items-start gap-2">
-              <MapPin className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-              <span>
-                {settings?.contact_address ||
-                  (language === 'bn'
-                    ? 'নানুপুর আবু সোবহান উচ্চ বিদ্যালয় প্রাঙ্গণ, ফটিকছড়ি, চট্টগ্রাম ৪৩৫০'
-                    : 'Nanupur Abu Sobhan High School, Nanupur, Fatikchhari, Chattogram 4350, Bangladesh')}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Phone className="w-4 h-4 text-amber-400 shrink-0" />
-              <span className="font-mono">
-                {settings?.contact_phone || '+880 1819-123456'}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Mail className="w-4 h-4 text-amber-400 shrink-0" />
-              <span>{settings?.contact_email || 'reunion2027@nanupuralumni.org'}</span>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Bottom Copyright Strip */}

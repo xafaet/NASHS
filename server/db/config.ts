@@ -29,6 +29,72 @@ export interface DatabaseConfiguration {
   };
 }
 
+export interface ParsedPostgresConfig {
+  user: string;
+  password?: string;
+  host: string;
+  port: number;
+  database: string;
+  ssl: boolean | object;
+}
+
+export function parsePostgresUrl(rawUrl?: string): ParsedPostgresConfig | null {
+  if (!rawUrl) return null;
+  try {
+    const prefix = 'postgresql://';
+    const postPrefix = 'postgres://';
+    let rest = rawUrl;
+    if (rest.startsWith(prefix)) {
+      rest = rest.slice(prefix.length);
+    } else if (rest.startsWith(postPrefix)) {
+      rest = rest.slice(postPrefix.length);
+    } else {
+      return null;
+    }
+
+    const lastAt = rest.lastIndexOf('@');
+    if (lastAt === -1) return null;
+
+    const userPass = rest.slice(0, lastAt);
+    const hostPart = rest.slice(lastAt + 1);
+
+    const firstColon = userPass.indexOf(':');
+    const rawUser = firstColon !== -1 ? userPass.slice(0, firstColon) : userPass;
+    const rawPass = firstColon !== -1 ? userPass.slice(firstColon + 1) : '';
+
+    let user = rawUser;
+    let password = rawPass;
+    try { user = decodeURIComponent(rawUser); } catch {}
+    try { password = decodeURIComponent(rawPass); } catch {}
+
+    const slashIndex = hostPart.indexOf('/');
+    const hostPort = slashIndex !== -1 ? hostPart.slice(0, slashIndex) : hostPart;
+    let dbName = slashIndex !== -1 ? hostPart.slice(slashIndex + 1) : 'postgres';
+
+    const questionIndex = dbName.indexOf('?');
+    if (questionIndex !== -1) {
+      dbName = dbName.slice(0, questionIndex);
+    }
+
+    const colonIndex = hostPort.indexOf(':');
+    const host = colonIndex !== -1 ? hostPort.slice(0, colonIndex) : hostPort;
+    const portStr = colonIndex !== -1 ? hostPort.slice(colonIndex + 1) : '5432';
+    const port = parseInt(portStr || '5432', 10);
+
+    return {
+      user: user || 'postgres',
+      password: password || '',
+      host: host || 'localhost',
+      port: isNaN(port) ? 5432 : port,
+      database: dbName || 'postgres',
+      ssl: { rejectUnauthorized: false },
+    };
+  } catch (err) {
+    console.warn('Error parsing PostgreSQL URL:', err);
+    return null;
+  }
+}
+
 let activeRuntimeConfig: DatabaseConfiguration | null = null;
 
 export function updateDatabaseConfig(newConfig: DatabaseConfiguration): void {

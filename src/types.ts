@@ -36,6 +36,7 @@ export interface User {
   permissions?: string[];
   last_login?: string;
   created_at: string;
+  password_hash?: string;
   // Career, Business & Profile Enhancement
   occupation?: string;
   designation?: string;
@@ -141,6 +142,7 @@ export interface Registration {
   token_code?: string;
   qr_code_svg?: string;
   photo_url?: string;
+  t_shirt_size?: string;
   token_url?: string;
   checked_in: boolean;
   checked_in_at?: string;
@@ -412,6 +414,7 @@ export interface NewsPost {
   publish_date: string;
   is_published: boolean;
   is_featured?: boolean;
+  status?: 'published' | 'draft';
   views: number;
   seo_title?: string;
   seo_description?: string;
@@ -678,6 +681,19 @@ export interface RegistrationConfig {
   success_message_en: string;
   success_message_bn: string;
   fields: RegistrationFieldConfig[];
+}
+
+export interface TokenFormatConfig {
+  prefix: string; // e.g. "NASHS"
+  separator: string; // e.g. "-"
+  use_batch_number: boolean; // whether to include batch number / passing year
+  batch_placeholder: string; // e.g. "[Batch Number]"
+  serial_placeholder: string; // e.g. "[Registration Serial]"
+  starting_number: number; // e.g. 1
+  padding_length: number; // e.g. 4 => "0001"
+  reset_per_batch: boolean; // true = reset serial for each batch, false = global continuous serial
+  is_active: boolean; // true / false
+  format_pattern?: string; // e.g. "NASHS-[Batch Number]-[Registration Serial]"
 }
 
 export interface GlobalSettings {

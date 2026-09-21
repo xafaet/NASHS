@@ -9,7 +9,10 @@
     "start": "node dist/server.cjs",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "diagnose:db": "tsx scripts/diagnose-db.ts",
+    "test:db": "tsx scripts/diagnose-db.ts",
+    "test:storage": "tsx scripts/verify-storage.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

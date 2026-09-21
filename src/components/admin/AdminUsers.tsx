@@ -13,6 +13,10 @@ import {
   AlertTriangle,
   ShieldCheck,
   Eye,
+  EyeOff,
+  RefreshCw,
+  Check,
+  Lock,
   Trash2,
   Mail,
   Phone,
@@ -44,6 +48,20 @@ export const AdminUsers: React.FC<Props> = ({ showToast, getHeaders }) => {
   const [resetResult, setResetResult] = useState<{ user: User; tempPass: string } | null>(null);
   const [newUsername, setNewUsername] = useState('');
   const [usernameError, setUsernameError] = useState('');
+
+  // Admin Password Management State
+  const [passwordModalUser, setPasswordModalUser] = useState<User | null>(null);
+  const [passwordMode, setPasswordMode] = useState<'generate' | 'custom'>('generate');
+  const [generatedPassword, setGeneratedPassword] = useState<string>('');
+  const [customPassword, setCustomPassword] = useState<string>('');
+  const [customPasswordConfirm, setCustomPasswordConfirm] = useState<string>('');
+  const [requireConfirm, setRequireConfirm] = useState<boolean>(true);
+  const [showCustomPassword, setShowCustomPassword] = useState<boolean>(false);
+  const [showCustomPasswordConfirm, setShowCustomPasswordConfirm] = useState<boolean>(false);
+  const [passwordError, setPasswordError] = useState<string>('');
+  const [isSavingPassword, setIsSavingPassword] = useState<boolean>(false);
+  const [confirmPasswordApply, setConfirmPasswordApply] = useState<boolean>(false);
+  const [copiedPassword, setCopiedPassword] = useState<boolean>(false);
 
   // View User Profile & History
   const [viewingUser, setViewingUser] = useState<User | null>(null);
@@ -100,6 +118,19 @@ export const AdminUsers: React.FC<Props> = ({ showToast, getHeaders }) => {
     if (!editingUser) return;
     setUsernameError('');
 
+    const cleanUsername = newUsername.trim().toLowerCase();
+    if (!cleanUsername) {
+      setUsernameError('Username cannot be empty.');
+      return;
+    }
+
+    // Client-side uniqueness check
+    const duplicate = users.find(u => u.id !== editingUser.id && (u.username || '').trim().toLowerCase() === cleanUsername);
+    if (duplicate) {
+      setUsernameError(`The username "${newUsername}" is already taken by ${duplicate.name || duplicate.email || 'another user'}. Please choose a different username.`);
+      return;
+    }
+
     try {
       const payload = {
         ...editingUser,
@@ -130,6 +161,19 @@ export const AdminUsers: React.FC<Props> = ({ showToast, getHeaders }) => {
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    const cleanUsername = createForm.username.trim().toLowerCase();
+    if (!cleanUsername) {
+      showToast('Error: Username is required');
+      return;
+    }
+
+    // Client-side uniqueness check
+    const duplicate = users.find(u => (u.username || '').trim().toLowerCase() === cleanUsername);
+    if (duplicate) {
+      showToast(`Error: The username "${createForm.username}" is already in use. Please select a unique username.`);
+      return;
+    }
+
     try {
       const payload = {
         ...createForm,
@@ -166,24 +210,91 @@ export const AdminUsers: React.FC<Props> = ({ showToast, getHeaders }) => {
     }
   };
 
-  const handleResetPassword = async (u: User) => {
-    if (!window.confirm(`Generate temporary login credential for ${u.name} (@${u.username})?`)) return;
+  const createRandomSecurePassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*';
+    let rand = '';
+    for (let i = 0; i < 6; i++) {
+      rand += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return `NASH@${rand}#`;
+  };
 
+  const handleOpenPasswordModal = (u: User) => {
+    setPasswordModalUser(u);
+    setPasswordMode('generate');
+    setGeneratedPassword(createRandomSecurePassword());
+    setCustomPassword('');
+    setCustomPasswordConfirm('');
+    setRequireConfirm(true);
+    setShowCustomPassword(false);
+    setShowCustomPasswordConfirm(false);
+    setPasswordError('');
+    setConfirmPasswordApply(false);
+    setCopiedPassword(false);
+  };
+
+  const getPasswordStrength = (pwd: string) => {
+    if (!pwd) return { score: 0, label: 'Empty', color: 'text-slate-400', bg: 'bg-slate-200' };
+    let score = 0;
+    if (pwd.length >= 6) score++;
+    if (pwd.length >= 8) score++;
+    if (/[A-Z]/.test(pwd) && /[a-z]/.test(pwd)) score++;
+    if (/[0-9]/.test(pwd)) score++;
+    if (/[^A-Za-z0-9]/.test(pwd)) score++;
+
+    if (score <= 1) return { score: 1, label: 'Weak (Min 6 chars needed)', color: 'text-red-600', bg: 'bg-red-500' };
+    if (score <= 3) return { score: 2, label: 'Medium (Good)', color: 'text-amber-600', bg: 'bg-amber-500' };
+    return { score: 3, label: 'Strong (Excellent)', color: 'text-emerald-600', bg: 'bg-emerald-500' };
+  };
+
+  const handleApplyPasswordChange = async () => {
+    if (!passwordModalUser) return;
+    setPasswordError('');
+
+    let finalPassword = '';
+    if (passwordMode === 'generate') {
+      finalPassword = generatedPassword || createRandomSecurePassword();
+    } else {
+      if (!customPassword || customPassword.trim().length < 6) {
+        setPasswordError('Custom password must be at least 6 characters long.');
+        setConfirmPasswordApply(false);
+        return;
+      }
+      if (requireConfirm && customPassword !== customPasswordConfirm) {
+        setPasswordError('Password confirmation does not match the new password.');
+        setConfirmPasswordApply(false);
+        return;
+      }
+      finalPassword = customPassword.trim();
+    }
+
+    setIsSavingPassword(true);
     try {
-      const res = await fetch(`/api/admin/users/${u.id}/reset-password`, {
+      const res = await fetch(`/api/admin/users/${passwordModalUser.id}/reset-password`, {
         method: 'POST',
-        headers: getHeaders(),
+        headers: {
+          'Content-Type': 'application/json',
+          ...getHeaders(),
+        },
+        body: JSON.stringify({ new_password: finalPassword }),
       });
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.message || 'Failed to reset password');
+        throw new Error(data.message || 'Failed to update user password');
       }
 
-      setResetResult({ user: u, tempPass: data.temp_password });
+      setResetResult({ user: passwordModalUser, tempPass: data.temp_password || finalPassword });
       setResetModalOpen(true);
-      showToast(`Temporary password generated for ${u.name}`);
+      setPasswordModalUser(null);
+      setConfirmPasswordApply(false);
+      showToast(`Password successfully updated for ${passwordModalUser.name}`);
+      fetchUsers();
     } catch (err: any) {
+      setPasswordError(err.message || 'An error occurred while updating password');
+      setConfirmPasswordApply(false);
       showToast(`Error: ${err.message}`);
+    } finally {
+      setIsSavingPassword(false);
     }
   };
 
@@ -365,8 +476,8 @@ export const AdminUsers: React.FC<Props> = ({ showToast, getHeaders }) => {
                         <Eye className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => handleResetPassword(u)}
-                        title="Reset Password & Issue Temp Pass"
+                        onClick={() => handleOpenPasswordModal(u)}
+                        title="Manage & Reset Password (Generate or Custom)"
                         className="p-1.5 bg-slate-100 hover:bg-amber-50 hover:text-amber-800 rounded-lg text-slate-600 transition cursor-pointer"
                       >
                         <Key className="w-3.5 h-3.5" />
@@ -729,54 +840,403 @@ export const AdminUsers: React.FC<Props> = ({ showToast, getHeaders }) => {
         </div>
       )}
 
+      {/* Admin Password Management Modal */}
+      {passwordModalUser && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-900 flex items-center justify-center font-bold">
+                  <Key className="w-5 h-5 text-amber-700" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    Manage User Password
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    {passwordModalUser.name} (<span className="font-mono text-emerald-800 font-bold">@{passwordModalUser.username}</span>)
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setPasswordModalUser(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Mode Switcher Tabs */}
+            <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-xl">
+              <button
+                type="button"
+                onClick={() => {
+                  setPasswordMode('generate');
+                  setPasswordError('');
+                }}
+                className={`py-2 px-3 text-xs font-bold rounded-lg transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                  passwordMode === 'generate'
+                    ? 'bg-white text-emerald-900 shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <RefreshCw className="w-3.5 h-3.5 text-emerald-700" />
+                <span>Auto-Generate Password</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPasswordMode('custom');
+                  setPasswordError('');
+                }}
+                className={`py-2 px-3 text-xs font-bold rounded-lg transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                  passwordMode === 'custom'
+                    ? 'bg-white text-emerald-900 shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Lock className="w-3.5 h-3.5 text-emerald-700" />
+                <span>Set Custom Password</span>
+              </button>
+            </div>
+
+            {passwordError && (
+              <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-center gap-2 font-medium">
+                <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                <span>{passwordError}</span>
+              </div>
+            )}
+
+            {/* Option 1: Auto-Generate Random Password */}
+            {passwordMode === 'generate' && (
+              <div className="space-y-4">
+                <div className="p-4 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-emerald-950 uppercase tracking-wider">
+                      Generated Secure Password
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setGeneratedPassword(createRandomSecurePassword())}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 hover:text-emerald-950 px-2 py-1 rounded-md hover:bg-emerald-100 transition cursor-pointer"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      <span>Generate New</span>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between bg-white px-3.5 py-2.5 rounded-xl border border-emerald-200 shadow-2xs">
+                    <span className="font-mono font-bold text-base text-emerald-900 tracking-wider select-all">
+                      {generatedPassword}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(generatedPassword);
+                        showToast('Generated password copied to clipboard!');
+                      }}
+                      className="p-1.5 text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50 rounded transition cursor-pointer"
+                      title="Copy to clipboard"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="text-[11.5px] text-emerald-800/90 leading-relaxed flex items-start gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+                    <span>
+                      High-entropy secure password containing uppercase, lowercase, numbers, and special symbols. Ready to apply and share with the alumni member.
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Option 2: Set Custom Password */}
+            {passwordMode === 'custom' && (
+              <div className="space-y-3.5">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    New Custom Password *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showCustomPassword ? 'text' : 'password'}
+                      value={customPassword}
+                      onChange={e => setCustomPassword(e.target.value)}
+                      placeholder="Enter new password (min 6 chars)"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono pr-10 focus:bg-white focus:border-emerald-600 focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCustomPassword(!showCustomPassword)}
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    >
+                      {showCustomPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+
+                  {/* Password Strength Indicator */}
+                  {customPassword.length > 0 && (
+                    <div className="mt-2 p-2 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1.5">
+                      <div className="flex justify-between items-center text-[11px]">
+                        <span className="text-slate-500 font-medium">Password Strength:</span>
+                        <span className={`font-bold ${getPasswordStrength(customPassword).color}`}>
+                          {getPasswordStrength(customPassword).label}
+                        </span>
+                      </div>
+                      <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden flex gap-1">
+                        <div
+                          className={`h-full flex-1 transition-all ${
+                            getPasswordStrength(customPassword).score >= 1
+                              ? getPasswordStrength(customPassword).bg
+                              : 'bg-transparent'
+                          }`}
+                        />
+                        <div
+                          className={`h-full flex-1 transition-all ${
+                            getPasswordStrength(customPassword).score >= 2
+                              ? getPasswordStrength(customPassword).bg
+                              : 'bg-transparent'
+                          }`}
+                        />
+                        <div
+                          className={`h-full flex-1 transition-all ${
+                            getPasswordStrength(customPassword).score >= 3
+                              ? getPasswordStrength(customPassword).bg
+                              : 'bg-transparent'
+                          }`}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Password Confirmation */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-slate-700 uppercase">
+                      Confirm New Password
+                    </label>
+                    <label className="inline-flex items-center gap-1.5 text-[11px] text-slate-500 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={requireConfirm}
+                        onChange={e => setRequireConfirm(e.target.checked)}
+                        className="rounded border-slate-300 text-emerald-700 focus:ring-emerald-500"
+                      />
+                      <span>Require Confirmation</span>
+                    </label>
+                  </div>
+
+                  <div className="relative">
+                    <input
+                      type={showCustomPasswordConfirm ? 'text' : 'password'}
+                      disabled={!requireConfirm}
+                      value={customPasswordConfirm}
+                      onChange={e => setCustomPasswordConfirm(e.target.value)}
+                      placeholder={requireConfirm ? 'Re-enter custom password' : 'Confirmation bypassed'}
+                      className={`w-full px-3.5 py-2.5 border rounded-xl text-xs font-mono pr-10 focus:outline-none ${
+                        !requireConfirm
+                          ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+                          : customPasswordConfirm && customPassword === customPasswordConfirm
+                          ? 'bg-emerald-50/50 border-emerald-300 focus:border-emerald-600'
+                          : customPasswordConfirm && customPassword !== customPasswordConfirm
+                          ? 'bg-red-50/50 border-red-300 focus:border-red-500'
+                          : 'bg-slate-50 border-slate-200 focus:bg-white focus:border-emerald-600'
+                      }`}
+                    />
+                    {requireConfirm && (
+                      <button
+                        type="button"
+                        onClick={() => setShowCustomPasswordConfirm(!showCustomPasswordConfirm)}
+                        className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                      >
+                        {showCustomPasswordConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    )}
+                  </div>
+
+                  {requireConfirm && customPasswordConfirm.length > 0 && (
+                    <div className="mt-1 text-[11px] font-medium flex items-center gap-1">
+                      {customPassword === customPasswordConfirm ? (
+                        <span className="text-emerald-700 flex items-center gap-1">
+                          <Check className="w-3.5 h-3.5" /> Passwords match
+                        </span>
+                      ) : (
+                        <span className="text-red-600 flex items-center gap-1">
+                          <X className="w-3.5 h-3.5" /> Passwords do not match
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Security Notice */}
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-[11.5px] text-slate-600 flex items-start gap-2">
+              <Shield className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+              <span>
+                Passwords are encrypted using standard <strong>bcrypt (cost 10)</strong> one-way hashing before storage. The plaintext password is never exposed in API endpoints or database storage.
+              </span>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setPasswordModalUser(null)}
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={
+                  passwordMode === 'custom' &&
+                  (customPassword.trim().length < 6 || (requireConfirm && customPassword !== customPasswordConfirm))
+                }
+                onClick={() => setConfirmPasswordApply(true)}
+                className="px-5 py-2 text-xs font-bold bg-emerald-800 text-white rounded-xl hover:bg-emerald-700 cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-1.5"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Review & Apply Password</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Step Before Applying Password */}
+      {confirmPasswordApply && passwordModalUser && (
+        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 z-60 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center mx-auto">
+              <AlertTriangle className="w-6 h-6 text-amber-700" />
+            </div>
+
+            <div className="text-center space-y-1">
+              <h3 className="text-base font-bold text-slate-900">
+                Confirm Password Update
+              </h3>
+              <p className="text-xs text-slate-500">
+                You are about to change the active password for <strong>{passwordModalUser.name}</strong> (
+                <span className="font-mono font-bold text-emerald-800">@{passwordModalUser.username}</span>).
+              </p>
+            </div>
+
+            <div className="p-3.5 bg-amber-50/70 border border-amber-200/80 rounded-xl text-xs text-amber-900 space-y-1.5">
+              <div className="font-bold flex items-center gap-1.5">
+                <ShieldAlert className="w-4 h-4 text-amber-700 shrink-0" />
+                <span>Immediate Session Invalidation</span>
+              </div>
+              <p className="leading-relaxed text-[11.5px] text-amber-800">
+                Updating this credential will take effect immediately in the database. Any active sessions for this user will require re-authentication with this new password.
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                disabled={isSavingPassword}
+                onClick={() => setConfirmPasswordApply(false)}
+                className="px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer transition"
+              >
+                Back to Edit
+              </button>
+              <button
+                type="button"
+                disabled={isSavingPassword}
+                onClick={handleApplyPasswordChange}
+                className="px-5 py-2.5 text-xs font-bold bg-emerald-800 text-white rounded-xl hover:bg-emerald-700 cursor-pointer shadow-xs transition flex items-center gap-1.5"
+              >
+                {isSavingPassword ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Updating Password...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Confirm & Apply Password</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Password Reset Result Modal */}
       {resetModalOpen && resetResult && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center mx-auto">
-              <ShieldCheck className="w-6 h-6" />
+            <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center mx-auto">
+              <ShieldCheck className="w-6 h-6 text-emerald-700" />
             </div>
 
             <div className="text-center">
               <h3 className="text-base font-bold text-slate-900">
-                Temporary Credential Generated
+                Password Successfully Updated
               </h3>
               <p className="text-xs text-slate-500 mt-1">
-                A secure one-time temporary password was assigned to <strong>{resetResult.user.name}</strong> (@{resetResult.user.username}).
+                A new secure password has been assigned to <strong>{resetResult.user.name}</strong> (@{resetResult.user.username}).
               </p>
             </div>
 
-            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-              <div className="text-[11px] font-bold text-slate-500 uppercase">One-Time Temporary Password</div>
-              <div className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-slate-200">
-                <span className="font-mono font-bold text-base text-emerald-800 tracking-wider">
+            <div className="p-4 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl space-y-2.5">
+              <div className="text-[11px] font-bold text-emerald-950 uppercase tracking-wider">
+                New Account Password
+              </div>
+              <div className="flex items-center justify-between bg-white px-3.5 py-2.5 rounded-xl border border-emerald-200 shadow-2xs">
+                <span className="font-mono font-bold text-base text-emerald-900 tracking-wider select-all">
                   {resetResult.tempPass}
                 </span>
                 <button
+                  type="button"
                   onClick={() => {
                     navigator.clipboard.writeText(resetResult.tempPass);
-                    showToast('Temporary password copied to clipboard!');
+                    setCopiedPassword(true);
+                    showToast('Password copied to clipboard!');
+                    setTimeout(() => setCopiedPassword(false), 2500);
                   }}
-                  className="p-1.5 text-slate-500 hover:text-emerald-700 rounded transition cursor-pointer"
+                  className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                    copiedPassword
+                      ? 'bg-emerald-100 text-emerald-900'
+                      : 'bg-slate-100 hover:bg-emerald-100 text-slate-700 hover:text-emerald-900'
+                  }`}
                   title="Copy Password"
                 >
-                  <Copy className="w-4 h-4" />
+                  {copiedPassword ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-700" />
+                      <span>Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5 text-slate-600" />
+                      <span>Copy</span>
+                    </>
+                  )}
                 </button>
               </div>
-              <p className="text-[11px] text-slate-500">
-                Provide this temporary password to the member. They will be prompted to set a personal password upon their next login.
+              <p className="text-[11px] text-emerald-800/90 leading-relaxed">
+                Safely copy and provide this password to the member. The event audit log has recorded this administrative password change.
               </p>
             </div>
 
             <div className="flex justify-end pt-2">
               <button
+                type="button"
                 onClick={() => {
                   setResetModalOpen(false);
                   setResetResult(null);
+                  setCopiedPassword(false);
                 }}
-                className="w-full py-2.5 text-xs font-bold bg-emerald-800 text-white rounded-xl hover:bg-emerald-700 cursor-pointer"
+                className="w-full py-2.5 text-xs font-bold bg-emerald-800 text-white rounded-xl hover:bg-emerald-700 cursor-pointer shadow-xs transition"
               >
-                Close & Done
+                Done & Return to Directory
               </button>
             </div>
           </div>

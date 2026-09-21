@@ -1,4 +1,4 @@
-import { getDatabaseConfig, DatabaseConfiguration } from './config';
+import { getDatabaseConfig, DatabaseConfiguration, parsePostgresUrl, ParsedPostgresConfig } from './config';
 import { Pool as PgPool } from 'pg';
 import mysql from 'mysql2/promise';
 
@@ -11,22 +11,28 @@ export interface DatabaseDriverAdapter {
   close?: () => Promise<void>;
 }
 
-class PortableDatabaseManager {
+export class PortableDatabaseManager {
   private config: DatabaseConfiguration;
   private pgPool: PgPool | null = null;
   private mysqlPool: mysql.Pool | null = null;
   private activeDriverType: string = 'local';
   private connected: boolean = false;
+  private lastError: string | null = null;
+  private lastConnectedAt: string | null = null;
+  private lastLatencyMs: number | null = null;
 
   constructor() {
     this.config = getDatabaseConfig();
     this.init();
   }
 
-  private async init() {
+  public async init() {
+    this.config = getDatabaseConfig();
+
     // 1. MySQL / MariaDB (e.g. cPanel)
     if (this.config.driver === 'mysql' && this.config.mysql) {
       try {
+        const start = Date.now();
         this.mysqlPool = mysql.createPool({
           host: this.config.mysql.host,
           port: this.config.mysql.port,
@@ -38,36 +44,61 @@ class PortableDatabaseManager {
           queueLimit: 0,
         });
 
-        // Test connection
         const conn = await this.mysqlPool.getConnection();
-        console.log(`[Database] Connected to cPanel MySQL/MariaDB database "${this.config.mysql.database}" on ${this.config.mysql.host}:${this.config.mysql.port}`);
+        await conn.query('SELECT 1');
         conn.release();
+        this.lastLatencyMs = Date.now() - start;
         this.activeDriverType = 'mysql';
         this.connected = true;
+        this.lastError = null;
+        this.lastConnectedAt = new Date().toISOString();
+        console.log(`[Database] Connected to cPanel MySQL/MariaDB database "${this.config.mysql.database}" on ${this.config.mysql.host}:${this.config.mysql.port} (${this.lastLatencyMs}ms)`);
         return;
       } catch (err: any) {
-        console.warn(`[Database] MySQL connection note (${err.message}). Using fallback local persistent store.`);
+        this.lastError = err.message;
+        console.warn(`[Database] MySQL connection error (${err.message}).`);
       }
     }
 
     // 2. Supabase / PostgreSQL
-    if (this.config.driver === 'supabase' && this.config.postgres?.connectionString) {
+    const connStr = this.config.postgres?.connectionString || process.env.DATABASE_URL;
+    if ((this.config.driver === 'supabase' || this.config.driver === 'postgres' || connStr) && connStr) {
       try {
-        this.pgPool = new PgPool({
-          connectionString: this.config.postgres.connectionString,
-          ssl: { rejectUnauthorized: false },
-          connectionTimeoutMillis: 5000,
-          max: 10,
-        });
+        const start = Date.now();
+        const parsed = parsePostgresUrl(connStr);
+        if (parsed) {
+          this.pgPool = new PgPool({
+            user: parsed.user,
+            password: parsed.password,
+            host: parsed.host,
+            port: parsed.port,
+            database: parsed.database,
+            ssl: parsed.ssl,
+            connectionTimeoutMillis: 8000,
+            max: 10,
+          });
+        } else {
+          this.pgPool = new PgPool({
+            connectionString: connStr,
+            ssl: { rejectUnauthorized: false },
+            connectionTimeoutMillis: 8000,
+            max: 10,
+          });
+        }
 
         const client = await this.pgPool.connect();
-        console.log('[Database] Connected to Supabase PostgreSQL database.');
+        await client.query('SELECT 1');
         client.release();
+        this.lastLatencyMs = Date.now() - start;
         this.activeDriverType = 'supabase';
         this.connected = true;
+        this.lastError = null;
+        this.lastConnectedAt = new Date().toISOString();
+        console.log(`[Database] Connected to Supabase PostgreSQL database successfully (${this.lastLatencyMs}ms).`);
         return;
       } catch (err: any) {
-        console.warn(`[Database] Supabase connection note (${err.message}). Operating on resilient local JSON store.`);
+        this.lastError = err.message;
+        console.warn(`[Database] Supabase PostgreSQL connection error (${err.message}).`);
       }
     }
 
@@ -75,13 +106,151 @@ class PortableDatabaseManager {
     this.connected = true;
   }
 
+  public async reconnect(): Promise<void> {
+    if (this.pgPool) {
+      try { await this.pgPool.end(); } catch {}
+      this.pgPool = null;
+    }
+    if (this.mysqlPool) {
+      try { await this.mysqlPool.end(); } catch {}
+      this.mysqlPool = null;
+    }
+    this.connected = false;
+    await this.init();
+  }
+
   public getStatus() {
     return {
       driver: this.activeDriverType,
       isConnected: this.connected,
       configuredDriver: this.config.driver,
+      lastError: this.lastError,
+      lastConnectedAt: this.lastConnectedAt,
+      latencyMs: this.lastLatencyMs,
       timestamp: new Date().toISOString(),
     };
+  }
+
+  public getDiagnosticInfo() {
+    const connStr = this.config.postgres?.connectionString || process.env.DATABASE_URL;
+    let maskedHost = 'local';
+    let dbName = 'local';
+
+    if (this.config.driver === 'mysql' && this.config.mysql) {
+      maskedHost = `${this.config.mysql.host}:${this.config.mysql.port}`;
+      dbName = this.config.mysql.database;
+    } else if (connStr) {
+      const parsed = parsePostgresUrl(connStr);
+      if (parsed) {
+        const hostParts = parsed.host.split('.');
+        if (hostParts.length > 2) {
+          maskedHost = `${hostParts[0].slice(0, 5)}****.${hostParts.slice(1).join('.')}:${parsed.port}`;
+        } else {
+          maskedHost = `${parsed.host}:${parsed.port}`;
+        }
+        dbName = parsed.database;
+      }
+    }
+
+    return {
+      driver: this.activeDriverType,
+      configured_driver: this.config.driver,
+      is_connected: this.connected && this.activeDriverType !== 'local',
+      host: maskedHost,
+      database: dbName,
+      last_connected_at: this.lastConnectedAt,
+      latency_ms: this.lastLatencyMs,
+      error: this.lastError,
+      ssl_enabled: this.activeDriverType === 'supabase',
+    };
+  }
+
+  public async testLiveConnection(): Promise<{
+    success: boolean;
+    driver: string;
+    latency_ms?: number;
+    error?: string;
+    tables?: Record<string, number>;
+    server_version?: string;
+  }> {
+    const start = Date.now();
+    try {
+      if (this.activeDriverType === 'supabase' && this.pgPool) {
+        const client = await this.pgPool.connect();
+        const verRes = await client.query('SELECT version()');
+        
+        // Count rows in main tables
+        const tables = ['users', 'batches', 'events', 'event_registrations', 'site_settings', 'notices', 'news_posts'];
+        const counts: Record<string, number> = {};
+        for (const tbl of tables) {
+          try {
+            const countRes = await client.query(`SELECT count(*) FROM public.${tbl}`);
+            counts[tbl] = parseInt(countRes.rows[0].count, 10);
+          } catch {
+            counts[tbl] = 0;
+          }
+        }
+        client.release();
+        const latency = Date.now() - start;
+        this.lastLatencyMs = latency;
+        this.lastConnectedAt = new Date().toISOString();
+        this.connected = true;
+        this.lastError = null;
+
+        return {
+          success: true,
+          driver: 'supabase',
+          latency_ms: latency,
+          server_version: verRes.rows[0]?.version ? verRes.rows[0].version.split(' ')[0] + ' ' + verRes.rows[0].version.split(' ')[1] : 'PostgreSQL',
+          tables: counts,
+        };
+      }
+
+      if (this.activeDriverType === 'mysql' && this.mysqlPool) {
+        const conn = await this.mysqlPool.getConnection();
+        const [verRes]: any = await conn.query('SELECT VERSION() as version');
+        const tables = ['users', 'batches', 'events', 'event_registrations', 'site_settings'];
+        const counts: Record<string, number> = {};
+        for (const tbl of tables) {
+          try {
+            const [cRes]: any = await conn.query(`SELECT count(*) as c FROM ${tbl}`);
+            counts[tbl] = cRes[0]?.c || 0;
+          } catch {
+            counts[tbl] = 0;
+          }
+        }
+        conn.release();
+        const latency = Date.now() - start;
+        this.lastLatencyMs = latency;
+        this.lastConnectedAt = new Date().toISOString();
+        this.connected = true;
+        this.lastError = null;
+
+        return {
+          success: true,
+          driver: 'mysql',
+          latency_ms: latency,
+          server_version: verRes[0]?.version || 'MySQL',
+          tables: counts,
+        };
+      }
+
+      return {
+        success: true,
+        driver: 'local',
+        latency_ms: 0,
+        server_version: 'Embedded Storage Engine',
+        tables: {},
+      };
+    } catch (err: any) {
+      this.lastError = err.message;
+      return {
+        success: false,
+        driver: this.activeDriverType,
+        latency_ms: Date.now() - start,
+        error: err.message,
+      };
+    }
   }
 
   public async query(sql: string, params: any[] = []): Promise<any[]> {

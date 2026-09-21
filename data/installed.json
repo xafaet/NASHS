@@ -1,0 +1,9 @@
+{
+  "is_installed": true,
+  "installed_at": "2026-09-17T05:30:19.000Z",
+  "driver": "supabase",
+  "site_name": "Nanupur Abu Sobhan High School Alumni Association",
+  "site_url": "https://nanupuralumni.org",
+  "admin_email": "dhrubo@engineer.com",
+  "version": "2.0.0-PROD"
+}

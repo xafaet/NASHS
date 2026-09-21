@@ -6,8 +6,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
-  login: (emailOrPhone: string, pass?: string) => Promise<boolean>;
-  quickLoginAs: (role: Role) => Promise<void>;
+  login: (emailOrPhone: string, pass: string) => Promise<boolean>;
   logout: () => void;
   isAdmin: boolean;
   isMember: boolean;
@@ -72,24 +71,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const quickLoginAs = async (role: Role) => {
-    try {
-      const res = await apiFetch('/api/auth/quick-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role })
-      });
-      const data = await res.json();
-      if (res.ok && data.token) {
-        localStorage.setItem('nash_token', data.token);
-        setToken(data.token);
-        setUser(data.user);
-      }
-    } catch (err) {
-      console.warn('Quick login paused:', err);
-    }
-  };
-
   const logout = () => {
     localStorage.removeItem('nash_token');
     setToken(null);
@@ -100,7 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isMember = !!user;
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, quickLoginAs, logout, isAdmin, isMember }}>
+    <AuthContext.Provider value={{ user, token, loading, login, logout, isAdmin, isMember }}>
       {children}
     </AuthContext.Provider>
   );

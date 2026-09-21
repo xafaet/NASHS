@@ -1,28 +1,106 @@
 import crypto from 'crypto';
 import QRCode from 'qrcode';
 import { db } from '../db';
-import { EntryToken, Registration } from '../../src/types';
+import { EntryToken, Registration, TokenFormatConfig } from '../../src/types';
 
 export class TokenService {
   /**
-   * Generates a cryptographically secure, high-entropy unique token code
-   * Format: NASH-85-2027-XXXXXX (e.g. NASH-85-2027-H9K3P2)
+   * Generates a configurable, database-backed, collision-safe unique token code
+   * Default Format: NASHS-[Batch Number]-[Registration Serial] (e.g. NASHS-2020-0001)
+   */
+  static generateFormattedTokenCode(passingYear?: number | string, batchName?: string): string {
+    const config: TokenFormatConfig = db.get('token_format_config') || {
+      prefix: 'NASHS',
+      separator: '-',
+      use_batch_number: true,
+      batch_placeholder: '[Batch Number]',
+      serial_placeholder: '[Registration Serial]',
+      starting_number: 1,
+      padding_length: 4,
+      reset_per_batch: true,
+      is_active: true,
+      format_pattern: 'NASHS-[Batch Number]-[Registration Serial]',
+    };
+
+    const tokens: EntryToken[] = db.get('tokens') || [];
+    const registrations: Registration[] = db.get('registrations') || [];
+
+    // Determine batch string (passing year or batch number)
+    const batchStr = passingYear ? String(passingYear) : (batchName ? batchName.replace(/\D/g, '') || 'BATCH' : '2026');
+    const prefix = config.prefix || 'NASHS';
+    const separator = config.separator || '-';
+    const padding = config.padding_length || 4;
+    const startNum = config.starting_number || 1;
+
+    // Collect all existing token codes from both tokens and registrations to prevent collisions
+    const existingCodes = new Set<string>();
+    tokens.forEach(t => { if (t.token_code) existingCodes.add(t.token_code.toUpperCase()); });
+    registrations.forEach(r => { if (r.token_code) existingCodes.add(r.token_code.toUpperCase()); });
+
+    // Determine current max serial for this batch (or globally if reset_per_batch is false)
+    let maxSerial = startNum - 1;
+
+    for (const code of existingCodes) {
+      if (config.reset_per_batch) {
+        // Pattern check for prefix + separator + batchStr + separator + serial
+        const expectedPrefix = `${prefix.toUpperCase()}${separator}${batchStr}${separator}`;
+        if (code.startsWith(expectedPrefix)) {
+          const serialPart = code.slice(expectedPrefix.length);
+          const parsed = parseInt(serialPart, 10);
+          if (!isNaN(parsed) && parsed > maxSerial) {
+            maxSerial = parsed;
+          }
+        }
+      } else {
+        // Global continuous: match prefix + separator + (anything) + separator + serial OR prefix + separator + serial
+        const parts = code.split(separator);
+        if (parts.length >= 2 && parts[0] === prefix.toUpperCase()) {
+          const lastPart = parts[parts.length - 1];
+          const parsed = parseInt(lastPart, 10);
+          if (!isNaN(parsed) && parsed > maxSerial) {
+            maxSerial = parsed;
+          }
+        }
+      }
+    }
+
+    let nextSerial = Math.max(startNum, maxSerial + 1);
+    let candidateCode = '';
+
+    // Loop until we find a collision-free unique code
+    while (true) {
+      const paddedSerial = String(nextSerial).padStart(padding, '0');
+      if (config.format_pattern && config.format_pattern.includes('[Batch Number]')) {
+        candidateCode = config.format_pattern
+          .replace(/\[Batch Number\]/g, batchStr)
+          .replace(/\[Registration Serial\]/g, paddedSerial)
+          .replace(/\{BATCH\}/g, batchStr)
+          .replace(/\{SERIAL\}/g, paddedSerial);
+      } else {
+        candidateCode = `${prefix}${separator}${batchStr}${separator}${paddedSerial}`;
+      }
+
+      if (!existingCodes.has(candidateCode.toUpperCase())) {
+        break;
+      }
+      nextSerial++;
+    }
+
+    return candidateCode;
+  }
+
+  /**
+   * Generates a cryptographically secure, high-entropy unique token code (legacy fallback)
    */
   static generateSecureTokenCode(): string {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // exclude ambiguous characters like 0/O, 1/I
-    let randomPart = '';
-    const bytes = crypto.randomBytes(6);
-    for (let i = 0; i < 6; i++) {
-      randomPart += chars[bytes[i] % chars.length];
-    }
-    return `NASH-85-2027-${randomPart}`;
+    return this.generateFormattedTokenCode();
   }
 
   /**
    * Generate an Entry Token with QR Code for a confirmed registration
    */
   static async issueToken(registration: Registration): Promise<EntryToken> {
-    const tokens = db.get('tokens');
+    const tokens = db.get('tokens') || [];
     
     // Check if token already exists for this registration
     const existing = tokens.find(t => t.registration_id === registration.id);
@@ -30,12 +108,7 @@ export class TokenService {
       return existing;
     }
 
-    let tokenCode = this.generateSecureTokenCode();
-    // Ensure uniqueness
-    while (tokens.some(t => t.token_code === tokenCode)) {
-      tokenCode = this.generateSecureTokenCode();
-    }
-
+    const tokenCode = this.generateFormattedTokenCode(registration.passing_year, registration.batch_name);
     const verificationUrl = `${process.env.APP_URL || ''}/verify?token=${tokenCode}`;
     
     // Generate QR code as SVG data URL
@@ -57,7 +130,7 @@ export class TokenService {
       id: `tok-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`,
       token_code: tokenCode,
       registration_id: registration.id,
-      event_id: registration.event_id,
+      event_id: registration.event_id || 'event-85th-anniversary',
       member_name: registration.full_name,
       batch_name: registration.batch_name,
       batch_name_bn: registration.batch_name_bn,
@@ -69,6 +142,16 @@ export class TokenService {
 
     tokens.push(token);
     db.set('tokens', tokens);
+
+    // Also update registration record with token code and qr svg
+    const registrations = db.get('registrations') || [];
+    const regIdx = registrations.findIndex(r => r.id === registration.id);
+    if (regIdx !== -1) {
+      registrations[regIdx].token_code = tokenCode;
+      registrations[regIdx].qr_code_svg = qrSvg;
+      registrations[regIdx].token_id = token.id;
+      db.set('registrations', registrations);
+    }
 
     return token;
   }
@@ -96,8 +179,32 @@ export class TokenService {
     message?: string;
   } {
     const cleanCode = (tokenCode || '').trim().toUpperCase();
-    const tokens = db.get('tokens');
-    const token = tokens.find(t => (t.token_code || '').toUpperCase() === cleanCode);
+    const tokens = db.get('tokens') || [];
+    let token = tokens.find(t => (t.token_code || '').toUpperCase() === cleanCode);
+
+    if (!token) {
+      // Check in registrations table as fallback
+      const registrations = db.get('registrations') || [];
+      const reg = registrations.find(
+        r => (r.token_code || '').toUpperCase() === cleanCode || (r.id || '').toUpperCase() === cleanCode
+      );
+      if (reg && reg.payment_status === 'paid') {
+        token = {
+          id: `tok-${reg.id}`,
+          token_code: reg.token_code || cleanCode,
+          registration_id: reg.id,
+          event_id: reg.event_id || 'event-85th-anniversary',
+          member_name: reg.full_name,
+          batch_name: reg.batch_name,
+          batch_name_bn: reg.batch_name_bn,
+          status: 'active',
+          qr_code_svg: reg.qr_code_svg || '',
+          checked_in: !!reg.checked_in,
+          checked_in_at: reg.checked_in_at,
+          created_at: reg.created_at || new Date().toISOString(),
+        };
+      }
+    }
 
     if (!token) {
       return { isValid: false, message: 'Invalid or unrecognized token code.' };

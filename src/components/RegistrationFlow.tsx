@@ -20,6 +20,7 @@ import {
   MapPin,
   Camera,
   FileText,
+  Shirt,
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { Registration, RegistrationFieldConfig } from '../types';
@@ -109,6 +110,23 @@ const DEFAULT_REGISTRATION_FIELDS: RegistrationFieldConfig[] = [
     grid_span: 'half',
   },
   {
+    name: 't_shirt_size',
+    label_en: 'T-Shirt Size',
+    label_bn: 'টি-শার্টের সাইজ',
+    placeholder_en: 'Select size (M, L, XL, XXL, XXXL)',
+    placeholder_bn: 'সাইজ নির্বাচন করুন',
+    help_text_en: 'Commemorative 85th reunion polo shirt size',
+    help_text_bn: '৮৫ বছর পূর্তির বিশেষ স্মারক টি-শার্টের সাইজ',
+    type: 'select',
+    is_required: true,
+    is_enabled: true,
+    order: 7,
+    options: ['M', 'L', 'XL', 'XXL', 'XXXL'],
+    options_bn: ['M (মিডিয়াম)', 'L (লার্জ)', 'XL (এক্সট্রা লার্জ)', 'XXL (ডাবল এক্সেল)', 'XXXL (ট্রিপল এক্সেল)'],
+    grid_span: 'half',
+    validation_rule: 'required|in:M,L,XL,XXL,XXXL',
+  },
+  {
     name: 'email',
     label_en: 'Email Address',
     label_bn: 'ইমেইল ঠিকানা',
@@ -117,7 +135,7 @@ const DEFAULT_REGISTRATION_FIELDS: RegistrationFieldConfig[] = [
     type: 'email',
     is_required: false,
     is_enabled: true,
-    order: 7,
+    order: 8,
     grid_span: 'half',
   },
   {
@@ -129,7 +147,7 @@ const DEFAULT_REGISTRATION_FIELDS: RegistrationFieldConfig[] = [
     type: 'text',
     is_required: false,
     is_enabled: true,
-    order: 8,
+    order: 9,
     grid_span: 'half',
   },
   {
@@ -141,7 +159,7 @@ const DEFAULT_REGISTRATION_FIELDS: RegistrationFieldConfig[] = [
     type: 'text',
     is_required: false,
     is_enabled: true,
-    order: 9,
+    order: 10,
     grid_span: 'full',
   },
   {
@@ -153,7 +171,7 @@ const DEFAULT_REGISTRATION_FIELDS: RegistrationFieldConfig[] = [
     type: 'file',
     is_required: false,
     is_enabled: true,
-    order: 10,
+    order: 11,
     grid_span: 'full',
   },
 ];
@@ -167,6 +185,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({ onGoToPortal
     gender: 'male',
     passing_year: '2005',
     blood_group: '',
+    t_shirt_size: 'L',
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -327,6 +346,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({ onGoToPortal
           gender: formValues.gender || 'male',
           passing_year: parseInt(formValues.passing_year, 10) || 2005,
           blood_group: formValues.blood_group || undefined,
+          t_shirt_size: formValues.t_shirt_size || 'L',
           phone: formValues.phone || '',
           email: formValues.email || undefined,
           address: formValues.address || undefined,
@@ -386,6 +406,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({ onGoToPortal
         return <Mail className="w-5 h-5" />;
       case 'blood_group':
         return <Heart className="w-5 h-5" />;
+      case 't_shirt_size':
+        return <Shirt className="w-5 h-5" />;
       case 'occupation':
         return <Briefcase className="w-5 h-5" />;
       case 'address':

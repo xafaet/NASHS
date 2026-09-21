@@ -242,3 +242,29 @@ CREATE TABLE IF NOT EXISTS check_in_logs (
 
 CREATE INDEX IF NOT EXISTS idx_checkin_token ON check_in_logs (token_code);
 CREATE INDEX IF NOT EXISTS idx_checkin_reg ON check_in_logs (registration_id);
+
+-- 13. CMS PAGES (WordPress / Laravel Eloquent Page Management)
+CREATE TABLE IF NOT EXISTS pages (
+    id VARCHAR(100) PRIMARY KEY,
+    slug VARCHAR(191) UNIQUE NOT NULL,
+    title_en VARCHAR(255) NOT NULL,
+    title_bn VARCHAR(255) NOT NULL,
+    content_en TEXT,
+    content_bn TEXT,
+    sections JSONB DEFAULT '[]'::jsonb,
+    status VARCHAR(50) DEFAULT 'published',
+    featured_image TEXT,
+    seo_meta JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_pages_slug ON pages (slug);
+CREATE INDEX IF NOT EXISTS idx_pages_status ON pages (status);
+
+-- 14. ELOQUENT / LARAVEL COMPATIBILITY VIEWS & ALIASES
+-- Allows Eloquent models with default convention ($table = 'cms_pages' or $table = 'registrations')
+-- to query seamlessly against PostgreSQL backend:
+CREATE OR REPLACE VIEW cms_pages AS SELECT * FROM pages;
+CREATE OR REPLACE VIEW registrations AS SELECT * FROM event_registrations;
+

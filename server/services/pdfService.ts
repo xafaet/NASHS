@@ -9,6 +9,7 @@ export interface PassPDFData {
   passingYear?: number | string;
   registrationId?: string;
   bloodGroup?: string;
+  tShirtSize?: string;
   occupation?: string;
   phone?: string;
   eventDate?: string;
@@ -167,11 +168,12 @@ export async function generateEntryPassPDF(data: PassPDFData): Promise<Buffer> {
 
       const passYearStr = data.passingYear ? `SSC Year: ${data.passingYear}` : '';
       const bloodStr = data.bloodGroup ? ` • Blood: ${data.bloodGroup}` : '';
+      const tshirtStr = data.tShirtSize ? ` • T-Shirt: ${data.tShirtSize}` : '';
       doc
         .fillColor('#475569')
         .font('Helvetica')
         .fontSize(9)
-        .text(`${passYearStr}${bloodStr}`, leftColX + 12, batchY + 40);
+        .text(`${passYearStr}${bloodStr}${tshirtStr}`, leftColX + 12, batchY + 40);
 
       // Registration ID & Token Code Box
       const tokenY = batchY + 68;

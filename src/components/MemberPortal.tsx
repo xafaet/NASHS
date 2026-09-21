@@ -34,10 +34,17 @@ export const MemberPortal: React.FC = () => {
   const { language, t } = useLanguage();
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [selectedPass, setSelectedPass] = useState<Registration | null>(null);
-  const [activeTab, setActiveTab] = useState<'pass' | 'profile'>('pass');
+  const [activeTab, setActiveTab] = useState<'pass' | 'profile' | 'security'>('pass');
   const [loading, setLoading] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMsg, setProfileMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Security / Password State
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordMsg, setPasswordMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Profile editable state
   const [profileData, setProfileData] = useState<Partial<User>>({
@@ -167,6 +174,66 @@ export const MemberPortal: React.FC = () => {
     }
   };
 
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentPassword || !newPassword) {
+      setPasswordMsg({
+        type: 'error',
+        text: language === 'bn' ? 'বর্তমান ও নতুন পাসওয়ার্ড প্রদান করুন।' : 'Both current and new password are required.',
+      });
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordMsg({
+        type: 'error',
+        text: language === 'bn' ? 'নতুন পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।' : 'New password must be at least 6 characters.',
+      });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordMsg({
+        type: 'error',
+        text: language === 'bn' ? 'নতুন পাসওয়ার্ড দুটি মিলছে না।' : 'New passwords do not match.',
+      });
+      return;
+    }
+
+    setPasswordLoading(true);
+    setPasswordMsg(null);
+    try {
+      const token = localStorage.getItem('nash_token');
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          current_password: currentPassword,
+          new_password: newPassword,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to update password');
+
+      setPasswordMsg({
+        type: 'success',
+        text: language === 'bn' ? 'পাসওয়ার্ড সফলভাবে পরিবর্তন করা হয়েছে!' : 'Password changed successfully!',
+      });
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      setPasswordMsg({
+        type: 'error',
+        text: err.message || 'Failed to change password.',
+      });
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-5xl mx-auto py-10 px-4 sm:px-6 space-y-8">
       {/* Top Welcome Header */}
@@ -241,6 +308,17 @@ export const MemberPortal: React.FC = () => {
         >
           <UserIcon className="w-4 h-4" />
           <span>{language === 'bn' ? 'প্রোফাইল, পেশা ও ব্যবসা' : 'Career, Business & Profile'}</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('security')}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer ${
+            activeTab === 'security'
+              ? 'bg-[#0f4d2a] text-white shadow-sm'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }`}
+        >
+          <Lock className="w-4 h-4" />
+          <span>{language === 'bn' ? 'সিকিউরিটি ও পাসওয়ার্ড' : 'Security & Password'}</span>
         </button>
       </div>
 
@@ -762,6 +840,114 @@ export const MemberPortal: React.FC = () => {
             </button>
           </div>
         </form>
+      )}
+
+      {/* TAB 3: SECURITY & PASSWORD CHANGE */}
+      {activeTab === 'security' && (
+        <div className="max-w-2xl bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6">
+          <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+              <ShieldCheck className="w-5 h-5 text-[#0f4d2a]" />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-900 text-lg">
+                {language === 'bn' ? 'অ্যাকাউন্ট নিরাপত্তা ও পাসওয়ার্ড পরিবর্তন' : 'Account Security & Change Password'}
+              </h3>
+              <p className="text-xs text-slate-500">
+                {language === 'bn'
+                  ? 'আপনার অ্যাকাউন্টের নিরাপত্তা নিশ্চিত করতে নিয়মিত শক্তিশালী পাসওয়ার্ড ব্যবহার করুন।'
+                  : 'Maintain account security by using a strong, distinct password.'}
+              </p>
+            </div>
+          </div>
+
+          {passwordMsg && (
+            <div
+              className={`p-4 rounded-xl flex items-center gap-3 text-xs sm:text-sm ${
+                passwordMsg.type === 'success'
+                  ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                  : 'bg-red-50 text-red-800 border border-red-200'
+              }`}
+            >
+              {passwordMsg.type === 'success' ? (
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+              ) : (
+                <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
+              )}
+              <span>{passwordMsg.text}</span>
+            </div>
+          )}
+
+          <form onSubmit={handlePasswordChange} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                {language === 'bn' ? 'বর্তমান পাসওয়ার্ড' : 'Current Password'}
+              </label>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="password"
+                  required
+                  value={currentPassword}
+                  onChange={e => setCurrentPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-emerald-600 transition"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                {language === 'bn' ? 'নতুন পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)' : 'New Password (min 6 characters)'}
+              </label>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-emerald-600 transition"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                {language === 'bn' ? 'নতুন পাসওয়ার্ড নিশ্চিত করুন' : 'Confirm New Password'}
+              </label>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-emerald-600 transition"
+                />
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={passwordLoading}
+                className="px-6 py-3 bg-[#0f4d2a] hover:bg-[#135d34] text-white rounded-xl text-sm font-bold shadow-md transition cursor-pointer flex items-center gap-2 disabled:opacity-50"
+              >
+                <Save className="w-4 h-4" />
+                <span>
+                  {passwordLoading
+                    ? (language === 'bn' ? 'হালনাগাদ হচ্ছে...' : 'Updating...')
+                    : (language === 'bn' ? 'পাসওয়ার্ড পরিবর্তন করুন' : 'Update Password')}
+                </span>
+              </button>
+            </div>
+          </form>
+        </div>
       )}
     </div>
   );

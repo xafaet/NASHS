@@ -31,6 +31,7 @@ interface RegistrationItem {
   dob?: string;
   gender?: string;
   blood_group?: string;
+  t_shirt_size?: string;
   phone: string;
   email?: string;
   passing_year: number;
@@ -111,6 +112,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
     gender: 'male',
     passing_year: '2008',
     blood_group: '',
+    t_shirt_size: 'L',
     address: '',
     occupation: '',
     fee_amount: 1000,
@@ -179,6 +181,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
           gender: 'male',
           passing_year: '2008',
           blood_group: '',
+          t_shirt_size: 'L',
           address: '',
           occupation: '',
           fee_amount: 1000,
@@ -317,6 +320,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
       'Batch',
       'Gender',
       'Blood Group',
+      'T-Shirt Size',
       'Occupation',
       'Address',
       'Fee Amount',
@@ -336,6 +340,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
       `"${r.batch_name || ''}"`,
       `"${r.gender || ''}"`,
       `"${r.blood_group || ''}"`,
+      `"${r.t_shirt_size || 'L'}"`,
       `"${r.occupation || ''}"`,
       `"${(r.address || '').replace(/"/g, '""')}"`,
       r.fee_amount || 1000,
@@ -637,6 +642,9 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                                 {reg.blood_group}
                               </span>
                             )}
+                            <span className="inline-block ml-1 px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200" title="T-Shirt Size">
+                              Size: {reg.t_shirt_size || 'L'}
+                            </span>
                           </div>
                         </div>
                       </td>
@@ -889,6 +897,24 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                    T-Shirt Size (টি-শার্টের সাইজ) *
+                  </label>
+                  <select
+                    value={formData.t_shirt_size}
+                    onChange={e => setFormData({ ...formData, t_shirt_size: e.target.value })}
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                    required
+                  >
+                    <option value="M">M - Medium (মিডিয়াম)</option>
+                    <option value="L">L - Large (লার্জ)</option>
+                    <option value="XL">XL - Extra Large (এক্সট্রা লার্জ)</option>
+                    <option value="XXL">XXL - Double XL (ডাবল এক্সেল)</option>
+                    <option value="XXXL">XXXL - Triple XL (ট্রিপল এক্সেল)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
                     Email Address
                   </label>
                   <input
@@ -1106,6 +1132,23 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                     <option value="O-">O-</option>
                     <option value="AB+">AB+</option>
                     <option value="AB-">AB-</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                    T-Shirt Size (টি-শার্ট সাইজ)
+                  </label>
+                  <select
+                    value={editingRegistration.t_shirt_size || 'L'}
+                    onChange={e => setEditingRegistration({ ...editingRegistration, t_shirt_size: e.target.value })}
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                  >
+                    <option value="M">M - Medium (মিডিয়াম)</option>
+                    <option value="L">L - Large (লার্জ)</option>
+                    <option value="XL">XL - Extra Large (এক্সট্রা লার্জ)</option>
+                    <option value="XXL">XXL - Double XL (ডাবল এক্সেল)</option>
+                    <option value="XXXL">XXXL - Triple XL (ট্রিপল এক্সেল)</option>
                   </select>
                 </div>
               </div>
@@ -1335,6 +1378,12 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                 <div className="py-2 flex justify-between">
                   <span className="text-slate-500">Blood Group:</span>
                   <span className="font-bold text-red-600">{viewingRegistration.blood_group || 'Not specified'}</span>
+                </div>
+                <div className="py-2 flex justify-between">
+                  <span className="text-slate-500">T-Shirt Size:</span>
+                  <span className="font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                    {viewingRegistration.t_shirt_size || 'L'}
+                  </span>
                 </div>
                 <div className="py-2 flex justify-between">
                   <span className="text-slate-500">Payment Status:</span>

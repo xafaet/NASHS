@@ -273,12 +273,12 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
             <div className="space-y-5 animate-in fade-in">
               <div className="space-y-2">
                 <h2 className="text-xl sm:text-2xl font-black text-white">
-                  Welcome to the 85th Reunion Platform Installation
+                  Welcome to the Alumni Platform Installation
                 </h2>
                 <p className="text-sm text-slate-400 leading-relaxed">
-                  This quick WordPress-style setup wizard will guide you through connecting your database
+                  This quick setup wizard will guide you through connecting your database
                   (Supabase Cloud or cPanel MySQL), creating your Super Administrator account, and configuring
-                  reunion payment settings.
+                  essential website information. Event and reunion-specific settings remain configurable later from the authenticated admin dashboard.
                 </p>
               </div>
 
