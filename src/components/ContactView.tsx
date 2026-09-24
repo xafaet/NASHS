@@ -1,16 +1,51 @@
-import React, { useState } from 'react';
-import { MapPin, Phone, Mail, Send, CheckCircle2, Clock, Navigation } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { MapPin, Phone, Mail, Send, CheckCircle2, Clock, Navigation, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { GlobalSettings } from '../types';
+import { apiFetch } from '../utils/api';
 
 export const ContactView: React.FC = () => {
   const { language, t } = useLanguage();
+  const [settings, setSettings] = useState<GlobalSettings | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', phone: '', batch: '', message: '' });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    apiFetch('/api/global-settings')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setSettings(data); })
+      .catch(err => console.warn('Global settings load paused:', err));
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/contact/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      if (!res.ok) {
+        throw new Error('Failed to send message. Please try again.');
+      }
+      setSubmitted(true);
+    } catch (err: any) {
+      setError(err.message || 'Error sending message');
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  const address = language === 'bn'
+    ? settings?.contact_address_bn || 'নানুপুর আবু সোবহান উচ্চ বিদ্যালয় প্রাঙ্গণ, নানুপুর, ফটিকছড়ি, চট্টগ্রাম ৪৩৫০, বাংলাদেশ।'
+    : settings?.contact_address_en || 'Nanupur Abu Sobhan High School Premises, Nanupur, Fatikchhari, Chattogram 4350, Bangladesh.';
+
+  const phone = settings?.contact_phone || '+880 1819-123456';
+  const email = settings?.contact_email || 'reunion@nanupurhighschool.edu.bd';
 
   return (
     <div className="max-w-5xl mx-auto py-12 px-4 sm:px-6 space-y-12">
@@ -37,9 +72,7 @@ export const ContactView: React.FC = () => {
               {language === 'bn' ? 'বিদ্যালয় ও অনুষ্ঠান ভেন্যু' : 'Event Venue & Campus'}
             </h4>
             <p className="text-xs text-slate-600 leading-relaxed">
-              {language === 'bn'
-                ? 'নানুপুর আবু সোবহান উচ্চ বিদ্যালয় প্রাঙ্গণ, নানুপুর, ফটিকছড়ি, চট্টগ্রাম ৪৩৫০, বাংলাদেশ।'
-                : 'Nanupur Abu Sobhan High School Premises, Nanupur, Fatikchhari, Chattogram 4350, Bangladesh.'}
+              {address}
             </p>
           </div>
 
@@ -51,11 +84,21 @@ export const ContactView: React.FC = () => {
               {language === 'bn' ? 'জরুরি হেল্পলাইন নম্বর' : 'Helpline & WhatsApp'}
             </h4>
             <p className="text-xs font-mono text-slate-700">
-              +880 1819-123456 (General Helpline)
+              <a href={`tel:${phone}`} className="hover:underline font-bold text-emerald-800">
+                {phone}
+              </a>
+              <span className="block text-[11px] text-slate-400 font-sans mt-0.5">
+                {language === 'bn' ? 'সাধারণ সহায়তা ও নিবন্ধন ডেস্ক' : 'General & Registration Inquiries'}
+              </span>
             </p>
-            <p className="text-xs font-mono text-slate-700">
-              +880 1812-000000 (Payment Support)
-            </p>
+            {email && (
+              <div className="pt-2 border-t border-slate-100 text-xs text-slate-600 flex items-center gap-1.5 font-mono">
+                <Mail className="w-3.5 h-3.5 text-slate-400" />
+                <a href={`mailto:${email}`} className="hover:underline">
+                  {email}
+                </a>
+              </div>
+            )}
           </div>
 
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-2">
@@ -79,6 +122,13 @@ export const ContactView: React.FC = () => {
             {language === 'bn' ? 'বার্তা অথবা জিজ্ঞাসা পাঠান' : 'Send an Inquiry / Message'}
           </h3>
 
+          {error && (
+            <div className="p-3 bg-red-50 text-red-700 border border-red-200 rounded-xl text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
           {submitted ? (
             <div className="bg-emerald-50 border border-emerald-300 rounded-xl p-6 text-center space-y-2">
               <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
@@ -90,6 +140,16 @@ export const ContactView: React.FC = () => {
                   ? 'আমাদের অভ্যর্থনা দল দ্রুত আপনার সাথে যোগাযোগ করবে।'
                   : 'Our reception sub-committee will respond to your inquiry shortly.'}
               </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setSubmitted(false);
+                  setFormData({ name: '', phone: '', batch: '', message: '' });
+                }}
+                className="mt-3 px-4 py-1.5 bg-emerald-800 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 cursor-pointer"
+              >
+                {language === 'bn' ? 'আরেকটি বার্তা পাঠান' : 'Send Another Message'}
+              </button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -149,10 +209,15 @@ export const ContactView: React.FC = () => {
 
               <button
                 type="submit"
-                className="w-full py-3.5 px-6 bg-[#0f4d2a] hover:bg-[#135d34] text-white rounded-xl font-bold flex items-center justify-center gap-2 transition cursor-pointer shadow-md"
+                disabled={submitting}
+                className="w-full py-3.5 px-6 bg-[#0f4d2a] hover:bg-[#135d34] disabled:opacity-50 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition cursor-pointer shadow-md"
               >
                 <Send className="w-4 h-4 text-amber-400" />
-                <span>{language === 'bn' ? 'বার্তা পাঠান' : 'Send Message'}</span>
+                <span>
+                  {submitting
+                    ? (language === 'bn' ? 'পাঠানো হচ্ছে...' : 'Sending...')
+                    : (language === 'bn' ? 'বার্তা পাঠান' : 'Send Message')}
+                </span>
               </button>
             </form>
           )}

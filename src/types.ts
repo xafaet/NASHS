@@ -249,10 +249,66 @@ export interface OfflineRegistrationCenter {
   address_bn: string;
   phone: string;
   contact_person?: string;
+  contact_person_bn?: string;
   timings?: string;
+  timings_bn?: string;
+  description_en?: string;
+  description_bn?: string;
   map_url?: string;
   order_index: number;
   is_active: boolean;
+  is_trashed?: boolean;
+  deleted_at?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface HeroConfig {
+  badge_en: string;
+  badge_bn: string;
+  show_badge: boolean;
+
+  headline_en: string;
+  headline_bn: string;
+  headline_highlight_en: string;
+  headline_highlight_bn: string;
+
+  subheading_en: string;
+  subheading_bn: string;
+
+  date_text_en: string;
+  date_text_bn: string;
+  show_date: boolean;
+
+  venue_text_en: string;
+  venue_text_bn: string;
+  show_venue: boolean;
+
+  fee_text_en: string;
+  fee_text_bn: string;
+  show_fee: boolean;
+
+  primary_cta_text_en: string;
+  primary_cta_text_bn: string;
+  primary_cta_link: string;
+  show_primary_cta: boolean;
+
+  secondary_cta_text_en: string;
+  secondary_cta_text_bn: string;
+  secondary_cta_link: string;
+  show_secondary_cta: boolean;
+
+  countdown_target_date: string;
+  countdown_label_en: string;
+  countdown_label_bn: string;
+  show_countdown: boolean;
+
+  background_style: 'gradient' | 'image' | 'solid';
+  background_image_url?: string;
+  hero_image_url?: string;
+  overlay_opacity: number;
+  accent_color?: string;
+  updated_at?: string;
 }
 
 export interface SchoolSection {

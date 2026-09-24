@@ -23,7 +23,45 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { apiFetch } from '../utils/api';
-import { ProgramScheduleSectionConfig } from '../types';
+import { ProgramScheduleSectionConfig, HeroConfig } from '../types';
+
+const defaultHero: HeroConfig = {
+  badge_en: '1942–2027 • 85 Glorious Years of Legacy',
+  badge_bn: '১৯৪২–২০২৭ • ৮৫ বছরের গৌরবময় ঐতিহ্য',
+  show_badge: true,
+  headline_en: '85th Anniversary Celebration &',
+  headline_bn: '৮৫ বছর পূর্তি উৎসব ও',
+  headline_highlight_en: 'Grand Alumni Reunion 2027',
+  headline_highlight_bn: 'প্রাক্তন শিক্ষার্থী পুনর্মিলনী ২০২৭',
+  subheading_en: 'Welcoming all beloved alumni of Nanupur Abu Sobhan High School to an unforgettable reunion of camaraderie, nostalgia, and community.',
+  subheading_bn: 'ঐতিহ্যবাহী নানুপুর আবু সোবহান উচ্চ বিদ্যালয়ের সকল প্রাক্তন শিক্ষার্থীকে প্রাণঢালা আমন্ত্রণ। আসুন শৈশব ও কৈশোরের সোনালী স্মৃতিতে অবগাহন করি।',
+  date_text_en: '16 January 2027 (Saturday)',
+  date_text_bn: '১৬ জানুয়ারি ২০২৭ (শনিবার)',
+  show_date: true,
+  venue_text_en: 'Nanupur Abu Sobhan High School Campus',
+  venue_text_bn: 'বিদ্যালয় প্রাঙ্গণ, নানুপুর, ফটিকছড়ি, চট্টগ্রাম',
+  show_venue: true,
+  fee_text_en: 'Registration Fee: ৳1,000 BDT',
+  fee_text_bn: 'নিবন্ধন ফি: ১,০০০ টাকা',
+  show_fee: true,
+  primary_cta_text_en: 'Register for Reunion Now',
+  primary_cta_text_bn: 'অনলাইনে নিবন্ধন করুন',
+  primary_cta_link: 'register',
+  show_primary_cta: true,
+  secondary_cta_text_en: 'Verify Token Code',
+  secondary_cta_text_bn: 'পাস যাচাই করুন',
+  secondary_cta_link: 'verify',
+  show_secondary_cta: true,
+  countdown_target_date: '2027-01-16T08:00:00+06:00',
+  countdown_label_en: 'Countdown to Historic Reunion',
+  countdown_label_bn: 'উৎসব শুরু হতে বাকি',
+  show_countdown: true,
+  background_style: 'gradient',
+  background_image_url: '',
+  hero_image_url: '',
+  overlay_opacity: 20,
+  accent_color: '#fbbf24',
+};
 
 interface HomeViewProps {
   onNavigate: (view: string) => void;
@@ -34,6 +72,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
 
   // Dynamic fee & event info
   const [eventData, setEventData] = useState<any>(null);
+  const [heroConfig, setHeroConfig] = useState<HeroConfig>(defaultHero);
   const [notices, setNotices] = useState<any[]>([]);
   const [faqs, setFaqs] = useState<any[]>([]);
   const [offlineCenters, setOfflineCenters] = useState<any[]>([]);
@@ -49,8 +88,8 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
   }>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   useEffect(() => {
-    // Event target: 16 January 2027 08:00:00 GMT+6 (Bangladesh Time)
-    const target = new Date('2027-01-16T08:00:00+06:00').getTime();
+    const targetStr = heroConfig.countdown_target_date || '2027-01-16T08:00:00+06:00';
+    const target = new Date(targetStr).getTime();
 
     const updateCountdown = () => {
       const now = Date.now();
@@ -67,9 +106,19 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
     updateCountdown();
     const interval = setInterval(updateCountdown, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [heroConfig.countdown_target_date]);
 
   useEffect(() => {
+    const loadHero = () => {
+      apiFetch('/api/appearance/hero')
+        .then(res => res.ok ? res.json() : null)
+        .then(data => { if (data) setHeroConfig(data); })
+        .catch(err => console.warn('Hero load paused:', err));
+    };
+
+    loadHero();
+    window.addEventListener('nash-hero-updated', loadHero);
+
     apiFetch('/api/events/current')
       .then(res => res.ok ? res.json() : null)
       .then(data => { if (data) setEventData(data); })
@@ -89,14 +138,17 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
       })
       .catch(err => console.warn('FAQs load paused:', err));
 
-    apiFetch('/api/offline-centers')
-      .then(res => res.ok ? res.json() : [])
-      .then(data => {
-        if (Array.isArray(data)) {
-          setOfflineCenters(data);
-        }
-      })
-      .catch(err => console.warn('Offline centers load paused:', err));
+    const loadBooths = () => {
+      apiFetch('/api/offline-centers')
+        .then(res => res.ok ? res.json() : [])
+        .then(data => {
+          if (Array.isArray(data)) {
+            setOfflineCenters(data);
+          }
+        })
+        .catch(err => console.warn('Offline centers load paused:', err));
+    };
+    loadBooths();
 
     apiFetch('/api/program-schedule')
       .then(res => res.ok ? res.json() : null)
@@ -106,6 +158,10 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
         }
       })
       .catch(err => console.warn('Program schedule load paused:', err));
+
+    return () => {
+      window.removeEventListener('nash-hero-updated', loadHero);
+    };
   }, []);
 
   const getScheduleIcon = (icon?: string) => {
@@ -132,123 +188,211 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
 
   return (
     <div className="space-y-16 pb-16">
-      {/* HERO SECTION */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-[#0a331c] via-[#0f4d2a] to-[#135d34] text-white pt-12 pb-20 px-4 sm:px-6 lg:px-8 border-b-8 border-amber-400">
+      {/* HERO SECTION - 100% CMS & DATABASE DRIVEN */}
+      <section
+        className={`relative overflow-hidden text-white pt-12 pb-20 px-4 sm:px-6 lg:px-8 border-b-8 border-amber-400 ${
+          heroConfig.background_style === 'image' && heroConfig.background_image_url
+            ? ''
+            : heroConfig.background_style === 'solid'
+            ? 'bg-[#0a331c]'
+            : 'bg-gradient-to-b from-[#0a331c] via-[#0f4d2a] to-[#135d34]'
+        }`}
+        style={
+          heroConfig.background_style === 'image' && heroConfig.background_image_url
+            ? {
+                backgroundImage: `linear-gradient(rgba(10, 51, 28, ${(heroConfig.overlay_opacity ?? 20) / 100}), rgba(19, 93, 52, ${(heroConfig.overlay_opacity ?? 20) / 100})), url('${heroConfig.background_image_url}')`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }
+            : undefined
+        }
+      >
         {/* Subtle decorative geometric overlay */}
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#d4971c_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
 
         <div className="max-w-6xl mx-auto text-center relative z-10 space-y-8">
           {/* Milestone Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40 text-xs sm:text-sm font-extrabold uppercase tracking-widest animate-in fade-in zoom-in-90 duration-300">
-            <Award className="w-4 h-4 text-amber-400" />
-            <span>
-              {language === 'bn'
-                ? '১৯৪২–২০২৭ • ৮৫ বছরের গৌরবময় ঐতিহ্য'
-                : '1942–2027 • 85 Glorious Years of Legacy'}
-            </span>
-          </div>
+          {heroConfig.show_badge !== false && (
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40 text-xs sm:text-sm font-extrabold uppercase tracking-widest animate-in fade-in zoom-in-90 duration-300">
+              <Award className="w-4 h-4 text-amber-400" />
+              <span>
+                {language === 'bn'
+                  ? heroConfig.badge_bn || heroConfig.badge_en
+                  : heroConfig.badge_en || heroConfig.badge_bn}
+              </span>
+            </div>
+          )}
 
-          {/* Main Headline */}
+          {/* Hero Image if configured */}
+          {heroConfig.hero_image_url && (
+            <div className="flex justify-center -mb-2">
+              <img
+                src={heroConfig.hero_image_url}
+                alt="Hero Emblem"
+                className="w-24 h-24 sm:w-28 sm:h-28 object-contain drop-shadow-xl animate-in zoom-in-90 duration-300"
+              />
+            </div>
+          )}
+
+          {/* Main Headline & Subheading */}
           <div className="space-y-4 max-w-4xl mx-auto">
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight font-display">
               {language === 'bn' ? (
                 <>
-                  ৮৫ বছর পূর্তি উৎসব ও <br />
-                  <span className="text-amber-400">প্রাক্তন শিক্ষার্থী পুনর্মিলনী ২০২৭</span>
+                  {heroConfig.headline_bn}{' '}
+                  {heroConfig.headline_highlight_bn && (
+                    <>
+                      <br />
+                      <span style={{ color: heroConfig.accent_color || '#fbbf24' }}>
+                        {heroConfig.headline_highlight_bn}
+                      </span>
+                    </>
+                  )}
                 </>
               ) : (
                 <>
-                  85th Anniversary Celebration & <br />
-                  <span className="text-amber-400">Grand Alumni Reunion 2027</span>
+                  {heroConfig.headline_en}{' '}
+                  {heroConfig.headline_highlight_en && (
+                    <>
+                      <br />
+                      <span style={{ color: heroConfig.accent_color || '#fbbf24' }}>
+                        {heroConfig.headline_highlight_en}
+                      </span>
+                    </>
+                  )}
                 </>
               )}
             </h1>
 
-            <p className="text-emerald-100 text-base sm:text-xl max-w-2xl mx-auto font-medium leading-relaxed">
-              {language === 'bn'
-                ? 'ঐতিহ্যবাহী নানুপুর আবু সোবহান উচ্চ বিদ্যালয়ের সকল প্রাক্তন শিক্ষার্থীকে প্রাণঢালা আমন্ত্রণ। আসুন শৈশব ও কৈশোরের সোনালী স্মৃতিতে অবগাহন করি।'
-                : 'Welcoming all beloved alumni of Nanupur Abu Sobhan High School to an unforgettable reunion of camaraderie, nostalgia, and community.'}
-            </p>
+            {(heroConfig.subheading_en || heroConfig.subheading_bn) && (
+              <p className="text-emerald-100 text-base sm:text-xl max-w-2xl mx-auto font-medium leading-relaxed">
+                {language === 'bn'
+                  ? heroConfig.subheading_bn || heroConfig.subheading_en
+                  : heroConfig.subheading_en || heroConfig.subheading_bn}
+              </p>
+            )}
           </div>
 
           {/* Event Key Details Pill Bar */}
-          <div className="inline-flex flex-wrap items-center justify-center gap-4 sm:gap-6 bg-black/30 backdrop-blur-xs px-6 py-3.5 rounded-2xl border border-white/10 text-xs sm:text-sm">
-            <div className="flex items-center gap-2 text-amber-300 font-bold">
-              <Calendar className="w-4 h-4 text-amber-400" />
-              <span>16 January 2027 (Saturday)</span>
+          {(heroConfig.show_date || heroConfig.show_venue || heroConfig.show_fee) && (
+            <div className="inline-flex flex-wrap items-center justify-center gap-4 sm:gap-6 bg-black/30 backdrop-blur-xs px-6 py-3.5 rounded-2xl border border-white/10 text-xs sm:text-sm">
+              {heroConfig.show_date && (
+                <div className="flex items-center gap-2 text-amber-300 font-bold">
+                  <Calendar className="w-4 h-4 text-amber-400" />
+                  <span>
+                    {language === 'bn'
+                      ? heroConfig.date_text_bn || heroConfig.date_text_en
+                      : heroConfig.date_text_en || heroConfig.date_text_bn}
+                  </span>
+                </div>
+              )}
+              {heroConfig.show_date && (heroConfig.show_venue || heroConfig.show_fee) && (
+                <span className="hidden sm:inline text-white/30">•</span>
+              )}
+              {heroConfig.show_venue && (
+                <div className="flex items-center gap-2 text-emerald-100 font-semibold">
+                  <MapPin className="w-4 h-4 text-amber-400" />
+                  <span>
+                    {language === 'bn'
+                      ? heroConfig.venue_text_bn || heroConfig.venue_text_en
+                      : heroConfig.venue_text_en || heroConfig.venue_text_bn}
+                  </span>
+                </div>
+              )}
+              {heroConfig.show_venue && heroConfig.show_fee && (
+                <span className="hidden sm:inline text-white/30">•</span>
+              )}
+              {heroConfig.show_fee && (
+                <div className="flex items-center gap-2 text-emerald-100 font-semibold">
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  <span>
+                    {language === 'bn'
+                      ? heroConfig.fee_text_bn || heroConfig.fee_text_en
+                      : heroConfig.fee_text_en || heroConfig.fee_text_bn}
+                  </span>
+                </div>
+              )}
             </div>
-            <span className="hidden sm:inline text-white/30">•</span>
-            <div className="flex items-center gap-2 text-emerald-100 font-semibold">
-              <MapPin className="w-4 h-4 text-amber-400" />
-              <span>Nanupur Abu Sobhan High School Campus</span>
-            </div>
-            <span className="hidden sm:inline text-white/30">•</span>
-            <div className="flex items-center gap-2 text-emerald-100 font-semibold">
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              <span>Registration Fee: ৳{eventData?.registration_fee || 1000} BDT</span>
-            </div>
-          </div>
+          )}
 
           {/* Prominent Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
-            <button
-              onClick={() => onNavigate('register')}
-              className="w-full sm:w-auto px-8 py-4 rounded-xl font-extrabold text-base bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-slate-950 shadow-xl shadow-amber-950/30 transition transform hover:-translate-y-0.5 cursor-pointer flex items-center justify-center gap-2"
-            >
-              <Sparkles className="w-5 h-5 text-slate-950" />
-              <span>{language === 'bn' ? 'অনলাইনে নিবন্ধন করুন' : 'Register for Reunion Now'}</span>
-              <ArrowRight className="w-5 h-5" />
-            </button>
+          {(heroConfig.show_primary_cta || heroConfig.show_secondary_cta) && (
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+              {heroConfig.show_primary_cta && (
+                <button
+                  onClick={() => onNavigate(heroConfig.primary_cta_link || 'register')}
+                  className="w-full sm:w-auto px-8 py-4 rounded-xl font-extrabold text-base bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-slate-950 shadow-xl shadow-amber-950/30 transition transform hover:-translate-y-0.5 cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <Sparkles className="w-5 h-5 text-slate-950" />
+                  <span>
+                    {language === 'bn'
+                      ? heroConfig.primary_cta_text_bn || 'অনলাইনে নিবন্ধন করুন'
+                      : heroConfig.primary_cta_text_en || 'Register for Reunion Now'}
+                  </span>
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              )}
 
-            <button
-              onClick={() => onNavigate('verify')}
-              className="w-full sm:w-auto px-7 py-4 rounded-xl font-bold text-base bg-white/10 hover:bg-white/20 active:bg-white/5 text-white border border-white/20 backdrop-blur-xs transition cursor-pointer flex items-center justify-center gap-2"
-            >
-              <ShieldCheck className="w-5 h-5 text-amber-300" />
-              <span>{t('nav.verify_pass', 'Verify Token Code')}</span>
-            </button>
-          </div>
+              {heroConfig.show_secondary_cta && (
+                <button
+                  onClick={() => onNavigate(heroConfig.secondary_cta_link || 'verify')}
+                  className="w-full sm:w-auto px-7 py-4 rounded-xl font-bold text-base bg-white/10 hover:bg-white/20 active:bg-white/5 text-white border border-white/20 backdrop-blur-xs transition cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <ShieldCheck className="w-5 h-5 text-amber-300" />
+                  <span>
+                    {language === 'bn'
+                      ? heroConfig.secondary_cta_text_bn || 'পাস যাচাই করুন'
+                      : heroConfig.secondary_cta_text_en || 'Verify Token Code'}
+                  </span>
+                </button>
+              )}
+            </div>
+          )}
 
           {/* LIVE COUNTDOWN TIMER */}
-          <div className="pt-8 max-w-xl mx-auto">
-            <span className="text-xs uppercase font-bold tracking-widest text-emerald-200 block mb-3">
-              {language === 'bn' ? 'উৎসব শুরু হতে বাকি' : 'Countdown to Historic Reunion'}
-            </span>
-            <div className="grid grid-cols-4 gap-2 sm:gap-4">
-              <div className="bg-black/40 backdrop-blur-xs p-3 sm:p-4 rounded-2xl border border-white/10">
-                <span className="text-2xl sm:text-4xl font-extrabold text-amber-400 font-mono block">
-                  {timeLeft.days}
-                </span>
-                <span className="text-[10px] sm:text-xs text-emerald-200 font-semibold uppercase">
-                  {language === 'bn' ? 'দিন' : 'Days'}
-                </span>
-              </div>
-              <div className="bg-black/40 backdrop-blur-xs p-3 sm:p-4 rounded-2xl border border-white/10">
-                <span className="text-2xl sm:text-4xl font-extrabold text-white font-mono block">
-                  {timeLeft.hours.toString().padStart(2, '0')}
-                </span>
-                <span className="text-[10px] sm:text-xs text-emerald-200 font-semibold uppercase">
-                  {language === 'bn' ? 'ঘণ্টা' : 'Hours'}
-                </span>
-              </div>
-              <div className="bg-black/40 backdrop-blur-xs p-3 sm:p-4 rounded-2xl border border-white/10">
-                <span className="text-2xl sm:text-4xl font-extrabold text-white font-mono block">
-                  {timeLeft.minutes.toString().padStart(2, '0')}
-                </span>
-                <span className="text-[10px] sm:text-xs text-emerald-200 font-semibold uppercase">
-                  {language === 'bn' ? 'মিনিট' : 'Minutes'}
-                </span>
-              </div>
-              <div className="bg-black/40 backdrop-blur-xs p-3 sm:p-4 rounded-2xl border border-white/10">
-                <span className="text-2xl sm:text-4xl font-extrabold text-amber-400 font-mono block">
-                  {timeLeft.seconds.toString().padStart(2, '0')}
-                </span>
-                <span className="text-[10px] sm:text-xs text-emerald-200 font-semibold uppercase">
-                  {language === 'bn' ? 'সেকেন্ড' : 'Seconds'}
-                </span>
+          {heroConfig.show_countdown && (
+            <div className="pt-8 max-w-xl mx-auto">
+              <span className="text-xs uppercase font-bold tracking-widest text-emerald-200 block mb-3">
+                {language === 'bn'
+                  ? heroConfig.countdown_label_bn || 'উৎসব শুরু হতে বাকি'
+                  : heroConfig.countdown_label_en || 'Countdown to Historic Reunion'}
+              </span>
+              <div className="grid grid-cols-4 gap-2 sm:gap-4">
+                <div className="bg-black/40 backdrop-blur-xs p-3 sm:p-4 rounded-2xl border border-white/10">
+                  <span className="text-2xl sm:text-4xl font-extrabold text-amber-400 font-mono block">
+                    {timeLeft.days}
+                  </span>
+                  <span className="text-[10px] sm:text-xs text-emerald-200 font-semibold uppercase">
+                    {language === 'bn' ? 'দিন' : 'Days'}
+                  </span>
+                </div>
+                <div className="bg-black/40 backdrop-blur-xs p-3 sm:p-4 rounded-2xl border border-white/10">
+                  <span className="text-2xl sm:text-4xl font-extrabold text-white font-mono block">
+                    {timeLeft.hours.toString().padStart(2, '0')}
+                  </span>
+                  <span className="text-[10px] sm:text-xs text-emerald-200 font-semibold uppercase">
+                    {language === 'bn' ? 'ঘণ্টা' : 'Hours'}
+                  </span>
+                </div>
+                <div className="bg-black/40 backdrop-blur-xs p-3 sm:p-4 rounded-2xl border border-white/10">
+                  <span className="text-2xl sm:text-4xl font-extrabold text-white font-mono block">
+                    {timeLeft.minutes.toString().padStart(2, '0')}
+                  </span>
+                  <span className="text-[10px] sm:text-xs text-emerald-200 font-semibold uppercase">
+                    {language === 'bn' ? 'মিনিট' : 'Minutes'}
+                  </span>
+                </div>
+                <div className="bg-black/40 backdrop-blur-xs p-3 sm:p-4 rounded-2xl border border-white/10">
+                  <span className="text-2xl sm:text-4xl font-extrabold text-amber-400 font-mono block">
+                    {timeLeft.seconds.toString().padStart(2, '0')}
+                  </span>
+                  <span className="text-[10px] sm:text-xs text-emerald-200 font-semibold uppercase">
+                    {language === 'bn' ? 'সেকেন্ড' : 'Seconds'}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </section>
 
@@ -388,8 +532,11 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {offlineCenters.map((center) => {
-              const name = language === 'bn' ? center.name_bn || center.name_en : center.name_en;
-              const address = language === 'bn' ? center.address_bn || center.address_en : center.address_en;
+              const name = language === 'bn' ? (center.name_bn || center.name_en) : (center.name_en || center.name_bn);
+              const address = language === 'bn' ? (center.address_bn || center.address_en) : (center.address_en || center.address_bn);
+              const contactPerson = language === 'bn' ? (center.contact_person_bn || center.contact_person) : (center.contact_person || center.contact_person_bn);
+              const timings = language === 'bn' ? (center.timings_bn || center.timings) : (center.timings || center.timings_bn);
+              const description = language === 'bn' ? (center.description_bn || center.description_en) : (center.description_en || center.description_bn);
               const rawAddress = `${center.name_en || center.name_bn}, ${center.address_en || center.address_bn}`;
               const mapLink = center.map_url || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(rawAddress)}`;
 
@@ -406,9 +553,9 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
                       <h3 className="font-bold text-slate-900 text-base leading-snug">
                         {name}
                       </h3>
-                      {center.contact_person && (
+                      {contactPerson && (
                         <p className="text-xs text-emerald-800 font-semibold mt-0.5">
-                          {language === 'bn' ? 'দায়িত্বপ্রাপ্ত:' : 'Contact:'} {center.contact_person}
+                          {language === 'bn' ? 'দায়িত্বপ্রাপ্ত:' : 'Contact:'} {contactPerson}
                         </p>
                       )}
                     </div>
@@ -417,10 +564,16 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
                       {address}
                     </p>
 
-                    {center.timings && (
+                    {description && (
+                      <p className="text-xs text-slate-500 italic bg-amber-50/50 p-2 rounded-lg border border-amber-100/70">
+                        {description}
+                      </p>
+                    )}
+
+                    {timings && (
                       <div className="flex items-center gap-1.5 text-xs text-slate-500 font-mono">
                         <Clock className="w-3.5 h-3.5 shrink-0 text-slate-400" />
-                        <span>{center.timings}</span>
+                        <span>{timings}</span>
                       </div>
                     )}
                   </div>

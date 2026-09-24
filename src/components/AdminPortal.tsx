@@ -35,6 +35,7 @@ import {
   MapPin,
   Calendar,
   Server,
+  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -53,6 +54,7 @@ import {
 } from '../types';
 import { AdminGlobalSettings } from './admin/AdminGlobalSettings';
 import { AdminAppearance } from './admin/AdminAppearance';
+import { AdminHero } from './admin/AdminHero';
 import { AdminPages } from './admin/AdminPages';
 import { AdminFaq } from './admin/AdminFaq';
 import { AdminGateways } from './admin/AdminGateways';
@@ -83,6 +85,7 @@ type AdminTab =
   | 'pages'
   | 'faq'
   | 'appearance'
+  | 'hero'
   | 'global_settings'
   | 'users'
   | 'rbac'
@@ -507,6 +510,16 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
             >
               <Layers className="w-4 h-4 text-amber-400" />
               <span>Appearance & Menus</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('hero')}
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition cursor-pointer ${
+                activeTab === 'hero' ? 'bg-[#0f4d2a] text-white shadow' : 'hover:bg-slate-700 text-slate-300'
+              }`}
+            >
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              <span>Hero Section (CMS)</span>
             </button>
 
             <button
@@ -1147,6 +1160,10 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
 
           {activeTab === 'appearance' && (
             <AdminAppearance showToast={showToast} getHeaders={getHeaders} />
+          )}
+
+          {activeTab === 'hero' && (
+            <AdminHero showToast={showToast} getHeaders={getHeaders} />
           )}
 
           {activeTab === 'pages' && (

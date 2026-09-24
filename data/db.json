@@ -2158,29 +2158,6 @@
       "created_at": "2026-09-17T12:30:18.997Z"
     },
     {
-      "id": "user-1789979455274",
-      "username": "fake",
-      "name": "Fake Impersonator",
-      "email": "fake@example.com",
-      "phone": null,
-      "password_hash": "",
-      "role": "alumni_member",
-      "status": "active",
-      "passing_year": null,
-      "batch": "",
-      "dob": null,
-      "gender": null,
-      "blood_group": null,
-      "photo_url": null,
-      "occupation": null,
-      "organization": null,
-      "designation": null,
-      "work_location": null,
-      "address": null,
-      "bio": null,
-      "created_at": "2026-09-21T08:30:55.388Z"
-    },
-    {
       "id": "user-1789979838103",
       "username": "dup1",
       "name": "Dup",
@@ -2202,6 +2179,43 @@
       "address": null,
       "bio": null,
       "created_at": "2026-09-21T08:37:18.264Z"
+    },
+    {
+      "id": "user-1790175576025-908",
+      "username": "alumni_1790175575981",
+      "name": "Valid Alumni",
+      "email": "alumni_1790175575981@mail.com",
+      "phone": "01717143109",
+      "password_hash": "$2b$10$XTnrFy5HufzyJMmNlVTOFusf3O6aKD3d6QZzOrIxw5Xzu/SWgAEGO",
+      "role": "alumni_member",
+      "status": "active",
+      "passing_year": 2008,
+      "batch": "131st Batch (2008)",
+      "dob": null,
+      "gender": null,
+      "blood_group": null,
+      "photo_url": null,
+      "occupation": null,
+      "organization": null,
+      "designation": null,
+      "work_location": null,
+      "address": null,
+      "bio": null,
+      "created_at": "2026-09-23T14:59:36.070Z"
+    },
+    {
+      "id": "user-1790175601194-990",
+      "username": "alumni_1790175601158",
+      "name": "Valid Alumni Updated",
+      "email": "alumni_1790175601158@mail.com",
+      "phone": "01719936936",
+      "password_hash": "$2b$10$9XTZ69JcUZ9YKCAPR38jBOAPDQK/AsBzXd1LDy5bSu.CYlPDPJeh6",
+      "role": "alumni_member",
+      "passing_year": 2008,
+      "batch": "131st Batch (2008)",
+      "gender": "male",
+      "status": "active",
+      "created_at": "2026-09-23T15:00:01.314Z"
     }
   ],
   "registrations": [
@@ -2209,11 +2223,12 @@
       "id": "REG-85-862178763",
       "event_id": "event-85th-anniversary",
       "full_name": "Dr. Fazlul Karim",
-      "dob": "1990-01-01",
+      "dob": "1990-01-01T00:00:00.000Z",
       "gender": "male",
       "blood_group": "B+",
       "t_shirt_size": "XXL",
       "phone": "01819776655",
+      "email": "",
       "passing_year": 1990,
       "batch_id": "batch-1990",
       "batch_name": "113th Batch (1990)",
@@ -2221,13 +2236,14 @@
       "fee_amount": 1000,
       "currency": "BDT",
       "payment_status": "paid",
-      "payment_method": "bkash",
       "registration_status": "confirmed",
+      "payment_method": "bkash",
+      "token_id": "",
       "token_code": "NASHS-1990-0002",
-      "qr_code_svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 43 43\" shape-rendering=\"crispEdges\"><path fill=\"#ffffff\" d=\"M0 0h43v43H0z\"/><path stroke=\"#0f4d2a\" d=\"M1 1.5h7m2 0h1m1 0h1m1 0h2m7 0h1m4 0h1m2 0h1m3 0h7M1 2.5h1m5 0h1m2 0h3m3 0h2m1 0h3m1 0h2m1 0h2m1 0h2m2 0h1m1 0h1m5 0h1M1 3.5h1m1 0h3m1 0h1m1 0h5m1 0h3m6 0h4m2 0h1m2 0h1m1 0h1m1 0h3m1 0h1M1 4.5h1m1 0h3m1 0h1m1 0h2m4 0h1m3 0h6m4 0h2m1 0h1m2 0h1m1 0h3m1 0h1M1 5.5h1m1 0h3m1 0h1m1 0h1m2 0h1m1 0h3m4 0h2m1 0h1m2 0h1m3 0h3m1 0h1m1 0h3m1 0h1M1 6.5h1m5 0h1m1 0h2m1 0h2m1 0h6m3 0h2m1 0h2m2 0h1m3 0h1m5 0h1M1 7.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M9 8.5h3m2 0h2m5 0h2m4 0h2m3 0h1M1 9.5h1m1 0h5m4 0h3m3 0h1m1 0h1m2 0h2m1 0h3m1 0h1m1 0h1m2 0h5M1 10.5h2m1 0h1m4 0h1m2 0h2m1 0h1m2 0h1m1 0h3m1 0h1m2 0h1m1 0h5m3 0h1m1 0h1M1 11.5h1m1 0h1m3 0h1m3 0h2m2 0h1m1 0h3m1 0h3m2 0h1m1 0h1m1 0h2m1 0h1m1 0h1m5 0h1M1 12.5h1m3 0h1m2 0h2m1 0h1m5 0h1m1 0h5m1 0h1m1 0h3m2 0h2m1 0h1m2 0h1m2 0h1M1 13.5h1m2 0h1m1 0h2m3 0h7m4 0h1m1 0h2m2 0h3m1 0h1m5 0h4M1 14.5h1m3 0h1m3 0h2m6 0h2m2 0h1m3 0h2m1 0h7m1 0h2M5 15.5h1m1 0h1m1 0h5m1 0h1m1 0h2m1 0h1m1 0h2m1 0h2m1 0h1m4 0h2m1 0h2m1 0h1m1 0h1M1 16.5h1m1 0h2m1 0h1m5 0h1m1 0h1m1 0h2m1 0h3m1 0h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h4m1 0h1M1 17.5h4m2 0h1m2 0h3m1 0h1m2 0h1m2 0h3m2 0h1m2 0h2m3 0h2m1 0h1m2 0h1m1 0h1M1 18.5h4m1 0h1m1 0h1m9 0h2m1 0h3m1 0h7m1 0h1m1 0h3m1 0h3M1 19.5h2m2 0h5m2 0h3m2 0h2m3 0h1m2 0h2m1 0h2m2 0h1m1 0h1m2 0h3M4 20.5h1m3 0h1m4 0h1m4 0h3m1 0h2m2 0h1m1 0h2m3 0h1m3 0h3m1 0h1M2 21.5h1m2 0h3m4 0h2m6 0h3m1 0h2m3 0h1m1 0h4m2 0h2m1 0h1M2 22.5h3m1 0h1m3 0h1m4 0h1m3 0h1m1 0h1m1 0h1m1 0h1m2 0h1m1 0h1m1 0h2m1 0h1m3 0h3M2 23.5h1m2 0h1m1 0h2m1 0h2m3 0h1m1 0h3m2 0h1m2 0h5m1 0h1m2 0h3m2 0h1M2 24.5h2m1 0h2m1 0h1m1 0h1m1 0h1m1 0h4m1 0h1m2 0h1m5 0h2m2 0h2m4 0h2m1 0h1M2 25.5h2m1 0h1m1 0h5m1 0h3m1 0h5m1 0h2m1 0h1m3 0h1m5 0h3M1 26.5h1m2 0h3m2 0h5m1 0h4m1 0h1m2 0h2m4 0h2m1 0h1m4 0h2M1 27.5h5m1 0h1m3 0h1m3 0h2m2 0h1m1 0h2m4 0h3m1 0h1m1 0h5m2 0h1M1 28.5h1m1 0h1m4 0h4m2 0h4m1 0h1m1 0h1m1 0h2m2 0h3m1 0h4m1 0h1m1 0h1M7 29.5h1m3 0h3m2 0h2m3 0h2m2 0h1m4 0h1m1 0h1m1 0h1m1 0h1m1 0h2m1 0h1M1 30.5h1m1 0h4m1 0h2m1 0h2m1 0h1m1 0h4m5 0h6m6 0h1m1 0h1M1 31.5h1m2 0h1m1 0h3m3 0h7m2 0h2m1 0h2m4 0h2m1 0h5M1 32.5h1m1 0h1m2 0h1m1 0h1m3 0h1m2 0h1m1 0h2m3 0h2m1 0h1m3 0h2m1 0h7m2 0h1M1 33.5h1m4 0h2m2 0h1m2 0h2m2 0h1m3 0h3m3 0h3m1 0h11M9 34.5h1m1 0h7m5 0h1m1 0h1m1 0h2m3 0h2m3 0h3m1 0h1M1 35.5h7m4 0h1m1 0h2m1 0h1m1 0h2m2 0h1m1 0h1m7 0h1m1 0h1m1 0h2m1 0h1M1 36.5h1m5 0h1m1 0h1m1 0h1m1 0h3m1 0h1m3 0h1m6 0h2m2 0h2m3 0h2m1 0h2M1 37.5h1m1 0h3m1 0h1m1 0h1m1 0h2m2 0h3m1 0h7m5 0h1m1 0h6M1 38.5h1m1 0h3m1 0h1m1 0h3m1 0h1m1 0h4m3 0h1m2 0h2m4 0h1m2 0h1m1 0h1m2 0h3M1 39.5h1m1 0h3m1 0h1m1 0h2m4 0h3m2 0h3m4 0h5m1 0h6m1 0h1M1 40.5h1m5 0h1m2 0h4m2 0h1m1 0h3m1 0h1m1 0h1m2 0h3m2 0h3m2 0h2m1 0h1M1 41.5h7m1 0h1m3 0h1m2 0h2m2 0h1m2 0h1m2 0h1m1 0h1m1 0h2m3 0h4\"/></svg>\n",
       "checked_in": false,
-      "created_at": "2026-09-21T08:37:42.199Z",
-      "updated_at": "2026-09-21T08:37:42.199Z"
+      "checked_in_at": null,
+      "created_at": "2026-09-21T08:37:42.347Z",
+      "updated_at": "2026-09-21T08:37:42.347Z"
     },
     {
       "id": "REG-85-838121377",
@@ -2253,7 +2269,7 @@
       "checked_in": false,
       "checked_in_at": null,
       "created_at": "2026-09-21T08:37:18.302Z",
-      "updated_at": "2026-09-21T08:37:18.302Z"
+      "updated_at": "2026-09-21T08:37:42.354Z"
     },
     {
       "id": "REG-85-520992996",
@@ -2279,7 +2295,7 @@
       "checked_in": false,
       "checked_in_at": null,
       "created_at": "2026-09-21T08:32:01.197Z",
-      "updated_at": "2026-09-21T08:37:18.310Z"
+      "updated_at": "2026-09-21T08:37:42.357Z"
     },
     {
       "id": "REG-85-532342",
@@ -2305,7 +2321,7 @@
       "checked_in": false,
       "checked_in_at": null,
       "created_at": "2026-09-21T08:30:55.393Z",
-      "updated_at": "2026-09-21T08:37:18.317Z"
+      "updated_at": "2026-09-21T08:37:42.361Z"
     }
   ],
   "payments": [
@@ -2424,71 +2440,218 @@
       "checked_in": false,
       "checked_in_at": null,
       "created_at": "2026-09-21T08:32:01.196Z"
-    },
-    {
-      "id": "tok-1789979862195",
-      "token_code": "NASHS-1990-0002",
-      "registration_id": "REG-85-862178763",
-      "event_id": "event-85th-anniversary",
-      "member_name": "Dr. Fazlul Karim",
-      "batch_name": "113th Batch (1990)",
-      "batch_name_bn": "১১৩তম ব্যাচ (১৯৯০)",
-      "qr_code_svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 43 43\" shape-rendering=\"crispEdges\"><path fill=\"#ffffff\" d=\"M0 0h43v43H0z\"/><path stroke=\"#0f4d2a\" d=\"M1 1.5h7m2 0h1m1 0h1m1 0h2m7 0h1m4 0h1m2 0h1m3 0h7M1 2.5h1m5 0h1m2 0h3m3 0h2m1 0h3m1 0h2m1 0h2m1 0h2m2 0h1m1 0h1m5 0h1M1 3.5h1m1 0h3m1 0h1m1 0h5m1 0h3m6 0h4m2 0h1m2 0h1m1 0h1m1 0h3m1 0h1M1 4.5h1m1 0h3m1 0h1m1 0h2m4 0h1m3 0h6m4 0h2m1 0h1m2 0h1m1 0h3m1 0h1M1 5.5h1m1 0h3m1 0h1m1 0h1m2 0h1m1 0h3m4 0h2m1 0h1m2 0h1m3 0h3m1 0h1m1 0h3m1 0h1M1 6.5h1m5 0h1m1 0h2m1 0h2m1 0h6m3 0h2m1 0h2m2 0h1m3 0h1m5 0h1M1 7.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M9 8.5h3m2 0h2m5 0h2m4 0h2m3 0h1M1 9.5h1m1 0h5m4 0h3m3 0h1m1 0h1m2 0h2m1 0h3m1 0h1m1 0h1m2 0h5M1 10.5h2m1 0h1m4 0h1m2 0h2m1 0h1m2 0h1m1 0h3m1 0h1m2 0h1m1 0h5m3 0h1m1 0h1M1 11.5h1m1 0h1m3 0h1m3 0h2m2 0h1m1 0h3m1 0h3m2 0h1m1 0h1m1 0h2m1 0h1m1 0h1m5 0h1M1 12.5h1m3 0h1m2 0h2m1 0h1m5 0h1m1 0h5m1 0h1m1 0h3m2 0h2m1 0h1m2 0h1m2 0h1M1 13.5h1m2 0h1m1 0h2m3 0h7m4 0h1m1 0h2m2 0h3m1 0h1m5 0h4M1 14.5h1m3 0h1m3 0h2m6 0h2m2 0h1m3 0h2m1 0h7m1 0h2M5 15.5h1m1 0h1m1 0h5m1 0h1m1 0h2m1 0h1m1 0h2m1 0h2m1 0h1m4 0h2m1 0h2m1 0h1m1 0h1M1 16.5h1m1 0h2m1 0h1m5 0h1m1 0h1m1 0h2m1 0h3m1 0h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h4m1 0h1M1 17.5h4m2 0h1m2 0h3m1 0h1m2 0h1m2 0h3m2 0h1m2 0h2m3 0h2m1 0h1m2 0h1m1 0h1M1 18.5h4m1 0h1m1 0h1m9 0h2m1 0h3m1 0h7m1 0h1m1 0h3m1 0h3M1 19.5h2m2 0h5m2 0h3m2 0h2m3 0h1m2 0h2m1 0h2m2 0h1m1 0h1m2 0h3M4 20.5h1m3 0h1m4 0h1m4 0h3m1 0h2m2 0h1m1 0h2m3 0h1m3 0h3m1 0h1M2 21.5h1m2 0h3m4 0h2m6 0h3m1 0h2m3 0h1m1 0h4m2 0h2m1 0h1M2 22.5h3m1 0h1m3 0h1m4 0h1m3 0h1m1 0h1m1 0h1m1 0h1m2 0h1m1 0h1m1 0h2m1 0h1m3 0h3M2 23.5h1m2 0h1m1 0h2m1 0h2m3 0h1m1 0h3m2 0h1m2 0h5m1 0h1m2 0h3m2 0h1M2 24.5h2m1 0h2m1 0h1m1 0h1m1 0h1m1 0h4m1 0h1m2 0h1m5 0h2m2 0h2m4 0h2m1 0h1M2 25.5h2m1 0h1m1 0h5m1 0h3m1 0h5m1 0h2m1 0h1m3 0h1m5 0h3M1 26.5h1m2 0h3m2 0h5m1 0h4m1 0h1m2 0h2m4 0h2m1 0h1m4 0h2M1 27.5h5m1 0h1m3 0h1m3 0h2m2 0h1m1 0h2m4 0h3m1 0h1m1 0h5m2 0h1M1 28.5h1m1 0h1m4 0h4m2 0h4m1 0h1m1 0h1m1 0h2m2 0h3m1 0h4m1 0h1m1 0h1M7 29.5h1m3 0h3m2 0h2m3 0h2m2 0h1m4 0h1m1 0h1m1 0h1m1 0h1m1 0h2m1 0h1M1 30.5h1m1 0h4m1 0h2m1 0h2m1 0h1m1 0h4m5 0h6m6 0h1m1 0h1M1 31.5h1m2 0h1m1 0h3m3 0h7m2 0h2m1 0h2m4 0h2m1 0h5M1 32.5h1m1 0h1m2 0h1m1 0h1m3 0h1m2 0h1m1 0h2m3 0h2m1 0h1m3 0h2m1 0h7m2 0h1M1 33.5h1m4 0h2m2 0h1m2 0h2m2 0h1m3 0h3m3 0h3m1 0h11M9 34.5h1m1 0h7m5 0h1m1 0h1m1 0h2m3 0h2m3 0h3m1 0h1M1 35.5h7m4 0h1m1 0h2m1 0h1m1 0h2m2 0h1m1 0h1m7 0h1m1 0h1m1 0h2m1 0h1M1 36.5h1m5 0h1m1 0h1m1 0h1m1 0h3m1 0h1m3 0h1m6 0h2m2 0h2m3 0h2m1 0h2M1 37.5h1m1 0h3m1 0h1m1 0h1m1 0h2m2 0h3m1 0h7m5 0h1m1 0h6M1 38.5h1m1 0h3m1 0h1m1 0h3m1 0h1m1 0h4m3 0h1m2 0h2m4 0h1m2 0h1m1 0h1m2 0h3M1 39.5h1m1 0h3m1 0h1m1 0h2m4 0h3m2 0h3m4 0h5m1 0h6m1 0h1M1 40.5h1m5 0h1m2 0h4m2 0h1m1 0h3m1 0h1m1 0h1m2 0h3m2 0h3m2 0h2m1 0h1M1 41.5h7m1 0h1m3 0h1m2 0h2m2 0h1m2 0h1m2 0h1m1 0h1m1 0h2m3 0h4\"/></svg>\n",
-      "status": "active",
-      "checked_in": false,
-      "created_at": "2026-09-21T08:37:42.195Z"
     }
   ],
   "audit_logs": [
     {
-      "id": "log-1789979862336-nkbt",
-      "user_name": "Chief Administrator (NASH Secretariat)",
-      "user_email": "admin@nanupuralumni.org",
-      "action": "DATABASE_EXPORT",
-      "entity": "Database",
-      "details": "Exported full system database backup in format: POSTGRES",
+      "id": "log-1790175601331-w8m5",
+      "user_name": "Valid Alumni Updated",
+      "user_email": "alumni_1790175601158@mail.com",
+      "action": "UPDATE_MEMBER_PROFILE",
+      "entity": "User",
+      "details": "Member updated their profile (Career: N/A, Business: N/A)",
       "ip": "127.0.0.1",
-      "created_at": "2026-09-21T08:37:42.336Z"
+      "created_at": "2026-09-23T15:00:01.331Z"
     },
     {
-      "id": "log-1789979862328-b4pt",
-      "user_name": "Chief Administrator (NASH Secretariat)",
-      "user_email": "admin@nanupuralumni.org",
-      "action": "DATABASE_EXPORT",
-      "entity": "Database",
-      "details": "Exported full system database backup in format: MYSQL",
+      "id": "log-1790175601319-a8oy",
+      "user_name": "Valid Alumni",
+      "user_email": "alumni_1790175601158@mail.com",
+      "action": "REGISTER",
+      "entity": "Auth",
+      "details": "New alumnus registered an account",
       "ip": "127.0.0.1",
-      "created_at": "2026-09-21T08:37:42.328Z"
+      "created_at": "2026-09-23T15:00:01.319Z"
     },
     {
-      "id": "log-1789979862321-2ywo",
+      "id": "log-1790175601154-z63n",
       "user_name": "Chief Administrator (NASH Secretariat)",
       "user_email": "admin@nanupuralumni.org",
-      "action": "DATABASE_EXPORT",
-      "entity": "Database",
-      "details": "Exported full system database backup in format: CSV",
+      "action": "UPDATE_HERO",
+      "entity": "Appearance",
+      "details": "Updated homepage hero section texts, labels, CTA buttons, and background settings",
       "ip": "127.0.0.1",
-      "created_at": "2026-09-21T08:37:42.321Z"
+      "created_at": "2026-09-23T15:00:01.154Z"
     },
     {
-      "id": "log-1789979862201-4o91",
+      "id": "log-1790175601134-ne86",
       "user_name": "Chief Administrator (NASH Secretariat)",
       "user_email": "admin@nanupuralumni.org",
-      "action": "CREATE_REGISTRATION",
-      "entity": "Registration",
-      "details": "Manually registered Dr. Fazlul Karim (REG-85-862178763, Batch: 113th Batch (1990), Token: NASHS-1990-0002)",
+      "action": "PERMANENT_DELETE_BOOTH",
+      "entity": "Booths",
+      "details": "Permanently deleted booth: Updated Chittagong Booth",
       "ip": "127.0.0.1",
-      "created_at": "2026-09-21T08:37:42.201Z"
+      "created_at": "2026-09-23T15:00:01.134Z"
     },
     {
-      "id": "log-1789979862144-yhme",
+      "id": "log-1790175601116-z3zt",
+      "user_name": "Chief Administrator (NASH Secretariat)",
+      "user_email": "admin@nanupuralumni.org",
+      "action": "RESTORE_BOOTH",
+      "entity": "Booths",
+      "details": "Restored booth Updated Chittagong Booth from trash",
+      "ip": "127.0.0.1",
+      "created_at": "2026-09-23T15:00:01.116Z"
+    },
+    {
+      "id": "log-1790175601095-7u8z",
+      "user_name": "Chief Administrator (NASH Secretariat)",
+      "user_email": "admin@nanupuralumni.org",
+      "action": "TRASH_BOOTH",
+      "entity": "Booths",
+      "details": "Moved booth Updated Chittagong Booth to trash",
+      "ip": "127.0.0.1",
+      "created_at": "2026-09-23T15:00:01.095Z"
+    },
+    {
+      "id": "log-1790175601078-79lk",
+      "user_name": "Chief Administrator (NASH Secretariat)",
+      "user_email": "admin@nanupuralumni.org",
+      "action": "UPDATE_BOOTH",
+      "entity": "Booths",
+      "details": "Updated registration booth: Updated Chittagong Booth",
+      "ip": "127.0.0.1",
+      "created_at": "2026-09-23T15:00:01.078Z"
+    },
+    {
+      "id": "log-1790175601063-52io",
+      "user_name": "Chief Administrator (NASH Secretariat)",
+      "user_email": "admin@nanupuralumni.org",
+      "action": "CREATE_BOOTH",
+      "entity": "Booths",
+      "details": "Added registration booth: New Chittagong Booth",
+      "ip": "127.0.0.1",
+      "created_at": "2026-09-23T15:00:01.063Z"
+    },
+    {
+      "id": "log-1790175601047-t1gx",
       "user_name": "Chief Administrator (NASH Secretariat)",
       "user_email": "admin@nanupuralumni.org",
       "action": "LOGIN",
       "entity": "Auth",
       "details": "User logged in successfully (super_admin)",
       "ip": "127.0.0.1",
-      "created_at": "2026-09-21T08:37:42.144Z"
+      "created_at": "2026-09-23T15:00:01.048Z"
+    },
+    {
+      "id": "log-1790175575948-q5dn",
+      "ip": "127.0.0.1",
+      "action": "RESTORE_BOOTH",
+      "entity": "Booths",
+      "details": "Restored booth Updated Chittagong Booth from trash",
+      "user_name": "Chief Administrator (NASH Secretariat)",
+      "created_at": "2026-09-23T14:59:35.948Z",
+      "user_email": "admin@nanupuralumni.org"
+    },
+    {
+      "id": "log-1790175575929-hchy",
+      "ip": "127.0.0.1",
+      "action": "TRASH_BOOTH",
+      "entity": "Booths",
+      "details": "Moved booth Updated Chittagong Booth to trash",
+      "user_name": "Chief Administrator (NASH Secretariat)",
+      "created_at": "2026-09-23T14:59:35.929Z",
+      "user_email": "admin@nanupuralumni.org"
+    },
+    {
+      "id": "log-1790175575898-81rl",
+      "ip": "127.0.0.1",
+      "action": "UPDATE_BOOTH",
+      "entity": "Booths",
+      "details": "Updated registration booth: Updated Chittagong Booth",
+      "user_name": "Chief Administrator (NASH Secretariat)",
+      "created_at": "2026-09-23T14:59:35.898Z",
+      "user_email": "admin@nanupuralumni.org"
+    },
+    {
+      "id": "log-1790175575886-74jc",
+      "ip": "127.0.0.1",
+      "action": "CREATE_BOOTH",
+      "entity": "Booths",
+      "details": "Added registration booth: New Chittagong Booth",
+      "user_name": "Chief Administrator (NASH Secretariat)",
+      "created_at": "2026-09-23T14:59:35.886Z",
+      "user_email": "admin@nanupuralumni.org"
+    },
+    {
+      "id": "log-1790175575872-smvh",
+      "ip": "127.0.0.1",
+      "action": "LOGIN",
+      "entity": "Auth",
+      "details": "User logged in successfully (super_admin)",
+      "user_name": "Chief Administrator (NASH Secretariat)",
+      "created_at": "2026-09-23T14:59:35.872Z",
+      "user_email": "admin@nanupuralumni.org"
+    },
+    {
+      "id": "log-1790175503641-1v89",
+      "ip": "127.0.0.1",
+      "action": "REGISTER",
+      "entity": "Auth",
+      "details": "New alumnus registered an account",
+      "user_name": "Test Dup",
+      "created_at": "2026-09-23T14:58:23.641Z",
+      "user_email": "dup@example.com"
+    },
+    {
+      "id": "log-1790172939355-zdut",
+      "ip": "127.0.0.1",
+      "action": "DELETE_USER",
+      "entity": "Users",
+      "details": "Deleted user account @dup1 (Dup, role: alumni_member). Historical alumni registration and financial records have been preserved.",
+      "user_name": "Chief Administrator (NASH Secretariat)",
+      "created_at": "2026-09-23T14:15:39.355Z",
+      "user_email": "admin@nanupuralumni.org"
+    },
+    {
+      "id": "log-1789979862336-nkbt",
+      "ip": "127.0.0.1",
+      "action": "DATABASE_EXPORT",
+      "entity": "Database",
+      "details": "Exported full system database backup in format: POSTGRES",
+      "user_name": "Chief Administrator (NASH Secretariat)",
+      "created_at": "2026-09-21T08:37:42.336Z",
+      "user_email": "admin@nanupuralumni.org"
+    },
+    {
+      "id": "log-1789979862328-b4pt",
+      "ip": "127.0.0.1",
+      "action": "DATABASE_EXPORT",
+      "entity": "Database",
+      "details": "Exported full system database backup in format: MYSQL",
+      "user_name": "Chief Administrator (NASH Secretariat)",
+      "created_at": "2026-09-21T08:37:42.328Z",
+      "user_email": "admin@nanupuralumni.org"
+    },
+    {
+      "id": "log-1789979862321-2ywo",
+      "ip": "127.0.0.1",
+      "action": "DATABASE_EXPORT",
+      "entity": "Database",
+      "details": "Exported full system database backup in format: CSV",
+      "user_name": "Chief Administrator (NASH Secretariat)",
+      "created_at": "2026-09-21T08:37:42.321Z",
+      "user_email": "admin@nanupuralumni.org"
+    },
+    {
+      "id": "log-1789979862201-4o91",
+      "ip": "127.0.0.1",
+      "action": "CREATE_REGISTRATION",
+      "entity": "Registration",
+      "details": "Manually registered Dr. Fazlul Karim (REG-85-862178763, Batch: 113th Batch (1990), Token: NASHS-1990-0002)",
+      "user_name": "Chief Administrator (NASH Secretariat)",
+      "created_at": "2026-09-21T08:37:42.201Z",
+      "user_email": "admin@nanupuralumni.org"
+    },
+    {
+      "id": "log-1789979862144-yhme",
+      "ip": "127.0.0.1",
+      "action": "LOGIN",
+      "entity": "Auth",
+      "details": "User logged in successfully (super_admin)",
+      "user_name": "Chief Administrator (NASH Secretariat)",
+      "created_at": "2026-09-21T08:37:42.144Z",
+      "user_email": "admin@nanupuralumni.org"
     },
     {
       "id": "log-1789979838287-dj7m",
@@ -3997,6 +4160,44 @@
       "placeholder_en": "e.g. Chattogram / Dhaka / Abroad"
     }
   ],
+  "hero_config": {
+    "badge_bn": "১৯৪২–২০২৭ • ৮৫ বছরের গৌরবময় ঐতিহ্য",
+    "badge_en": "1942–2027 • 85 Glorious Years of Legacy",
+    "show_fee": true,
+    "show_date": true,
+    "show_badge": true,
+    "show_venue": true,
+    "updated_at": "2026-09-23T15:00:01.152Z",
+    "fee_text_bn": "নিবন্ধন ফি: ১,০০০ টাকা",
+    "fee_text_en": "Registration Fee: ৳1,000 BDT",
+    "headline_bn": "৮৫ বছর পূর্তি উৎসব ও",
+    "headline_en": "85th Anniversary Celebration &",
+    "accent_color": "#fbbf24",
+    "date_text_bn": "১৬ জানুয়ারি ২০২৭ (শনিবার)",
+    "date_text_en": "16 January 2027 (Saturday)",
+    "subheading_bn": "ঐতিহ্যবাহী নানুপুর আবু সোবহান উচ্চ বিদ্যালয়ের সকল প্রাক্তন শিক্ষার্থীকে প্রাণঢালা আমন্ত্রণ। আসুন শৈশব ও কৈশোরের সোনালী স্মৃতিতে অবগাহন করি।",
+    "subheading_en": "Welcoming all beloved alumni of Nanupur Abu Sobhan High School to an unforgettable reunion of camaraderie, nostalgia, and community.",
+    "venue_text_bn": "বিদ্যালয় প্রাঙ্গণ, নানুপুর, ফটিকছড়ি, চট্টগ্রাম",
+    "venue_text_en": "Nanupur Abu Sobhan High School Campus",
+    "hero_image_url": "",
+    "show_countdown": true,
+    "overlay_opacity": 20,
+    "background_style": "gradient",
+    "primary_cta_link": "register",
+    "show_primary_cta": true,
+    "countdown_label_bn": "উৎসব শুরু হতে বাকি",
+    "countdown_label_en": "Countdown to Historic Reunion",
+    "secondary_cta_link": "verify",
+    "show_secondary_cta": true,
+    "primary_cta_text_bn": "অনলাইনে নিবন্ধন করুন",
+    "primary_cta_text_en": "Register for Reunion Now",
+    "background_image_url": "",
+    "countdown_target_date": "2027-01-16T08:00:00+06:00",
+    "headline_highlight_bn": "প্রাক্তন শিক্ষার্থী পুনর্মিলনী ২০২৭",
+    "headline_highlight_en": "Grand Alumni Reunion 2027",
+    "secondary_cta_text_bn": "পাস যাচাই করুন",
+    "secondary_cta_text_en": "Verify Token Code"
+  },
   "app_installed": {
     "driver": "supabase",
     "installed_at": "2026-09-17T12:30:19.097Z",

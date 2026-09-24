@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import { createServer as createViteServer } from 'vite';
 import { db, portableDb } from './server/db';
-import { initialProgramSchedule, initialRegistrationFields, initialTokenFormatConfig } from './server/seedData';
+import { initialProgramSchedule, initialRegistrationFields, initialTokenFormatConfig, initialHeroConfig } from './server/seedData';
 import { AuthService, authenticate, requireRole, requirePermission, AuthRequest } from './server/auth';
 import { BatchService } from './server/services/batchService';
 import { PaymentService, PaymentManager } from './server/services/paymentService';
@@ -29,6 +29,7 @@ import {
   CustomRole,
   NewsPost,
   GateItem,
+  HeroConfig,
 } from './src/types';
 import PDFDocument from 'pdfkit';
 import QRCode from 'qrcode';
@@ -212,11 +213,25 @@ async function startServer() {
         return res.status(400).json({ success: false, message: 'An account with this email address or mobile phone already exists.' });
       }
 
+      const users = db.get('users') || [];
+      const requestedUsername = (req.body.username || email.split('@')[0] || `alumni_${phone.slice(-4)}`).trim();
+      const cleanUsername = requestedUsername.toLowerCase();
+
+      // Enforce global username uniqueness (Application & Database level)
+      const existingUserByUsername = await db.getUserByCredential(cleanUsername);
+      if (existingUserByUsername || users.some(u => (u.username || '').trim().toLowerCase() === cleanUsername)) {
+        return res.status(422).json({
+          success: false,
+          message: 'This username is already taken. Please choose another username.',
+          message_bn: 'এই ইউজারনেমটি ইতিমধ্যে ব্যবহৃত হয়েছে। অনুগ্রহ করে অন্য একটি ইউজারনেম বেছে নিন।'
+        });
+      }
+
       const yearNum = parseInt(passing_year, 10) || 2008;
       const batchInfo = BatchService.getBatchByPassingYear(yearNum);
       const newUser: User = {
         id: `user-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        username: email.split('@')[0] || `alumni_${phone.slice(-4)}`,
+        username: cleanUsername,
         name: name.trim(),
         email: email.trim().toLowerCase(),
         phone: phone.trim(),
@@ -230,7 +245,6 @@ async function startServer() {
         created_at: new Date().toISOString(),
       };
 
-      const users = db.get('users') || [];
       users.push(newUser);
       db.set('users', users);
 
@@ -474,6 +488,24 @@ async function startServer() {
     const updated = { ...current, ...req.body };
     db.set('top_bar_config', updated);
     db.logAudit(req.user?.name || 'Admin', req.user?.email || '', 'UPDATE_TOPBAR', 'Appearance', 'Updated topbar notification banner');
+    res.json(updated);
+  });
+
+  // Hero Section Configuration
+  app.get('/api/appearance/hero', (req, res) => {
+    const hero = db.get('hero_config') || initialHeroConfig;
+    res.json(hero);
+  });
+
+  app.put('/api/admin/appearance/hero', authenticate, requireRole(['super_admin', 'admin', 'content_manager']), (req: AuthRequest, res) => {
+    const current = db.get('hero_config') || initialHeroConfig;
+    const updated: HeroConfig = {
+      ...current,
+      ...req.body,
+      updated_at: new Date().toISOString(),
+    };
+    db.set('hero_config', updated);
+    db.logAudit(req.user?.name || 'Admin', req.user?.email || '', 'UPDATE_HERO', 'Appearance', 'Updated homepage hero section texts, labels, CTA buttons, and background settings');
     res.json(updated);
   });
 
@@ -1323,8 +1355,8 @@ async function startServer() {
     const cleanUsername = username.trim().toLowerCase();
     if (users.some(u => (u.username || '').trim().toLowerCase() === cleanUsername)) {
       return res.status(409).json({
-        message: `The username "${username}" is already taken. Please choose another username.`,
-        message_bn: `"${username}" ইউজারনেমটি ইতিমধ্যে ব্যবহৃত হয়েছে। অনুগ্রহ করে অন্য একটি ইউজারনেম বেছে নিন।`
+        message: 'This username is already taken. Please choose another username.',
+        message_bn: 'এই ইউজারনেমটি ইতিমধ্যে ব্যবহৃত হয়েছে। অনুগ্রহ করে অন্য একটি ইউজারনেম বেছে নিন।'
       });
     }
 
@@ -1362,8 +1394,8 @@ async function startServer() {
       const cleanUsername = username.trim().toLowerCase();
       if (users.some(u => u.id !== existing.id && (u.username || '').trim().toLowerCase() === cleanUsername)) {
         return res.status(409).json({
-          message: `The username "${username}" is already in use by another account. Please choose a different username.`,
-          message_bn: `"${username}" ইউজারনেমটি ইতিমধ্যে অন্য একজন ব্যবহারকারী নিয়েছেন। অনুগ্রহ করে অন্য ইউজারনেম বেছে নিন।`
+          message: 'This username is already taken. Please choose another username.',
+          message_bn: 'এই ইউজারনেমটি ইতিমধ্যে ব্যবহৃত হয়েছে। অনুগ্রহ করে অন্য একটি ইউজারনেম বেছে নিন।'
         });
       }
       existing.username = cleanUsername;
@@ -1728,56 +1760,148 @@ async function startServer() {
     res.json({ success: true });
   });
 
-  // Offline Registration Centers
-  app.get('/api/offline-centers', (req, res) => {
+  // Authorized Registration Booths / Offline Registration Centers
+  const getPublicBooths = (req: Request, res: Response) => {
     const centers = db.get('offline_centers') || [];
-    res.json(centers.filter(c => c.is_active).sort((a, b) => a.order_index - b.order_index));
-  });
+    // Only return active and non-trashed centers, ordered by order_index
+    const activeBooths = centers
+      .filter(c => !c.is_trashed && c.is_active !== false)
+      .sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
+    res.json(activeBooths);
+  };
+  app.get('/api/offline-centers', getPublicBooths);
+  app.get('/api/booths', getPublicBooths);
 
-  app.get('/api/admin/offline-centers', authenticate, requireRole(['super_admin', 'admin']), (req, res) => {
+  const getAdminBooths = (req: Request, res: Response) => {
     const centers = db.get('offline_centers') || [];
-    res.json(centers.sort((a, b) => a.order_index - b.order_index));
-  });
+    const includeTrash = req.query.trash === 'true';
+    let filtered = centers;
+    if (includeTrash) {
+      filtered = centers.filter(c => c.is_trashed === true);
+    }
+    res.json(filtered.sort((a, b) => (a.order_index || 0) - (b.order_index || 0)));
+  };
+  app.get('/api/admin/offline-centers', authenticate, requireRole(['super_admin', 'admin', 'content_manager']), getAdminBooths);
+  app.get('/api/admin/booths', authenticate, requireRole(['super_admin', 'admin', 'content_manager']), getAdminBooths);
 
-  app.post('/api/admin/offline-centers', authenticate, requireRole(['super_admin', 'admin']), (req: AuthRequest, res) => {
+  const createBoothHandler = (req: AuthRequest, res: Response) => {
     const centers = db.get('offline_centers') || [];
+    const maxOrder = centers.length > 0 ? Math.max(...centers.map(c => c.order_index || 0)) : 0;
     const newCenter: OfflineRegistrationCenter = {
-      id: `off-${Date.now()}`,
-      name_en: req.body.name_en,
-      name_bn: req.body.name_bn,
-      address_en: req.body.address_en,
-      address_bn: req.body.address_bn,
-      phone: req.body.phone,
-      contact_person: req.body.contact_person,
-      timings: req.body.timings,
-      map_url: req.body.map_url,
-      order_index: centers.length + 1,
-      is_active: req.body.is_active ?? true,
+      id: `booth-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      name_en: req.body.name_en ? req.body.name_en.trim() : '',
+      name_bn: req.body.name_bn ? req.body.name_bn.trim() : (req.body.name_en || '').trim(),
+      address_en: req.body.address_en ? req.body.address_en.trim() : '',
+      address_bn: req.body.address_bn ? req.body.address_bn.trim() : (req.body.address_en || '').trim(),
+      phone: req.body.phone ? req.body.phone.trim() : '',
+      contact_person: req.body.contact_person ? req.body.contact_person.trim() : undefined,
+      contact_person_bn: req.body.contact_person_bn ? req.body.contact_person_bn.trim() : undefined,
+      timings: req.body.timings ? req.body.timings.trim() : 'Daily 9:00 AM – 8:00 PM',
+      timings_bn: req.body.timings_bn ? req.body.timings_bn.trim() : undefined,
+      description_en: req.body.description_en ? req.body.description_en.trim() : undefined,
+      description_bn: req.body.description_bn ? req.body.description_bn.trim() : undefined,
+      map_url: req.body.map_url ? req.body.map_url.trim() : undefined,
+      order_index: typeof req.body.order_index === 'number' ? req.body.order_index : maxOrder + 1,
+      is_active: req.body.is_active !== false,
+      is_trashed: false,
+      deleted_at: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
     centers.push(newCenter);
     db.set('offline_centers', centers);
-    db.logAudit(req.user?.name || 'Admin', req.user?.email || '', 'CREATE_OFFLINE_CENTER', 'Centers', `Added center: ${newCenter.name_en}`);
+    db.logAudit(req.user?.name || 'Admin', req.user?.email || '', 'CREATE_BOOTH', 'Booths', `Added registration booth: ${newCenter.name_en || newCenter.name_bn}`);
     res.status(201).json(newCenter);
-  });
+  };
+  app.post('/api/admin/offline-centers', authenticate, requireRole(['super_admin', 'admin', 'content_manager']), createBoothHandler);
+  app.post('/api/admin/booths', authenticate, requireRole(['super_admin', 'admin', 'content_manager']), createBoothHandler);
 
-  app.put('/api/admin/offline-centers/:id', authenticate, requireRole(['super_admin', 'admin']), (req: AuthRequest, res) => {
+  // Bulk reorder booths
+  const reorderBoothsHandler = (req: AuthRequest, res: Response) => {
+    const centers = db.get('offline_centers') || [];
+    const { items } = req.body; // Array of { id, order_index } or array of ids
+    if (Array.isArray(items)) {
+      items.forEach((item: any, idx: number) => {
+        const id = typeof item === 'string' ? item : item.id;
+        const targetOrder = typeof item === 'object' && typeof item.order_index === 'number' ? item.order_index : idx + 1;
+        const target = centers.find(c => c.id === id);
+        if (target) {
+          target.order_index = targetOrder;
+          target.updated_at = new Date().toISOString();
+        }
+      });
+      db.set('offline_centers', centers);
+      db.logAudit(req.user?.name || 'Admin', req.user?.email || '', 'REORDER_BOOTHS', 'Booths', 'Reordered registration booths display sequence');
+    }
+    res.json({ success: true, centers });
+  };
+  app.put('/api/admin/offline-centers/reorder', authenticate, requireRole(['super_admin', 'admin', 'content_manager']), reorderBoothsHandler);
+  app.post('/api/admin/offline-centers/reorder', authenticate, requireRole(['super_admin', 'admin', 'content_manager']), reorderBoothsHandler);
+  app.put('/api/admin/booths/reorder', authenticate, requireRole(['super_admin', 'admin', 'content_manager']), reorderBoothsHandler);
+  app.post('/api/admin/booths/reorder', authenticate, requireRole(['super_admin', 'admin', 'content_manager']), reorderBoothsHandler);
+
+  const updateBoothHandler = (req: AuthRequest, res: Response) => {
     const centers = db.get('offline_centers') || [];
     const index = centers.findIndex(c => c.id === req.params.id);
-    if (index === -1) return res.status(404).json({ message: 'Center not found' });
+    if (index === -1) return res.status(404).json({ message: 'Booth not found' });
 
-    centers[index] = { ...centers[index], ...req.body };
+    centers[index] = {
+      ...centers[index],
+      ...req.body,
+      updated_at: new Date().toISOString(),
+    };
     db.set('offline_centers', centers);
-    db.logAudit(req.user?.name || 'Admin', req.user?.email || '', 'UPDATE_OFFLINE_CENTER', 'Centers', `Updated center: ${centers[index].name_en}`);
+    db.logAudit(req.user?.name || 'Admin', req.user?.email || '', 'UPDATE_BOOTH', 'Booths', `Updated registration booth: ${centers[index].name_en || centers[index].name_bn}`);
     res.json(centers[index]);
-  });
+  };
+  app.put('/api/admin/offline-centers/:id', authenticate, requireRole(['super_admin', 'admin', 'content_manager']), updateBoothHandler);
+  app.put('/api/admin/booths/:id', authenticate, requireRole(['super_admin', 'admin', 'content_manager']), updateBoothHandler);
 
-  app.delete('/api/admin/offline-centers/:id', authenticate, requireRole(['super_admin', 'admin']), (req: AuthRequest, res) => {
+  // Soft delete / move to trash
+  const trashBoothHandler = (req: AuthRequest, res: Response) => {
+    const centers = db.get('offline_centers') || [];
+    const index = centers.findIndex(c => c.id === req.params.id);
+    if (index === -1) return res.status(404).json({ message: 'Booth not found' });
+
+    centers[index].is_trashed = true;
+    centers[index].is_active = false;
+    centers[index].deleted_at = new Date().toISOString();
+    centers[index].updated_at = new Date().toISOString();
+    db.set('offline_centers', centers);
+    db.logAudit(req.user?.name || 'Admin', req.user?.email || '', 'TRASH_BOOTH', 'Booths', `Moved booth ${centers[index].name_en} to trash`);
+    res.json({ success: true, message: 'Booth moved to trash', booth: centers[index] });
+  };
+  app.delete('/api/admin/offline-centers/:id', authenticate, requireRole(['super_admin', 'admin', 'content_manager']), trashBoothHandler);
+  app.delete('/api/admin/booths/:id', authenticate, requireRole(['super_admin', 'admin', 'content_manager']), trashBoothHandler);
+
+  // Restore booth from trash
+  const restoreBoothHandler = (req: AuthRequest, res: Response) => {
+    const centers = db.get('offline_centers') || [];
+    const index = centers.findIndex(c => c.id === req.params.id);
+    if (index === -1) return res.status(404).json({ message: 'Booth not found' });
+
+    centers[index].is_trashed = false;
+    centers[index].is_active = true;
+    centers[index].deleted_at = null;
+    centers[index].updated_at = new Date().toISOString();
+    db.set('offline_centers', centers);
+    db.logAudit(req.user?.name || 'Admin', req.user?.email || '', 'RESTORE_BOOTH', 'Booths', `Restored booth ${centers[index].name_en} from trash`);
+    res.json({ success: true, message: 'Booth restored successfully', booth: centers[index] });
+  };
+  app.post('/api/admin/offline-centers/:id/restore', authenticate, requireRole(['super_admin', 'admin', 'content_manager']), restoreBoothHandler);
+  app.post('/api/admin/booths/:id/restore', authenticate, requireRole(['super_admin', 'admin', 'content_manager']), restoreBoothHandler);
+
+  // Permanent force delete booth
+  const forceDeleteBoothHandler = (req: AuthRequest, res: Response) => {
     let centers = db.get('offline_centers') || [];
+    const target = centers.find(c => c.id === req.params.id);
     centers = centers.filter(c => c.id !== req.params.id);
     db.set('offline_centers', centers);
-    db.logAudit(req.user?.name || 'Admin', req.user?.email || '', 'DELETE_OFFLINE_CENTER', 'Centers', `Deleted center ${req.params.id}`);
-    res.json({ success: true });
-  });
+    db.logAudit(req.user?.name || 'Admin', req.user?.email || '', 'PERMANENT_DELETE_BOOTH', 'Booths', `Permanently deleted booth: ${target?.name_en || req.params.id}`);
+    res.json({ success: true, message: 'Booth permanently deleted' });
+  };
+  app.delete('/api/admin/offline-centers/:id/force', authenticate, requireRole(['super_admin', 'admin', 'content_manager']), forceDeleteBoothHandler);
+  app.delete('/api/admin/booths/:id/force', authenticate, requireRole(['super_admin', 'admin', 'content_manager']), forceDeleteBoothHandler);
 
   app.get('/api/notices', (req, res) => {
     const notices = db.get('notices') || [];
@@ -1787,6 +1911,22 @@ async function startServer() {
   app.get('/api/news', (req, res) => {
     const news = db.get('news') || [];
     res.json(news.filter(n => n.is_published).sort((a, b) => new Date(b.publish_date).getTime() - new Date(a.publish_date).getTime()));
+  });
+
+  // Contact Inquiries / Message Submission
+  app.post('/api/contact/messages', (req, res) => {
+    const { name, phone, batch, message } = req.body;
+    if (!name || !phone || !message) {
+      return res.status(400).json({ success: false, message: 'Name, phone, and message are required.' });
+    }
+    db.logAudit(
+      name.trim(),
+      phone.trim(),
+      'CONTACT_INQUIRY',
+      'Contact',
+      `Inquiry from ${name.trim()} (Phone: ${phone.trim()}, Batch: ${batch ? batch.trim() : 'N/A'}): ${message.trim().slice(0, 150)}`
+    );
+    res.status(201).json({ success: true, message: 'Message received successfully! Our team will contact you shortly.' });
   });
 
   app.get('/api/batches', (req, res) => {
@@ -2297,6 +2437,7 @@ async function startServer() {
     }
 
     const {
+      username,
       name,
       name_bn,
       phone,
@@ -2317,8 +2458,28 @@ async function startServer() {
     } = req.body;
 
     const existing = users[index];
+
+    // Check username uniqueness if member changes their username
+    let validatedUsername = existing.username;
+    if (username !== undefined && username !== null) {
+      const cleanUsername = username.trim().toLowerCase();
+      if (!cleanUsername) {
+        return res.status(400).json({ message: 'Username cannot be empty.' });
+      }
+      if (cleanUsername !== (existing.username || '').trim().toLowerCase()) {
+        if (users.some(u => u.id !== existing.id && (u.username || '').trim().toLowerCase() === cleanUsername)) {
+          return res.status(409).json({
+            message: 'This username is already taken. Please choose another username.',
+            message_bn: 'এই ইউজারনেমটি ইতিমধ্যে ব্যবহৃত হয়েছে। অনুগ্রহ করে অন্য একটি ইউজারনেম বেছে নিন।'
+          });
+        }
+        validatedUsername = cleanUsername;
+      }
+    }
+
     const updated = {
       ...existing,
+      username: validatedUsername,
       name: name !== undefined ? name.trim() : existing.name,
       name_bn: name_bn !== undefined ? name_bn.trim() : existing.name_bn,
       phone: phone !== undefined ? phone.trim() : existing.phone,

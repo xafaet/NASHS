@@ -36,6 +36,7 @@ import {
   ProgramScheduleSectionConfig,
   RegistrationFieldConfig,
   GateItem,
+  HeroConfig,
 } from '../src/types';
 import {
   initialBatches,
@@ -67,6 +68,7 @@ import {
   initialRegistrations,
   initialTokens,
   initialGates,
+  initialHeroConfig,
 } from './seedData';
 import { portableDb } from './db/portableDb';
 import { parsePostgresUrl } from './db/config';
@@ -105,6 +107,7 @@ export interface DatabaseSchema {
   audit_logs: AuditLog[];
   program_schedule: ProgramScheduleSectionConfig;
   registration_form_fields: RegistrationFieldConfig[];
+  hero_config: HeroConfig;
 }
 
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -785,6 +788,7 @@ class DatabaseEngine {
           audit_logs: parsed.audit_logs || [],
           program_schedule: parsed.program_schedule || initialProgramSchedule,
           registration_form_fields: parsed.registration_form_fields || initialRegistrationFields,
+          hero_config: parsed.hero_config || initialHeroConfig,
         };
         this.saveData(resolved);
         return resolved;
@@ -893,6 +897,7 @@ class DatabaseEngine {
       ],
       program_schedule: initialProgramSchedule,
       registration_form_fields: initialRegistrationFields,
+      hero_config: initialHeroConfig,
     };
 
     this.saveData(initial);
@@ -1512,6 +1517,60 @@ class DatabaseEngine {
       } else {
         lines.push(
           `INSERT INTO entry_tokens (id, token_code, registration_id, event_id, member_name, batch_name, batch_name_bn, status, checked_in, checked_in_at, created_at) VALUES (${sqlEscape(t.id)}, ${sqlEscape(t.token_code)}, ${sqlEscape(t.registration_id)}, ${sqlEscape(t.event_id || 'event-85th-anniversary')}, ${sqlEscape(t.member_name)}, ${sqlEscape(t.batch_name)}, ${sqlEscape(t.batch_name_bn)}, ${sqlEscape(t.status || 'active')}, ${sqlEscape(t.checked_in || false)}, ${sqlEscape(t.checked_in_at)}, ${sqlEscape(t.created_at || timestamp)}) ON CONFLICT (id) DO NOTHING;`
+        );
+      }
+    }
+    lines.push('\n');
+
+    // 7. TABLE: offline_centers (Authorized Registration Booths)
+    lines.push(`-- ------------------------------------------------------------`);
+    lines.push(`-- 7. TABLE: offline_centers (Authorized Registration Booths)`);
+    lines.push(`-- ------------------------------------------------------------`);
+    if (isMySQL) {
+      lines.push(`CREATE TABLE IF NOT EXISTS \`offline_centers\` (`);
+      lines.push(`  \`id\` VARCHAR(100) PRIMARY KEY,`);
+      lines.push(`  \`name_en\` VARCHAR(255) NOT NULL,`);
+      lines.push(`  \`name_bn\` VARCHAR(255) NOT NULL,`);
+      lines.push(`  \`address_en\` TEXT,`);
+      lines.push(`  \`address_bn\` TEXT,`);
+      lines.push(`  \`phone\` VARCHAR(50) NOT NULL,`);
+      lines.push(`  \`contact_person\` VARCHAR(255),`);
+      lines.push(`  \`timings\` VARCHAR(255),`);
+      lines.push(`  \`map_url\` TEXT,`);
+      lines.push(`  \`order_index\` INT DEFAULT 1,`);
+      lines.push(`  \`is_active\` BOOLEAN DEFAULT TRUE,`);
+      lines.push(`  \`is_trashed\` BOOLEAN DEFAULT FALSE,`);
+      lines.push(`  \`deleted_at\` TIMESTAMP NULL,`);
+      lines.push(`  \`created_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP`);
+      lines.push(`) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;\n`);
+    } else {
+      lines.push(`CREATE TABLE IF NOT EXISTS offline_centers (`);
+      lines.push(`  id VARCHAR(100) PRIMARY KEY,`);
+      lines.push(`  name_en VARCHAR(255) NOT NULL,`);
+      lines.push(`  name_bn VARCHAR(255) NOT NULL,`);
+      lines.push(`  address_en TEXT,`);
+      lines.push(`  address_bn TEXT,`);
+      lines.push(`  phone VARCHAR(50) NOT NULL,`);
+      lines.push(`  contact_person VARCHAR(255),`);
+      lines.push(`  timings VARCHAR(255),`);
+      lines.push(`  map_url TEXT,`);
+      lines.push(`  order_index INT DEFAULT 1,`);
+      lines.push(`  is_active BOOLEAN DEFAULT TRUE,`);
+      lines.push(`  is_trashed BOOLEAN DEFAULT FALSE,`);
+      lines.push(`  deleted_at TIMESTAMP NULL,`);
+      lines.push(`  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`);
+      lines.push(`);\n`);
+    }
+
+    const booths = this.data.offline_centers || [];
+    for (const b of booths) {
+      if (isMySQL) {
+        lines.push(
+          `INSERT INTO \`offline_centers\` (\`id\`, \`name_en\`, \`name_bn\`, \`address_en\`, \`address_bn\`, \`phone\`, \`contact_person\`, \`timings\`, \`map_url\`, \`order_index\`, \`is_active\`, \`is_trashed\`) VALUES (${sqlEscape(b.id)}, ${sqlEscape(b.name_en)}, ${sqlEscape(b.name_bn)}, ${sqlEscape(b.address_en)}, ${sqlEscape(b.address_bn)}, ${sqlEscape(b.phone)}, ${sqlEscape(b.contact_person)}, ${sqlEscape(b.timings)}, ${sqlEscape(b.map_url)}, ${b.order_index || 1}, ${b.is_active !== false}, ${b.is_trashed === true}) ON DUPLICATE KEY UPDATE \`name_en\` = VALUES(\`name_en\`);`
+        );
+      } else {
+        lines.push(
+          `INSERT INTO offline_centers (id, name_en, name_bn, address_en, address_bn, phone, contact_person, timings, map_url, order_index, is_active, is_trashed) VALUES (${sqlEscape(b.id)}, ${sqlEscape(b.name_en)}, ${sqlEscape(b.name_bn)}, ${sqlEscape(b.address_en)}, ${sqlEscape(b.address_bn)}, ${sqlEscape(b.phone)}, ${sqlEscape(b.contact_person)}, ${sqlEscape(b.timings)}, ${sqlEscape(b.map_url)}, ${b.order_index || 1}, ${b.is_active !== false}, ${b.is_trashed === true}) ON CONFLICT (id) DO NOTHING;`
         );
       }
     }

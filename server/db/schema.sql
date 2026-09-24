@@ -240,3 +240,31 @@ CREATE TABLE IF NOT EXISTS check_in_logs (
     INDEX `idx_checkin_token` (`token_code`),
     INDEX `idx_checkin_reg` (`registration_id`)
 );
+
+-- ------------------------------------------------------------
+-- 11. AUTHORIZED REGISTRATION BOOTHS / CENTERS
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS offline_centers (
+    `id` VARCHAR(100) PRIMARY KEY,
+    `name_en` VARCHAR(255) NOT NULL,
+    `name_bn` VARCHAR(255) NOT NULL,
+    `address_en` TEXT,
+    `address_bn` TEXT,
+    `phone` VARCHAR(50) NOT NULL,
+    `contact_person` VARCHAR(255),
+    `contact_person_bn` VARCHAR(255),
+    `timings` VARCHAR(255),
+    `timings_bn` VARCHAR(255),
+    `description_en` TEXT,
+    `description_bn` TEXT,
+    `map_url` TEXT,
+    `order_index` INT DEFAULT 1,
+    `is_active` BOOLEAN DEFAULT TRUE,
+    `is_trashed` BOOLEAN DEFAULT FALSE,
+    `deleted_at` TIMESTAMP NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX `idx_booths_order` (`order_index`),
+    INDEX `idx_booths_active` (`is_active`, `is_trashed`)
+);
+

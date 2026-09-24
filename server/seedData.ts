@@ -27,6 +27,7 @@ import {
   EntryToken,
   ProgramScheduleSectionConfig,
   RegistrationFieldConfig,
+  HeroConfig,
 } from '../src/types';
 
 // Batch calculation reference: 2008 = 65th Batch (Batch = 65 + PassingYear - 2008)
@@ -1434,4 +1435,51 @@ export const initialGates = [
     created_at: '2026-01-01T00:00:00.000Z',
   },
 ];
+
+export const initialHeroConfig: HeroConfig = {
+  badge_en: '1942–2027 • 85 Glorious Years of Legacy',
+  badge_bn: '১৯৪২–২০২৭ • ৮৫ বছরের গৌরবময় ঐতিহ্য',
+  show_badge: true,
+
+  headline_en: '85th Anniversary Celebration &',
+  headline_bn: '৮৫ বছর পূর্তি উৎসব ও',
+  headline_highlight_en: 'Grand Alumni Reunion 2027',
+  headline_highlight_bn: 'প্রাক্তন শিক্ষার্থী পুনর্মিলনী ২০২৭',
+
+  subheading_en: 'Welcoming all beloved alumni of Nanupur Abu Sobhan High School to an unforgettable reunion of camaraderie, nostalgia, and community.',
+  subheading_bn: 'ঐতিহ্যবাহী নানুপুর আবু সোবহান উচ্চ বিদ্যালয়ের সকল প্রাক্তন শিক্ষার্থীকে প্রাণঢালা আমন্ত্রণ। আসুন শৈশব ও কৈশোরের সোনালী স্মৃতিতে অবগাহন করি।',
+
+  date_text_en: '16 January 2027 (Saturday)',
+  date_text_bn: '১৬ জানুয়ারি ২০২৭ (শনিবার)',
+  show_date: true,
+
+  venue_text_en: 'Nanupur Abu Sobhan High School Campus',
+  venue_text_bn: 'বিদ্যালয় প্রাঙ্গণ, নানুপুর, ফটিকছড়ি, চট্টগ্রাম',
+  show_venue: true,
+
+  fee_text_en: 'Registration Fee: ৳1,000 BDT',
+  fee_text_bn: 'নিবন্ধন ফি: ১,০০০ টাকা',
+  show_fee: true,
+
+  primary_cta_text_en: 'Register for Reunion Now',
+  primary_cta_text_bn: 'অনলাইনে নিবন্ধন করুন',
+  primary_cta_link: 'register',
+  show_primary_cta: true,
+
+  secondary_cta_text_en: 'Verify Token Code',
+  secondary_cta_text_bn: 'পাস যাচাই করুন',
+  secondary_cta_link: 'verify',
+  show_secondary_cta: true,
+
+  countdown_target_date: '2027-01-16T08:00:00+06:00',
+  countdown_label_en: 'Countdown to Historic Reunion',
+  countdown_label_bn: 'উৎসব শুরু হতে বাকি',
+  show_countdown: true,
+
+  background_style: 'gradient',
+  background_image_url: '',
+  hero_image_url: '',
+  overlay_opacity: 20,
+  accent_color: '#fbbf24',
+};
 
