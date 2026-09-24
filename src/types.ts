@@ -128,6 +128,8 @@ export interface Registration {
   email?: string;
   address?: string;
   occupation?: string;
+  designation?: string;
+  organization?: string;
   passing_year: number;
   batch_id?: string;
   batch_name: string;
