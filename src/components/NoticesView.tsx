@@ -3,11 +3,12 @@ import { Bell, Calendar, Download, FileText, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { Notice } from '../types';
 import { apiFetch } from '../utils/api';
+import { INITIAL_NOTICES } from '../constants/initialCmsData';
 
 export const NoticesView: React.FC = () => {
   const { language, t } = useLanguage();
-  const [notices, setNotices] = useState<Notice[]>([]);
-  const [activeNotice, setActiveNotice] = useState<Notice | null>(null);
+  const [notices, setNotices] = useState<Notice[]>(INITIAL_NOTICES);
+  const [activeNotice, setActiveNotice] = useState<Notice | null>(INITIAL_NOTICES[0] || null);
 
   useEffect(() => {
     apiFetch('/api/notices')

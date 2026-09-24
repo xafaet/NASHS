@@ -24,44 +24,13 @@ import {
 import { useLanguage } from '../context/LanguageContext';
 import { apiFetch } from '../utils/api';
 import { ProgramScheduleSectionConfig, HeroConfig } from '../types';
-
-const defaultHero: HeroConfig = {
-  badge_en: '1942–2027 • 85 Glorious Years of Legacy',
-  badge_bn: '১৯৪২–২০২৭ • ৮৫ বছরের গৌরবময় ঐতিহ্য',
-  show_badge: true,
-  headline_en: '85th Anniversary Celebration &',
-  headline_bn: '৮৫ বছর পূর্তি উৎসব ও',
-  headline_highlight_en: 'Grand Alumni Reunion 2027',
-  headline_highlight_bn: 'প্রাক্তন শিক্ষার্থী পুনর্মিলনী ২০২৭',
-  subheading_en: 'Welcoming all beloved alumni of Nanupur Abu Sobhan High School to an unforgettable reunion of camaraderie, nostalgia, and community.',
-  subheading_bn: 'ঐতিহ্যবাহী নানুপুর আবু সোবহান উচ্চ বিদ্যালয়ের সকল প্রাক্তন শিক্ষার্থীকে প্রাণঢালা আমন্ত্রণ। আসুন শৈশব ও কৈশোরের সোনালী স্মৃতিতে অবগাহন করি।',
-  date_text_en: '16 January 2027 (Saturday)',
-  date_text_bn: '১৬ জানুয়ারি ২০২৭ (শনিবার)',
-  show_date: true,
-  venue_text_en: 'Nanupur Abu Sobhan High School Campus',
-  venue_text_bn: 'বিদ্যালয় প্রাঙ্গণ, নানুপুর, ফটিকছড়ি, চট্টগ্রাম',
-  show_venue: true,
-  fee_text_en: 'Registration Fee: ৳1,000 BDT',
-  fee_text_bn: 'নিবন্ধন ফি: ১,০০০ টাকা',
-  show_fee: true,
-  primary_cta_text_en: 'Register for Reunion Now',
-  primary_cta_text_bn: 'অনলাইনে নিবন্ধন করুন',
-  primary_cta_link: 'register',
-  show_primary_cta: true,
-  secondary_cta_text_en: 'Verify Token Code',
-  secondary_cta_text_bn: 'পাস যাচাই করুন',
-  secondary_cta_link: 'verify',
-  show_secondary_cta: true,
-  countdown_target_date: '2027-01-16T08:00:00+06:00',
-  countdown_label_en: 'Countdown to Historic Reunion',
-  countdown_label_bn: 'উৎসব শুরু হতে বাকি',
-  show_countdown: true,
-  background_style: 'gradient',
-  background_image_url: '',
-  hero_image_url: '',
-  overlay_opacity: 20,
-  accent_color: '#fbbf24',
-};
+import {
+  INITIAL_HERO_CONFIG,
+  INITIAL_PROGRAM_SCHEDULE,
+  INITIAL_OFFLINE_CENTERS,
+  INITIAL_NOTICES,
+  INITIAL_FAQS,
+} from '../constants/initialCmsData';
 
 interface HomeViewProps {
   onNavigate: (view: string) => void;
@@ -70,14 +39,23 @@ interface HomeViewProps {
 export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
   const { language, t } = useLanguage();
 
-  // Dynamic fee & event info
-  const [eventData, setEventData] = useState<any>(null);
-  const [heroConfig, setHeroConfig] = useState<HeroConfig>(defaultHero);
-  const [notices, setNotices] = useState<any[]>([]);
-  const [faqs, setFaqs] = useState<any[]>([]);
-  const [offlineCenters, setOfflineCenters] = useState<any[]>([]);
+  // Dynamic fee & event info with authoritative initial CMS values
+  const [eventData, setEventData] = useState<any>({
+    id: 'event-85th-anniversary',
+    title_en: '85th Anniversary Celebration & Grand Alumni Reunion',
+    title_bn: '৮৫ বছর পূর্তি উৎসব ও প্রাক্তন শিক্ষার্থী পুনর্মিলনী',
+    registration_fee: 1000,
+    currency: 'BDT',
+    event_date: '2027-01-16',
+    venue_en: 'Nanupur Abu Sobhan High School Campus',
+    venue_bn: 'বিদ্যালয় প্রাঙ্গণ, নানুপুর, ফটিকছড়ি, চট্টগ্রাম',
+  });
+  const [heroConfig, setHeroConfig] = useState<HeroConfig>(INITIAL_HERO_CONFIG);
+  const [notices, setNotices] = useState<any[]>(INITIAL_NOTICES.slice(0, 3));
+  const [faqs, setFaqs] = useState<any[]>(INITIAL_FAQS);
+  const [offlineCenters, setOfflineCenters] = useState<any[]>(INITIAL_OFFLINE_CENTERS);
   const [openFaq, setOpenFaq] = useState<string | null>(null);
-  const [programSchedule, setProgramSchedule] = useState<ProgramScheduleSectionConfig | null>(null);
+  const [programSchedule, setProgramSchedule] = useState<ProgramScheduleSectionConfig>(INITIAL_PROGRAM_SCHEDULE);
 
   // Live Countdown to 16 January 2027
   const [timeLeft, setTimeLeft] = useState<{

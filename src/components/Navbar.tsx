@@ -26,6 +26,12 @@ import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { GlobalSettings, HeaderConfig, TopBarConfig, NavigationMenuItem } from '../types';
 import { apiFetch } from '../utils/api';
+import {
+  INITIAL_MENUS,
+  INITIAL_GLOBAL_SETTINGS,
+  INITIAL_TOPBAR_CONFIG,
+  INITIAL_HEADER_CONFIG,
+} from '../constants/initialCmsData';
 
 interface NavbarProps {
   currentView: string;
@@ -37,10 +43,10 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenL
   const { language, toggleLanguage, t } = useLanguage();
   const { user, logout, isAdmin } = useAuth();
 
-  const [settings, setSettings] = useState<GlobalSettings | null>(null);
-  const [topbar, setTopbar] = useState<TopBarConfig | null>(null);
-  const [header, setHeader] = useState<HeaderConfig | null>(null);
-  const [menus, setMenus] = useState<NavigationMenuItem[]>([]);
+  const [settings, setSettings] = useState<GlobalSettings>(INITIAL_GLOBAL_SETTINGS);
+  const [topbar, setTopbar] = useState<TopBarConfig>(INITIAL_TOPBAR_CONFIG);
+  const [header, setHeader] = useState<HeaderConfig>(INITIAL_HEADER_CONFIG);
+  const [menus, setMenus] = useState<NavigationMenuItem[]>(INITIAL_MENUS);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
@@ -457,8 +463,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenL
             ref={dropdownRef}
             className="hidden lg:flex items-center gap-1 font-semibold text-sm text-slate-700"
           >
-            {topLevelMenus.length > 0 ? (
-              topLevelMenus.map(item => {
+            {topLevelMenus.map(item => {
                 const subItems = getSubMenus(item.id);
                 const label = language === 'bn' ? item.label_bn || item.label_en : item.label_en;
                 const hasSubs = subItems.length > 0;
@@ -539,52 +544,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenL
                     {label}
                   </button>
                 );
-              })
-            ) : (
-              // Clean Fallback Navigation
-              <>
-                <button
-                  onClick={() => handleNavClick('home')}
-                  className={`px-3.5 py-2 rounded-xl transition cursor-pointer text-sm ${
-                    currentView === 'home'
-                      ? 'text-[#0f4d2a] bg-emerald-50 font-bold border border-emerald-100 shadow-2xs'
-                      : 'hover:text-[#0f4d2a] hover:bg-slate-100/80'
-                  }`}
-                >
-                  {t('nav.home', 'Home')}
-                </button>
-                <button
-                  onClick={() => handleNavClick('school')}
-                  className={`px-3.5 py-2 rounded-xl transition cursor-pointer text-sm ${
-                    currentView === 'school'
-                      ? 'text-[#0f4d2a] bg-emerald-50 font-bold border border-emerald-100 shadow-2xs'
-                      : 'hover:text-[#0f4d2a] hover:bg-slate-100/80'
-                  }`}
-                >
-                  {t('nav.school', 'School')}
-                </button>
-                <button
-                  onClick={() => handleNavClick('association')}
-                  className={`px-3.5 py-2 rounded-xl transition cursor-pointer text-sm ${
-                    currentView === 'association'
-                      ? 'text-[#0f4d2a] bg-emerald-50 font-bold border border-emerald-100 shadow-2xs'
-                      : 'hover:text-[#0f4d2a] hover:bg-slate-100/80'
-                  }`}
-                >
-                  {t('nav.association', 'Association')}
-                </button>
-                <button
-                  onClick={() => handleNavClick('notices')}
-                  className={`px-3.5 py-2 rounded-xl transition cursor-pointer text-sm ${
-                    currentView === 'notices'
-                      ? 'text-[#0f4d2a] bg-emerald-50 font-bold border border-emerald-100 shadow-2xs'
-                      : 'hover:text-[#0f4d2a] hover:bg-slate-100/80'
-                  }`}
-                >
-                  {t('nav.notices', 'Notices')}
-                </button>
-              </>
-            )}
+              })}
           </nav>
 
           {/* Right Action Tools: Search, Register CTA, User Account */}
@@ -682,8 +642,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenL
             <div className="px-5 py-4 space-y-4">
               {/* Primary Navigation Items */}
               <div className="space-y-1">
-                {topLevelMenus.length > 0 ? (
-                  topLevelMenus.map(item => {
+                {topLevelMenus.map(item => {
                     const subItems = getSubMenus(item.id);
                     const label = language === 'bn' ? item.label_bn || item.label_en : item.label_en;
                     const hasSubs = subItems.length > 0;
@@ -755,52 +714,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenL
                         {label}
                       </button>
                     );
-                  })
-                ) : (
-                  // Fallback Mobile Links
-                  <>
-                    <button
-                      onClick={() => handleNavClick('home')}
-                      className={`w-full px-4 py-2.5 text-left font-bold text-sm rounded-xl transition ${
-                        currentView === 'home'
-                          ? 'bg-emerald-50 text-[#0f4d2a]'
-                          : 'text-slate-800 hover:bg-slate-50'
-                      }`}
-                    >
-                      {t('nav.home', 'Home')}
-                    </button>
-                    <button
-                      onClick={() => handleNavClick('school')}
-                      className={`w-full px-4 py-2.5 text-left font-bold text-sm rounded-xl transition ${
-                        currentView === 'school'
-                          ? 'bg-emerald-50 text-[#0f4d2a]'
-                          : 'text-slate-800 hover:bg-slate-50'
-                      }`}
-                    >
-                      {t('nav.school', 'School')}
-                    </button>
-                    <button
-                      onClick={() => handleNavClick('association')}
-                      className={`w-full px-4 py-2.5 text-left font-bold text-sm rounded-xl transition ${
-                        currentView === 'association'
-                          ? 'bg-emerald-50 text-[#0f4d2a]'
-                          : 'text-slate-800 hover:bg-slate-50'
-                      }`}
-                    >
-                      {t('nav.association', 'Association')}
-                    </button>
-                    <button
-                      onClick={() => handleNavClick('notices')}
-                      className={`w-full px-4 py-2.5 text-left font-bold text-sm rounded-xl transition ${
-                        currentView === 'notices'
-                          ? 'bg-emerald-50 text-[#0f4d2a]'
-                          : 'text-slate-800 hover:bg-slate-50'
-                      }`}
-                    >
-                      {t('nav.notices', 'Notices')}
-                    </button>
-                  </>
-                )}
+                  })}
               </div>
 
               {/* Quick Action Shortcuts */}

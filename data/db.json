@@ -1393,21 +1393,6 @@
   },
   "pages": [
     {
-      "id": "ctrl-page-1789744012438",
-      "slug": "ctrl-test-1789744012438",
-      "status": "published",
-      "sections": [
-        {
-          "id": "sec-1",
-          "type": "hero",
-          "heading": "Controller Test"
-        }
-      ],
-      "title_bn": "কন্ট্রোলার ম্যাপিং টেস্ট পাতা",
-      "title_en": "Controller Mapping Test Page",
-      "updated_at": "2026-09-18T15:06:52.438Z"
-    },
-    {
       "id": "page-about",
       "slug": "about",
       "status": "published",
@@ -1601,6 +1586,123 @@
       "title_en": "Alumni Association Mission & Vision",
       "created_at": "2026-01-01T00:00:00Z",
       "updated_at": "2026-03-01T00:00:00Z"
+    },
+    {
+      "id": "page-history",
+      "slug": "history",
+      "title_en": "Reunion History & 85 Years Legacy",
+      "title_bn": "পুনর্মিলনীর ইতিহাস ও ৮৫ বছরের গৌরবময় ঐতিহ্য",
+      "status": "published",
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-03-01T00:00:00Z",
+      "sections": [
+        {
+          "id": "sec-hist-hero",
+          "type": "hero",
+          "order": 1,
+          "is_active": true,
+          "title_en": "Historic 85th Anniversary & Grand Reunion 2027",
+          "title_bn": "ঐতিহাসিক ৮৫ বছর পূর্তি উৎসব ও মহা পুনর্মিলনী ২০২৭",
+          "subtitle_en": "1942 – 2027 • Eight Decades of Brotherhood, Nostalgia & Community Service",
+          "subtitle_bn": "১৯৪২ – ২০২৭ • আট দশকের ভ্রাতৃত্ব, সোনালী স্মৃতি ও ঐতিহ্যের মিলনমেলা",
+          "image_url": "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1200&q=80"
+        },
+        {
+          "id": "sec-hist-text",
+          "type": "text",
+          "order": 2,
+          "is_active": true,
+          "title_en": "The Journey of Reunion Celebrations",
+          "title_bn": "পুনর্মিলনী আয়োজনের ঐতিহাসিক ইতিবৃত্ত",
+          "content_en": "Founded in 1942 in northern Chattogram, Nanupur Abu Sobhan High School has fostered generations of distinguished citizens. The Alumni Association celebrated landmark milestones including the Golden Jubilee in 1992 and the Diamond Jubilee in 2017. The upcoming 85th Anniversary on 16 January 2027 is our most ambitious gathering yet—uniting over 85 batches to establish educational endowments, digital STEM labs, and student scholarship funds for the centenary ahead.",
+          "content_bn": "উত্তর চট্টগ্রামের অন্যতম শ্রেষ্ঠ বিদ্যাপীঠ নানুপুর আবু সোবহান উচ্চ বিদ্যালয় ১৯৪২ সাল থেকে আলো ছড়িয়ে আসছে। ১৯৯২ সালে সুবর্ণ জয়ন্তী এবং ২০১৭ সালে হীরক জয়ন্তীর ঐতিহাসিক সাফল্যের ধারাবাহিকতায় আগামী ১৬ জানুয়ারি ২০২৭ অনুষ্ঠিত হতে যাচ্ছে ৮৫ বছর পূর্তি উৎসব ও মহা পুনর্মিলনী। এই উৎসবে সকল ব্যাচের প্রাক্তন শিক্ষার্থীরা একত্রিত হয়ে শতবর্ষের যাত্রায় বিদ্যালয়কে বিশ্বমানের প্রতিষ্ঠানে রূপান্তরের অঙ্গীকার ব্যক্ত করবেন।"
+        },
+        {
+          "id": "sec-hist-stats",
+          "type": "stats",
+          "order": 3,
+          "is_active": true,
+          "title_en": "Reunion Milestones at a Glance",
+          "title_bn": "এক নজরে ঐতিহাসিক অর্জন",
+          "meta": {
+            "stats": [
+              {
+                "label_en": "Established",
+                "label_bn": "প্রতিষ্ঠা সাল",
+                "value": "1942"
+              },
+              {
+                "label_en": "Alumni Generations",
+                "label_bn": "ব্যাচ সংখ্যা",
+                "value": "85+ Batches"
+              },
+              {
+                "label_en": "Expected Attendees",
+                "label_bn": "প্রত্যাশিত উপস্থিতি",
+                "value": "5,000+"
+              },
+              {
+                "label_en": "Celebration Date",
+                "label_bn": "উৎসবের দিনক্ষণ",
+                "value": "16 Jan 2027"
+              }
+            ]
+          }
+        },
+        {
+          "id": "sec-hist-cta",
+          "type": "cta",
+          "order": 4,
+          "is_active": true,
+          "title_en": "Reserve Your Seat for the 85th Anniversary",
+          "title_bn": "৮৫ বছর পূর্তির গৌরবময় ইতিহাসের অংশীদার হোন",
+          "button_text_en": "Register Online Now",
+          "button_text_bn": "অনলাইনে নিবন্ধন করুন",
+          "button_url": "#register"
+        }
+      ]
+    },
+    {
+      "id": "page-terms",
+      "slug": "terms",
+      "title_en": "Terms & Conditions & Event Policy",
+      "title_bn": "নিবন্ধন শর্তাবলী ও উৎসব নীতিমালা",
+      "status": "published",
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-03-01T00:00:00Z",
+      "sections": [
+        {
+          "id": "sec-terms-hero",
+          "type": "hero",
+          "order": 1,
+          "is_active": true,
+          "title_en": "Event Participation Guidelines & Terms",
+          "title_bn": "৮৫ বছর পূর্তি উৎসব নীতিমালা ও নিয়মাবলী",
+          "subtitle_en": "Essential policies ensuring safety, convenience, and decorum for all alumni and guests.",
+          "subtitle_bn": "উৎসবের সুষ্ঠু ও সুশৃঙ্খল পরিবেশ বজায় রাখার জন্য সকল অংশগ্রহণকারীর জন্য নির্দেশিকা।"
+        },
+        {
+          "id": "sec-terms-text",
+          "type": "text",
+          "order": 2,
+          "is_active": true,
+          "title_en": "Entry Token & Pass Policy",
+          "title_bn": "ডিজিটাল প্রবেশপত্র ও কিট সংগ্রহ নীতিমালা",
+          "content_en": "1. Each registered participant will receive a unique cryptographic QR Token Code upon successful payment. 2. The Digital Entry Pass is non-transferable and must be presented at the campus security checkpoint on 16 January 2027. 3. Registration fees cover the commemorative souvenir book, badge, celebration polo, morning snacks, royal Mezban lunch banquet, and evening cultural admission. 4. Cancellations or refunds are subject to sub-committee review before 31 December 2026.",
+          "content_bn": "১. নিবন্ধন ও ফি সফলভাবে পরিশোধের পর প্রত্যেক প্রাক্তন শিক্ষার্থীকে একটি অনন্য কিউআর কোডযুক্ত ডিজিটাল প্রবেশপত্র প্রদান করা হবে। ২. প্রবেশপত্রটি হস্তান্তরযোগ্য নয় এবং ১৬ জানুয়ারি ২০২৭ তারিখে উৎসব প্রাঙ্গণে প্রবেশের সময় এটি দেখাতে হবে। ৩. নিবন্ধন ফির মধ্যে স্মরণিকা গ্রন্থ, ব্যাজ, টি-শার্ট, প্রাতঃরাশ, ঐতিহ্যবাহী মেজবান মধ্যাহ্নভোজ ও সাংস্কৃতিক অনুষ্ঠান অন্তর্ভুক্ত। ৪. যে কোনো অনিবার্য পরিস্থিতিতে নিবন্ধন সংক্রান্ত সিদ্ধান্ত আহ্বায়ক কমিটির এখতিয়ারাধীন থাকবে।"
+        },
+        {
+          "id": "sec-terms-cta",
+          "type": "cta",
+          "order": 3,
+          "is_active": true,
+          "title_en": "Have Questions? Contact Our Secretariat",
+          "title_bn": "কোনো প্রশ্ন থাকলে আমাদের সাথে যোগাযোগ করুন",
+          "button_text_en": "Contact & Helpline",
+          "button_text_bn": "যোগাযোগ ও তথ্য কেন্দ্র",
+          "button_url": "#contact"
+        }
+      ]
     }
   ],
   "faqs": [
@@ -2136,23 +2238,27 @@
     {
       "id": "user-super-admin",
       "username": "super_admin",
-      "name": "Chief Administrator (NASH Secretariat)",
+      "name": "Engr. Mohammad Nurul Islam (Admin)",
       "name_bn": "প্রধান প্রশাসক (সচিবালয়)",
       "email": "admin@nanupuralumni.org",
-      "phone": "01819000001",
+      "phone": "+880 1819-998877",
       "password_hash": "$2b$10$0TDHOwUnM9Ocu8x2OoB5zu64jUv1IwEmYg/JjhF1pXX3SK84ldaUe",
       "role": "super_admin",
       "status": "active",
       "passing_year": 1992,
       "batch": "49th Batch (1992)",
       "dob": null,
-      "gender": null,
-      "blood_group": null,
+      "gender": "male",
+      "blood_group": "B+",
       "photo_url": null,
-      "occupation": null,
-      "organization": null,
+      "occupation": "Senior Software Architect",
+      "organization": "Global Enterprise Solutions",
       "designation": null,
       "work_location": null,
+      "business_name": null,
+      "business_type": null,
+      "business_address": null,
+      "business_website": null,
       "address": null,
       "bio": null,
       "created_at": "2026-09-17T12:30:18.997Z"
@@ -2176,6 +2282,10 @@
       "organization": null,
       "designation": null,
       "work_location": null,
+      "business_name": null,
+      "business_type": null,
+      "business_address": null,
+      "business_website": null,
       "address": null,
       "bio": null,
       "created_at": "2026-09-21T08:37:18.264Z"
@@ -2199,6 +2309,10 @@
       "organization": null,
       "designation": null,
       "work_location": null,
+      "business_name": null,
+      "business_type": null,
+      "business_address": null,
+      "business_website": null,
       "address": null,
       "bio": null,
       "created_at": "2026-09-23T14:59:36.070Z"
@@ -2211,11 +2325,24 @@
       "phone": "01719936936",
       "password_hash": "$2b$10$9XTZ69JcUZ9YKCAPR38jBOAPDQK/AsBzXd1LDy5bSu.CYlPDPJeh6",
       "role": "alumni_member",
+      "status": "active",
       "passing_year": 2008,
       "batch": "131st Batch (2008)",
-      "gender": "male",
-      "status": "active",
-      "created_at": "2026-09-23T15:00:01.314Z"
+      "dob": null,
+      "gender": null,
+      "blood_group": null,
+      "photo_url": null,
+      "occupation": null,
+      "organization": null,
+      "designation": null,
+      "work_location": null,
+      "business_name": null,
+      "business_type": null,
+      "business_address": null,
+      "business_website": null,
+      "address": null,
+      "bio": null,
+      "created_at": "2026-09-23T15:00:01.267Z"
     }
   ],
   "registrations": [
@@ -2444,94 +2571,74 @@
   ],
   "audit_logs": [
     {
-      "id": "log-1790175601331-w8m5",
-      "user_name": "Valid Alumni Updated",
-      "user_email": "alumni_1790175601158@mail.com",
+      "id": "log-1790278360073-7ght",
+      "user_name": "Engr. Mohammad Nurul Islam (Admin)",
+      "user_email": "admin@nanupuralumni.org",
       "action": "UPDATE_MEMBER_PROFILE",
       "entity": "User",
-      "details": "Member updated their profile (Career: N/A, Business: N/A)",
+      "details": "Member updated their profile (Career: Senior Software Architect, Business: N/A)",
       "ip": "127.0.0.1",
-      "created_at": "2026-09-23T15:00:01.331Z"
+      "created_at": "2026-09-24T19:32:40.073Z"
     },
     {
-      "id": "log-1790175601319-a8oy",
-      "user_name": "Valid Alumni",
-      "user_email": "alumni_1790175601158@mail.com",
-      "action": "REGISTER",
-      "entity": "Auth",
-      "details": "New alumnus registered an account",
-      "ip": "127.0.0.1",
-      "created_at": "2026-09-23T15:00:01.319Z"
-    },
-    {
-      "id": "log-1790175601154-z63n",
-      "user_name": "Chief Administrator (NASH Secretariat)",
-      "user_email": "admin@nanupuralumni.org",
-      "action": "UPDATE_HERO",
-      "entity": "Appearance",
-      "details": "Updated homepage hero section texts, labels, CTA buttons, and background settings",
-      "ip": "127.0.0.1",
-      "created_at": "2026-09-23T15:00:01.154Z"
-    },
-    {
-      "id": "log-1790175601134-ne86",
-      "user_name": "Chief Administrator (NASH Secretariat)",
-      "user_email": "admin@nanupuralumni.org",
-      "action": "PERMANENT_DELETE_BOOTH",
-      "entity": "Booths",
-      "details": "Permanently deleted booth: Updated Chittagong Booth",
-      "ip": "127.0.0.1",
-      "created_at": "2026-09-23T15:00:01.134Z"
-    },
-    {
-      "id": "log-1790175601116-z3zt",
-      "user_name": "Chief Administrator (NASH Secretariat)",
-      "user_email": "admin@nanupuralumni.org",
-      "action": "RESTORE_BOOTH",
-      "entity": "Booths",
-      "details": "Restored booth Updated Chittagong Booth from trash",
-      "ip": "127.0.0.1",
-      "created_at": "2026-09-23T15:00:01.116Z"
-    },
-    {
-      "id": "log-1790175601095-7u8z",
-      "user_name": "Chief Administrator (NASH Secretariat)",
-      "user_email": "admin@nanupuralumni.org",
-      "action": "TRASH_BOOTH",
-      "entity": "Booths",
-      "details": "Moved booth Updated Chittagong Booth to trash",
-      "ip": "127.0.0.1",
-      "created_at": "2026-09-23T15:00:01.095Z"
-    },
-    {
-      "id": "log-1790175601078-79lk",
-      "user_name": "Chief Administrator (NASH Secretariat)",
-      "user_email": "admin@nanupuralumni.org",
-      "action": "UPDATE_BOOTH",
-      "entity": "Booths",
-      "details": "Updated registration booth: Updated Chittagong Booth",
-      "ip": "127.0.0.1",
-      "created_at": "2026-09-23T15:00:01.078Z"
-    },
-    {
-      "id": "log-1790175601063-52io",
-      "user_name": "Chief Administrator (NASH Secretariat)",
-      "user_email": "admin@nanupuralumni.org",
-      "action": "CREATE_BOOTH",
-      "entity": "Booths",
-      "details": "Added registration booth: New Chittagong Booth",
-      "ip": "127.0.0.1",
-      "created_at": "2026-09-23T15:00:01.063Z"
-    },
-    {
-      "id": "log-1790175601047-t1gx",
+      "id": "log-1790278360044-qm5h",
       "user_name": "Chief Administrator (NASH Secretariat)",
       "user_email": "admin@nanupuralumni.org",
       "action": "LOGIN",
       "entity": "Auth",
       "details": "User logged in successfully (super_admin)",
       "ip": "127.0.0.1",
-      "created_at": "2026-09-23T15:00:01.048Z"
+      "created_at": "2026-09-24T19:32:40.044Z"
+    },
+    {
+      "id": "log-1790175601116-z3zt",
+      "ip": "127.0.0.1",
+      "action": "RESTORE_BOOTH",
+      "entity": "Booths",
+      "details": "Restored booth Updated Chittagong Booth from trash",
+      "user_name": "Chief Administrator (NASH Secretariat)",
+      "created_at": "2026-09-23T15:00:01.116Z",
+      "user_email": "admin@nanupuralumni.org"
+    },
+    {
+      "id": "log-1790175601095-7u8z",
+      "ip": "127.0.0.1",
+      "action": "TRASH_BOOTH",
+      "entity": "Booths",
+      "details": "Moved booth Updated Chittagong Booth to trash",
+      "user_name": "Chief Administrator (NASH Secretariat)",
+      "created_at": "2026-09-23T15:00:01.095Z",
+      "user_email": "admin@nanupuralumni.org"
+    },
+    {
+      "id": "log-1790175601078-79lk",
+      "ip": "127.0.0.1",
+      "action": "UPDATE_BOOTH",
+      "entity": "Booths",
+      "details": "Updated registration booth: Updated Chittagong Booth",
+      "user_name": "Chief Administrator (NASH Secretariat)",
+      "created_at": "2026-09-23T15:00:01.078Z",
+      "user_email": "admin@nanupuralumni.org"
+    },
+    {
+      "id": "log-1790175601063-52io",
+      "ip": "127.0.0.1",
+      "action": "CREATE_BOOTH",
+      "entity": "Booths",
+      "details": "Added registration booth: New Chittagong Booth",
+      "user_name": "Chief Administrator (NASH Secretariat)",
+      "created_at": "2026-09-23T15:00:01.063Z",
+      "user_email": "admin@nanupuralumni.org"
+    },
+    {
+      "id": "log-1790175601047-t1gx",
+      "ip": "127.0.0.1",
+      "action": "LOGIN",
+      "entity": "Auth",
+      "details": "User logged in successfully (super_admin)",
+      "user_name": "Chief Administrator (NASH Secretariat)",
+      "created_at": "2026-09-23T15:00:01.048Z",
+      "user_email": "admin@nanupuralumni.org"
     },
     {
       "id": "log-1790175575948-q5dn",

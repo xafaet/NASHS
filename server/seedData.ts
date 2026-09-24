@@ -978,6 +978,107 @@ export const initialPages: CMSPage[] = [
         button_url: '#register',
       }
     ]
+  },
+  {
+    id: 'page-history',
+    slug: 'history',
+    title_en: 'Reunion History & 85 Years Legacy',
+    title_bn: 'পুনর্মিলনীর ইতিহাস ও ৮৫ বছরের গৌরবময় ঐতিহ্য',
+    status: 'published',
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-03-01T00:00:00Z',
+    sections: [
+      {
+        id: 'sec-hist-hero',
+        type: 'hero',
+        order: 1,
+        is_active: true,
+        title_en: 'Historic 85th Anniversary & Grand Reunion 2027',
+        title_bn: 'ঐতিহাসিক ৮৫ বছর পূর্তি উৎসব ও মহা পুনর্মিলনী ২০২৭',
+        subtitle_en: '1942 – 2027 • Eight Decades of Brotherhood, Nostalgia & Community Service',
+        subtitle_bn: '১৯৪২ – ২০২৭ • আট দশকের ভ্রাতৃত্ব, সোনালী স্মৃতি ও ঐতিহ্যের মিলনমেলা',
+        image_url: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1200&q=80',
+      },
+      {
+        id: 'sec-hist-text',
+        type: 'text',
+        order: 2,
+        is_active: true,
+        title_en: 'The Journey of Reunion Celebrations',
+        title_bn: 'পুনর্মিলনী আয়োজনের ঐতিহাসিক ইতিবৃত্ত',
+        content_en: 'Founded in 1942 in northern Chattogram, Nanupur Abu Sobhan High School has fostered generations of distinguished citizens. The Alumni Association celebrated landmark milestones including the Golden Jubilee in 1992 and the Diamond Jubilee in 2017. The upcoming 85th Anniversary on 16 January 2027 is our most ambitious gathering yet—uniting over 85 batches to establish educational endowments, digital STEM labs, and student scholarship funds for the centenary ahead.',
+        content_bn: 'উত্তর চট্টগ্রামের অন্যতম শ্রেষ্ঠ বিদ্যাপীঠ নানুপুর আবু সোবহান উচ্চ বিদ্যালয় ১৯৪২ সাল থেকে আলো ছড়িয়ে আসছে। ১৯৯২ সালে সুবর্ণ জয়ন্তী এবং ২০১৭ সালে হীরক জয়ন্তীর ঐতিহাসিক সাফল্যের ধারাবাহিকতায় আগামী ১৬ জানুয়ারি ২০২৭ অনুষ্ঠিত হতে যাচ্ছে ৮৫ বছর পূর্তি উৎসব ও মহা পুনর্মিলনী। এই উৎসবে সকল ব্যাচের প্রাক্তন শিক্ষার্থীরা একত্রিত হয়ে শতবর্ষের যাত্রায় বিদ্যালয়কে বিশ্বমানের প্রতিষ্ঠানে রূপান্তরের অঙ্গীকার ব্যক্ত করবেন।',
+      },
+      {
+        id: 'sec-hist-stats',
+        type: 'stats',
+        order: 3,
+        is_active: true,
+        title_en: 'Reunion Milestones at a Glance',
+        title_bn: 'এক নজরে ঐতিহাসিক অর্জন',
+        meta: {
+          stats: [
+            { label_en: 'Established', label_bn: 'প্রতিষ্ঠা সাল', value: '1942' },
+            { label_en: 'Alumni Generations', label_bn: 'ব্যাচ সংখ্যা', value: '85+ Batches' },
+            { label_en: 'Expected Attendees', label_bn: 'প্রত্যাশিত উপস্থিতি', value: '5,000+' },
+            { label_en: 'Celebration Date', label_bn: 'উৎসবের দিনক্ষণ', value: '16 Jan 2027' },
+          ]
+        }
+      },
+      {
+        id: 'sec-hist-cta',
+        type: 'cta',
+        order: 4,
+        is_active: true,
+        title_en: 'Reserve Your Seat for the 85th Anniversary',
+        title_bn: '৮৫ বছর পূর্তির গৌরবময় ইতিহাসের অংশীদার হোন',
+        button_text_en: 'Register Online Now',
+        button_text_bn: 'অনলাইনে নিবন্ধন করুন',
+        button_url: '#register',
+      }
+    ]
+  },
+  {
+    id: 'page-terms',
+    slug: 'terms',
+    title_en: 'Terms & Conditions & Event Policy',
+    title_bn: 'নিবন্ধন শর্তাবলী ও উৎসব নীতিমালা',
+    status: 'published',
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-03-01T00:00:00Z',
+    sections: [
+      {
+        id: 'sec-terms-hero',
+        type: 'hero',
+        order: 1,
+        is_active: true,
+        title_en: 'Event Participation Guidelines & Terms',
+        title_bn: '৮৫ বছর পূর্তি উৎসব নীতিমালা ও নিয়মাবলী',
+        subtitle_en: 'Essential policies ensuring safety, convenience, and decorum for all alumni and guests.',
+        subtitle_bn: 'উৎসবের সুষ্ঠু ও সুশৃঙ্খল পরিবেশ বজায় রাখার জন্য সকল অংশগ্রহণকারীর জন্য নির্দেশিকা।',
+      },
+      {
+        id: 'sec-terms-text',
+        type: 'text',
+        order: 2,
+        is_active: true,
+        title_en: 'Entry Token & Pass Policy',
+        title_bn: 'ডিজিটাল প্রবেশপত্র ও কিট সংগ্রহ নীতিমালা',
+        content_en: '1. Each registered participant will receive a unique cryptographic QR Token Code upon successful payment. 2. The Digital Entry Pass is non-transferable and must be presented at the campus security checkpoint on 16 January 2027. 3. Registration fees cover the commemorative souvenir book, badge, celebration polo, morning snacks, royal Mezban lunch banquet, and evening cultural admission. 4. Cancellations or refunds are subject to sub-committee review before 31 December 2026.',
+        content_bn: '১. নিবন্ধন ও ফি সফলভাবে পরিশোধের পর প্রত্যেক প্রাক্তন শিক্ষার্থীকে একটি অনন্য কিউআর কোডযুক্ত ডিজিটাল প্রবেশপত্র প্রদান করা হবে। ২. প্রবেশপত্রটি হস্তান্তরযোগ্য নয় এবং ১৬ জানুয়ারি ২০২৭ তারিখে উৎসব প্রাঙ্গণে প্রবেশের সময় এটি দেখাতে হবে। ৩. নিবন্ধন ফির মধ্যে স্মরণিকা গ্রন্থ, ব্যাজ, টি-শার্ট, প্রাতঃরাশ, ঐতিহ্যবাহী মেজবান মধ্যাহ্নভোজ ও সাংস্কৃতিক অনুষ্ঠান অন্তর্ভুক্ত। ৪. যে কোনো অনিবার্য পরিস্থিতিতে নিবন্ধন সংক্রান্ত সিদ্ধান্ত আহ্বায়ক কমিটির এখতিয়ারাধীন থাকবে।',
+      },
+      {
+        id: 'sec-terms-cta',
+        type: 'cta',
+        order: 3,
+        is_active: true,
+        title_en: 'Have Questions? Contact Our Secretariat',
+        title_bn: 'কোনো প্রশ্ন থাকলে আমাদের সাথে যোগাযোগ করুন',
+        button_text_en: 'Contact & Helpline',
+        button_text_bn: 'যোগাযোগ ও তথ্য কেন্দ্র',
+        button_url: '#contact',
+      }
+    ]
   }
 ];
 

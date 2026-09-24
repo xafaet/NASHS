@@ -29,15 +29,25 @@ import { Registration, User } from '../types';
 import { DigitalEntryPass } from './DigitalEntryPass';
 import { apiFetch } from '../utils/api';
 
-export const MemberPortal: React.FC = () => {
-  const { user, logout } = useAuth();
+export interface MemberPortalProps {
+  initialTab?: 'pass' | 'profile' | 'security';
+}
+
+export const MemberPortal: React.FC<MemberPortalProps> = ({ initialTab = 'pass' }) => {
+  const { user, logout, updateUser } = useAuth();
   const { language, t } = useLanguage();
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [selectedPass, setSelectedPass] = useState<Registration | null>(null);
-  const [activeTab, setActiveTab] = useState<'pass' | 'profile' | 'security'>('pass');
+  const [activeTab, setActiveTab] = useState<'pass' | 'profile' | 'security'>(initialTab);
   const [loading, setLoading] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMsg, setProfileMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   // Security / Password State
   const [currentPassword, setCurrentPassword] = useState('');
@@ -144,6 +154,28 @@ export const MemberPortal: React.FC = () => {
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to update profile');
+
+      if (data.user) {
+        updateUser(data.user);
+        setProfileData(prev => ({ ...prev, ...data.user }));
+        window.dispatchEvent(new CustomEvent('nash-user-updated', { detail: data.user }));
+      }
+
+      // Reload linked registrations so pass info and summary stay perfectly synchronized
+      try {
+        const regRes = await apiFetch('/api/member/registrations', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (regRes.ok) {
+          const regData = await regRes.json();
+          setRegistrations(regData || []);
+          if (regData && regData.length > 0 && regData[0].payment_status === 'paid') {
+            setSelectedPass(regData[0]);
+          }
+        }
+      } catch (rErr) {
+        console.warn('Registrations refresh paused:', rErr);
+      }
 
       setProfileMsg({
         type: 'success',

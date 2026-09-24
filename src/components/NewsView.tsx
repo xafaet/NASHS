@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { NewsPost } from '../types';
+import { INITIAL_NEWS_POSTS } from '../constants/initialCmsData';
 
 interface NewsViewProps {
   initialSlug?: string;
@@ -26,14 +27,14 @@ interface NewsViewProps {
 export const NewsView: React.FC<NewsViewProps> = ({ initialSlug, onNavigate }) => {
   const { language, t } = useLanguage();
 
-  const [posts, setPosts] = useState<NewsPost[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [posts, setPosts] = useState<NewsPost[]>(() => INITIAL_NEWS_POSTS);
+  const [categories, setCategories] = useState<string[]>(['All', 'Event Updates', 'Campus News']);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
-  const [totalPosts, setTotalPosts] = useState<number>(0);
+  const [totalPosts, setTotalPosts] = useState<number>(() => INITIAL_NEWS_POSTS.length);
 
   // Detail view state
   const [activeArticle, setActiveArticle] = useState<NewsPost | null>(null);

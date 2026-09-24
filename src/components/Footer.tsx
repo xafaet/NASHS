@@ -3,11 +3,12 @@ import { School, MapPin, Phone, Mail, Award, Facebook, Youtube, Globe, ShieldChe
 import { useLanguage } from '../context/LanguageContext';
 import { FooterConfig, GlobalSettings } from '../types';
 import { apiFetch } from '../utils/api';
+import { INITIAL_FOOTER_CONFIG, INITIAL_GLOBAL_SETTINGS } from '../constants/initialCmsData';
 
 export const Footer: React.FC<{ onNavigate: (view: string) => void }> = ({ onNavigate }) => {
   const { language, t } = useLanguage();
-  const [footerConfig, setFooterConfig] = useState<FooterConfig | null>(null);
-  const [settings, setSettings] = useState<GlobalSettings | null>(null);
+  const [footerConfig, setFooterConfig] = useState<FooterConfig>(INITIAL_FOOTER_CONFIG);
+  const [settings, setSettings] = useState<GlobalSettings>(INITIAL_GLOBAL_SETTINGS);
 
   useEffect(() => {
     apiFetch('/api/appearance/footer')
@@ -101,78 +102,26 @@ export const Footer: React.FC<{ onNavigate: (view: string) => void }> = ({ onNav
           )}
         </div>
 
-        {/* Dynamic CMS Columns (Col 2 & 3 or custom) */}
-        {columns.length > 0 ? (
-          columns.map(col => (
-            <div key={col.id} className="space-y-3">
-              <h4 className="text-sm font-bold uppercase tracking-wider text-amber-400 border-b border-emerald-900 pb-2">
-                {language === 'bn' ? col.title_bn || col.title_en : col.title_en}
-              </h4>
-              <ul className="space-y-2 text-xs text-emerald-200">
-                {col.links.map(lnk => (
-                  <li key={lnk.id}>
-                    <button
-                      onClick={() => handleLinkClick(lnk.url)}
-                      className="hover:text-white transition cursor-pointer text-left block"
-                    >
-                      {language === 'bn' ? lnk.label_bn || lnk.label_en : lnk.label_en}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))
-        ) : (
-          // Default fallbacks
-          <>
-            <div className="space-y-3">
-              <h4 className="text-sm font-bold uppercase tracking-wider text-amber-400 border-b border-emerald-900 pb-2">
-                {language === 'bn' ? '৮৫ বছর পূর্তি উৎসব' : '85th Anniversary Event'}
-              </h4>
-              <ul className="space-y-2 text-xs text-emerald-200">
-                <li>
-                  <button onClick={() => onNavigate('register')} className="hover:text-white transition cursor-pointer">
-                    {t('nav.register', 'Register for Reunion')}
+        {/* Dynamic CMS Columns */}
+        {columns.map(col => (
+          <div key={col.id} className="space-y-3">
+            <h4 className="text-sm font-bold uppercase tracking-wider text-amber-400 border-b border-emerald-900 pb-2">
+              {language === 'bn' ? col.title_bn || col.title_en : col.title_en}
+            </h4>
+            <ul className="space-y-2 text-xs text-emerald-200">
+              {col.links.map(lnk => (
+                <li key={lnk.id}>
+                  <button
+                    onClick={() => handleLinkClick(lnk.url)}
+                    className="hover:text-white transition cursor-pointer text-left block"
+                  >
+                    {language === 'bn' ? lnk.label_bn || lnk.label_en : lnk.label_en}
                   </button>
                 </li>
-                <li>
-                  <button onClick={() => onNavigate('verify')} className="hover:text-white transition cursor-pointer flex items-center gap-1.5">
-                    <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-                    {t('nav.verify_pass', 'Verify Token Code')}
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => onNavigate('notices')} className="hover:text-white transition cursor-pointer">
-                    {language === 'bn' ? 'জরুরি বিজ্ঞপ্তি' : 'Latest Official Notices'}
-                  </button>
-                </li>
-              </ul>
-            </div>
-
-            <div className="space-y-3">
-              <h4 className="text-sm font-bold uppercase tracking-wider text-amber-400 border-b border-emerald-900 pb-2">
-                {language === 'bn' ? 'পরিচিতি ও পরিষদ' : 'Organization'}
-              </h4>
-              <ul className="space-y-2 text-xs text-emerald-200">
-                <li>
-                  <button onClick={() => onNavigate('school')} className="hover:text-white transition cursor-pointer">
-                    {t('nav.school', 'School History')}
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => onNavigate('committee')} className="hover:text-white transition cursor-pointer">
-                    {t('nav.committee', 'Executive Committee')}
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => onNavigate('contact')} className="hover:text-white transition cursor-pointer">
-                    {t('nav.contact', 'Contact & Helpline')}
-                  </button>
-                </li>
-              </ul>
-            </div>
-          </>
-        )}
+              ))}
+            </ul>
+          </div>
+        ))}
       </div>
 
       {/* Bottom Copyright Strip */}

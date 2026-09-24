@@ -3,10 +3,11 @@ import { School, Award, Calendar, MapPin, CheckCircle2, UserCheck, BookOpen } fr
 import { useLanguage } from '../context/LanguageContext';
 import { SchoolInfo } from '../types';
 import { apiFetch } from '../utils/api';
+import { INITIAL_SCHOOL_INFO } from '../constants/initialCmsData';
 
 export const SchoolView: React.FC = () => {
   const { language } = useLanguage();
-  const [info, setInfo] = useState<SchoolInfo | null>(null);
+  const [info, setInfo] = useState<SchoolInfo>(INITIAL_SCHOOL_INFO);
 
   useEffect(() => {
     apiFetch('/api/school-info')
@@ -14,8 +15,6 @@ export const SchoolView: React.FC = () => {
       .then(data => { if (data) setInfo(data); })
       .catch(err => console.warn('School info load paused:', err));
   }, []);
-
-  if (!info) return null;
 
   return (
     <div className="max-w-5xl mx-auto py-12 px-4 sm:px-6 space-y-12">

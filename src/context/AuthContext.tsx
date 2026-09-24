@@ -8,6 +8,7 @@ interface AuthContextType {
   loading: boolean;
   login: (emailOrPhone: string, pass: string) => Promise<boolean>;
   logout: () => void;
+  updateUser: (updatedUser: User) => void;
   isAdmin: boolean;
   isMember: boolean;
 }
@@ -18,6 +19,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('nash_token'));
   const [loading, setLoading] = useState(true);
+
+  const updateUser = (updatedUser: User) => {
+    setUser(prev => (prev ? { ...prev, ...updatedUser } : updatedUser));
+  };
+
+  // Sync with custom event across components
+  useEffect(() => {
+    const handleUserUpdate = (e: any) => {
+      if (e.detail) {
+        setUser(prev => (prev ? { ...prev, ...e.detail } : e.detail));
+      }
+    };
+    window.addEventListener('nash-user-updated', handleUserUpdate);
+    return () => window.removeEventListener('nash-user-updated', handleUserUpdate);
+  }, []);
 
   // Fetch current user if token exists
   useEffect(() => {
@@ -81,7 +97,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isMember = !!user;
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout, isAdmin, isMember }}>
+    <AuthContext.Provider value={{ user, token, loading, login, logout, updateUser, isAdmin, isMember }}>
       {children}
     </AuthContext.Provider>
   );

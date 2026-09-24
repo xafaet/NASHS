@@ -1405,18 +1405,33 @@ async function startServer() {
     users[index] = updatedUser;
     db.set('users', users);
 
-    // If passing year changed, auto update batch on linked registrations
-    if (otherUpdates.passing_year && otherUpdates.passing_year !== existing.passing_year) {
-      const year = parseInt(otherUpdates.passing_year, 10);
-      const newBatch = BatchService.getBatchByPassingYear(year);
-      const registrations = db.get('registrations') || [];
-      registrations.forEach(r => {
-        if (r.user_id === updatedUser.id) {
+    // Synchronize linked registrations with updated user info
+    const registrations = db.get('registrations') || [];
+    let regsModified = false;
+    registrations.forEach(r => {
+      if (r.user_id === updatedUser.id || (r.email && r.email.toLowerCase() === updatedUser.email.toLowerCase())) {
+        if (otherUpdates.name) r.full_name = otherUpdates.name;
+        if (otherUpdates.phone) r.phone = otherUpdates.phone;
+        if (otherUpdates.blood_group) r.blood_group = otherUpdates.blood_group;
+        if (otherUpdates.gender) r.gender = otherUpdates.gender;
+        if (otherUpdates.photo_url) r.photo_url = otherUpdates.photo_url;
+        if (otherUpdates.address) r.address = otherUpdates.address;
+        if (otherUpdates.occupation) r.occupation = otherUpdates.occupation;
+        if (otherUpdates.designation) r.designation = otherUpdates.designation;
+        if (otherUpdates.organization) r.organization = otherUpdates.organization;
+
+        // If passing year changed, auto update batch on linked registrations
+        if (otherUpdates.passing_year && otherUpdates.passing_year !== existing.passing_year) {
+          const year = parseInt(otherUpdates.passing_year, 10);
+          const newBatch = BatchService.getBatchByPassingYear(year);
           r.passing_year = year;
           r.batch_name = newBatch.batch_name;
           r.batch_name_bn = newBatch.batch_name_bn;
         }
-      });
+        regsModified = true;
+      }
+    });
+    if (regsModified) {
       db.set('registrations', registrations);
     }
 
@@ -2502,6 +2517,27 @@ async function startServer() {
     users[index] = updated;
     db.set('users', users);
 
+    // Synchronize linked registrations so user info stays unified across the entire portal
+    const registrations = db.get('registrations') || [];
+    let regsModified = false;
+    registrations.forEach(r => {
+      if (r.user_id === updated.id || (r.email && r.email.toLowerCase() === updated.email.toLowerCase())) {
+        if (updated.name) r.full_name = updated.name;
+        if (updated.phone) r.phone = updated.phone;
+        if (updated.blood_group) r.blood_group = updated.blood_group;
+        if (updated.gender) r.gender = updated.gender;
+        if (updated.photo_url) r.photo_url = updated.photo_url;
+        if (updated.address) r.address = updated.address;
+        if (updated.occupation) r.occupation = updated.occupation;
+        if (updated.designation) r.designation = updated.designation;
+        if (updated.organization) r.organization = updated.organization;
+        regsModified = true;
+      }
+    });
+    if (regsModified) {
+      db.set('registrations', registrations);
+    }
+
     db.logAudit(
       updated.name,
       updated.email,
@@ -2794,6 +2830,34 @@ async function startServer() {
 
     registrations[index] = updated;
     db.set('registrations', registrations);
+
+    // If registration is linked to a user, sync user record so user info stays unified
+    if (updated.user_id || updated.email) {
+      const users = db.get('users') || [];
+      const userIdx = users.findIndex(u => (updated.user_id && u.id === updated.user_id) || (updated.email && u.email.toLowerCase() === updated.email.toLowerCase()));
+      if (userIdx !== -1) {
+        let userMod = false;
+        if (updated.full_name && users[userIdx].name !== updated.full_name) {
+          users[userIdx].name = updated.full_name;
+          userMod = true;
+        }
+        if (updated.phone && users[userIdx].phone !== updated.phone) {
+          users[userIdx].phone = updated.phone;
+          userMod = true;
+        }
+        if (updated.blood_group && users[userIdx].blood_group !== updated.blood_group) {
+          users[userIdx].blood_group = updated.blood_group;
+          userMod = true;
+        }
+        if (updated.photo_url && users[userIdx].photo_url !== updated.photo_url) {
+          users[userIdx].photo_url = updated.photo_url;
+          userMod = true;
+        }
+        if (userMod) {
+          db.set('users', users);
+        }
+      }
+    }
 
     db.logAudit(
       req.user?.name || 'Admin',

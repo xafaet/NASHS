@@ -205,6 +205,19 @@ class DatabaseEngine {
             }
           }
         }
+
+        // Ensure all authoritative initial pages exist if not present in site_settings
+        if (Array.isArray(this.data.pages)) {
+          // Remove dummy test pages
+          this.data.pages = this.data.pages.filter(p => !p.slug.startsWith('ctrl-test'));
+          for (const initPage of initialPages) {
+            const exists = this.data.pages.find(p => p.slug === initPage.slug || p.id === initPage.id);
+            if (!exists) {
+              this.data.pages.push(initPage);
+            }
+          }
+          await this.persistKeyToSupabase('pages', this.data.pages);
+        }
       } catch (sErr: any) {
         console.warn('Site settings sync note:', sErr.message);
       }
@@ -288,8 +301,13 @@ class DatabaseEngine {
             organization: r.organization,
             designation: r.designation,
             work_location: r.work_location,
+            business_name: r.business_name,
+            business_type: r.business_type,
+            business_address: r.business_address,
+            business_website: r.business_website,
             address: r.address,
             bio: r.bio,
+            privacy: r.privacy || undefined,
             created_at: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
           }));
 
@@ -486,11 +504,68 @@ class DatabaseEngine {
         for (const u of value) {
           try {
             await this.pool.query(
-              `INSERT INTO users (id, name, name_bn, email, phone, password_hash, role, status, passing_year, batch, created_at, updated_at)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
-               ON CONFLICT (id) DO UPDATE
-               SET name = $2, name_bn = $3, email = $4, phone = $5, password_hash = $6, role = $7, status = $8, passing_year = $9, batch = $10, updated_at = NOW()`,
-              [u.id, u.name, u.name_bn || '', u.email, u.phone, u.password_hash || '', u.role, u.status || 'active', u.passing_year || null, u.batch || '']
+              `INSERT INTO users (
+                id, username, name, name_bn, email, phone, password_hash, role, status,
+                passing_year, batch, dob, gender, blood_group, photo_url,
+                occupation, organization, designation, work_location,
+                business_name, business_type, business_address, business_website,
+                address, bio, privacy, created_at, updated_at
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, NOW(), NOW())
+              ON CONFLICT (id) DO UPDATE SET
+                username = EXCLUDED.username,
+                name = EXCLUDED.name,
+                name_bn = EXCLUDED.name_bn,
+                email = EXCLUDED.email,
+                phone = EXCLUDED.phone,
+                password_hash = COALESCE(NULLIF(EXCLUDED.password_hash, ''), users.password_hash),
+                role = EXCLUDED.role,
+                status = EXCLUDED.status,
+                passing_year = EXCLUDED.passing_year,
+                batch = EXCLUDED.batch,
+                dob = EXCLUDED.dob,
+                gender = EXCLUDED.gender,
+                blood_group = EXCLUDED.blood_group,
+                photo_url = EXCLUDED.photo_url,
+                occupation = EXCLUDED.occupation,
+                organization = EXCLUDED.organization,
+                designation = EXCLUDED.designation,
+                work_location = EXCLUDED.work_location,
+                business_name = EXCLUDED.business_name,
+                business_type = EXCLUDED.business_type,
+                business_address = EXCLUDED.business_address,
+                business_website = EXCLUDED.business_website,
+                address = EXCLUDED.address,
+                bio = EXCLUDED.bio,
+                privacy = EXCLUDED.privacy,
+                updated_at = NOW()`,
+              [
+                u.id,
+                u.username || '',
+                u.name,
+                u.name_bn || '',
+                u.email,
+                u.phone || '',
+                u.password_hash || '',
+                u.role || 'alumni_member',
+                u.status || 'active',
+                u.passing_year || null,
+                u.batch || '',
+                u.dob || '',
+                u.gender || '',
+                u.blood_group || '',
+                u.photo_url || '',
+                u.occupation || '',
+                u.organization || '',
+                u.designation || '',
+                u.work_location || '',
+                u.business_name || '',
+                u.business_type || '',
+                u.business_address || '',
+                u.business_website || '',
+                u.address || '',
+                u.bio || '',
+                u.privacy ? JSON.stringify(u.privacy) : null,
+              ]
             );
           } catch (uErr: any) {
             console.warn(`User row sync error (${u.email}):`, uErr.message);
@@ -503,14 +578,37 @@ class DatabaseEngine {
         for (const r of value) {
           try {
             await this.pool.query(
-              `INSERT INTO event_registrations (id, event_id, user_id, full_name, dob, gender, blood_group, t_shirt_size, phone, email, passing_year, batch_id, batch_name, batch_name_bn, fee_amount, currency, payment_status, registration_status, payment_method, token_id, token_code, checked_in, checked_in_at, created_at, updated_at)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, NOW(), NOW())
-               ON CONFLICT (id) DO UPDATE
-               SET full_name = $4, t_shirt_size = $8, phone = $9, email = $10, fee_amount = $15, payment_status = $17, registration_status = $18, payment_method = $19, token_id = $20, token_code = $21, checked_in = $22, checked_in_at = $23, updated_at = NOW()`,
+              `INSERT INTO event_registrations (
+                id, event_id, user_id, full_name, dob, gender, blood_group, t_shirt_size,
+                phone, email, passing_year, batch_id, batch_name, batch_name_bn,
+                fee_amount, currency, payment_status, registration_status, payment_method,
+                token_id, token_code, checked_in, checked_in_at, created_at, updated_at
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, NOW(), NOW())
+              ON CONFLICT (id) DO UPDATE SET
+                user_id = EXCLUDED.user_id,
+                full_name = EXCLUDED.full_name,
+                t_shirt_size = EXCLUDED.t_shirt_size,
+                phone = EXCLUDED.phone,
+                email = EXCLUDED.email,
+                blood_group = EXCLUDED.blood_group,
+                gender = EXCLUDED.gender,
+                dob = EXCLUDED.dob,
+                passing_year = EXCLUDED.passing_year,
+                batch_name = EXCLUDED.batch_name,
+                batch_name_bn = EXCLUDED.batch_name_bn,
+                fee_amount = EXCLUDED.fee_amount,
+                payment_status = EXCLUDED.payment_status,
+                registration_status = EXCLUDED.registration_status,
+                payment_method = EXCLUDED.payment_method,
+                token_id = EXCLUDED.token_id,
+                token_code = EXCLUDED.token_code,
+                checked_in = EXCLUDED.checked_in,
+                checked_in_at = EXCLUDED.checked_in_at,
+                updated_at = NOW()`,
               [
                 r.id,
                 r.event_id || 'event-85th-anniversary',
-                null,
+                r.user_id || null,
                 r.full_name,
                 r.dob || '1990-01-01',
                 r.gender || 'male',

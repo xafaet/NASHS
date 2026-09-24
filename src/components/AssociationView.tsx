@@ -3,11 +3,12 @@ import { Award, Users, Mail, Phone, ShieldCheck, Heart, MapPin, Target, CheckCir
 import { useLanguage } from '../context/LanguageContext';
 import { CommitteeMember, AssociationInfo } from '../types';
 import { apiFetch } from '../utils/api';
+import { INITIAL_ASSOCIATION_INFO, INITIAL_COMMITTEE } from '../constants/initialCmsData';
 
 export const AssociationView: React.FC = () => {
   const { language, t } = useLanguage();
-  const [committee, setCommittee] = useState<CommitteeMember[]>([]);
-  const [associationInfo, setAssociationInfo] = useState<AssociationInfo | null>(null);
+  const [committee, setCommittee] = useState<CommitteeMember[]>(INITIAL_COMMITTEE);
+  const [associationInfo, setAssociationInfo] = useState<AssociationInfo>(INITIAL_ASSOCIATION_INFO);
 
   useEffect(() => {
     Promise.all([

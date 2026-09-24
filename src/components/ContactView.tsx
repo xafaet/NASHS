@@ -3,10 +3,11 @@ import { MapPin, Phone, Mail, Send, CheckCircle2, Clock, Navigation, AlertCircle
 import { useLanguage } from '../context/LanguageContext';
 import { GlobalSettings } from '../types';
 import { apiFetch } from '../utils/api';
+import { INITIAL_GLOBAL_SETTINGS } from '../constants/initialCmsData';
 
 export const ContactView: React.FC = () => {
   const { language, t } = useLanguage();
-  const [settings, setSettings] = useState<GlobalSettings | null>(null);
+  const [settings, setSettings] = useState<GlobalSettings>(INITIAL_GLOBAL_SETTINGS);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);

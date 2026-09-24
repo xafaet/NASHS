@@ -25,7 +25,7 @@ function MainLayout() {
   // Navigation routing state
   const [currentView, setCurrentView] = useState<string>('home');
   const [loginModalOpen, setLoginModalOpen] = useState(false);
-  const [isInstalled, setIsInstalled] = useState<boolean | null>(null);
+  const [isInstalled, setIsInstalled] = useState<boolean | null>(true);
   const [setupReason, setSetupReason] = useState<string | undefined>();
 
   // Check installation status on initial mount
@@ -65,7 +65,7 @@ function MainLayout() {
   }, []);
 
   const navigateTo = (view: string) => {
-    if (view === 'member' && !user) {
+    if ((view === 'member' || view === 'profile') && !user) {
       setLoginModalOpen(true);
       return;
     }
@@ -123,7 +123,8 @@ function MainLayout() {
           <RegistrationFlow onGoToPortal={() => navigateTo('member')} />
         )}
         {currentView === 'verify' && <TokenVerificationView />}
-        {currentView === 'member' && <MemberPortal />}
+        {currentView === 'member' && <MemberPortal initialTab="pass" />}
+        {currentView === 'profile' && <MemberPortal initialTab="profile" />}
         {currentView === 'school' && <SchoolView />}
         {currentView === 'association' && <AssociationView />}
         {currentView === 'committee' && <AssociationView />}
@@ -135,6 +136,7 @@ function MainLayout() {
           'register',
           'verify',
           'member',
+          'profile',
           'school',
           'association',
           'committee',
