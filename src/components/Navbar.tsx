@@ -54,6 +54,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenL
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [logoError, setLogoError] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -432,10 +433,11 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenL
             onClick={() => handleNavClick('home')}
             className="flex items-center gap-3 text-left group cursor-pointer focus:outline-none shrink-0"
           >
-            {settings?.logo_url ? (
+            {settings?.logo_url && !logoError ? (
               <img
                 src={settings.logo_url}
                 alt="School Crest"
+                onError={() => setLogoError(true)}
                 className="w-11 h-11 sm:w-12 sm:h-12 object-contain group-hover:scale-105 transition-transform duration-200 rounded-xl shadow-xs"
                 referrerPolicy="no-referrer"
               />

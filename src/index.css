@@ -3,6 +3,7 @@
 @theme {
   --font-sans: "Hind Siliguri", "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
   --font-heading: "Hind Siliguri", "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-display: "Hind Siliguri", "Plus Jakarta Sans", system-ui, sans-serif;
   --color-brand-950: #072615;
   --color-brand-900: #0f4d2a;
   --color-brand-800: #135d34;
@@ -17,6 +18,8 @@
 
 body {
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 @media print {

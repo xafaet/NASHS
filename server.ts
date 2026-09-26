@@ -3477,8 +3477,11 @@ async function startServer() {
   });
 
   // ==========================================
-  // VITE MIDDLEWARE & SPA FALLBACK
+  // STATIC ASSETS & VITE MIDDLEWARE & SPA FALLBACK
   // ==========================================
+  const publicPath = path.join(process.cwd(), 'public');
+  app.use(express.static(publicPath));
+
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -3493,9 +3496,25 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://0.0.0.0:${PORT}`);
-  });
+  if (process.env.VERCEL !== '1') {
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server running on http://0.0.0.0:${PORT}`);
+    });
+  }
+
+  return app;
 }
 
-startServer();
+let appPromise: Promise<express.Express> | null = null;
+export function getApp() {
+  if (!appPromise) {
+    appPromise = startServer();
+  }
+  return appPromise;
+}
+
+if (process.env.VERCEL !== '1') {
+  startServer();
+}
+
+export default getApp;

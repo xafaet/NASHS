@@ -9,6 +9,7 @@ export const Footer: React.FC<{ onNavigate: (view: string) => void }> = ({ onNav
   const { language, t } = useLanguage();
   const [footerConfig, setFooterConfig] = useState<FooterConfig>(INITIAL_FOOTER_CONFIG);
   const [settings, setSettings] = useState<GlobalSettings>(INITIAL_GLOBAL_SETTINGS);
+  const [logoError, setLogoError] = useState(false);
 
   useEffect(() => {
     apiFetch('/api/appearance/footer')
@@ -40,11 +41,12 @@ export const Footer: React.FC<{ onNavigate: (view: string) => void }> = ({ onNav
         {/* Col 1: Identity & Heritage */}
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            {settings?.logo_url ? (
+            {settings?.logo_url && !logoError ? (
               <img
                 src={settings.logo_url}
                 alt="Logo"
-                className="w-12 h-12 object-contain"
+                onError={() => setLogoError(true)}
+                className="w-12 h-12 object-contain rounded-xl"
                 referrerPolicy="no-referrer"
               />
             ) : (

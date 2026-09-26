@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { CMSPage, PageSection } from '../types';
+import { INITIAL_CMS_PAGES } from '../constants/initialCmsData';
 import { School, Calendar, ArrowRight, CheckCircle2, ChevronDown, ChevronUp, Users, Award, Sparkles } from 'lucide-react';
 
 interface Props {
@@ -10,25 +11,37 @@ interface Props {
 
 export const CMSPageView: React.FC<Props> = ({ slug, onNavigate }) => {
   const { language } = useLanguage();
-  const [page, setPage] = useState<CMSPage | null>(null);
-  const [loading, setLoading] = useState(true);
+  const initialFallback = INITIAL_CMS_PAGES.find(p => p.slug === slug) || null;
+  const [page, setPage] = useState<CMSPage | null>(initialFallback);
+  const [loading, setLoading] = useState(!initialFallback);
   const [notFound, setNotFound] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
   useEffect(() => {
-    setLoading(true);
+    const fallback = INITIAL_CMS_PAGES.find(p => p.slug === slug) || null;
+    if (fallback) {
+      setPage(fallback);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
     setNotFound(false);
+
     fetch(`/api/pages/${slug}`)
       .then(res => {
         if (!res.ok) throw new Error('Page not found');
         return res.json();
       })
       .then(data => {
-        setPage(data);
+        if (data && data.title_en) {
+          setPage(data);
+        }
         setLoading(false);
       })
       .catch(() => {
-        setNotFound(true);
+        if (!fallback) {
+          setNotFound(true);
+        }
         setLoading(false);
       });
   }, [slug]);
