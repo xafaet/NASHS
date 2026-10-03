@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+@source "../index.html";
+@source "../src/**/*.{js,ts,jsx,tsx}";
+
 @theme {
   --font-sans: "Hind Siliguri", "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
   --font-heading: "Hind Siliguri", "Plus Jakarta Sans", system-ui, sans-serif;

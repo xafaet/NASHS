@@ -9,6 +9,7 @@ import { initialProgramSchedule, initialRegistrationFields, initialTokenFormatCo
 import { AuthService, authenticate, requireRole, requirePermission, AuthRequest } from './server/auth';
 import { BatchService } from './server/services/batchService';
 import { PaymentService, PaymentManager } from './server/services/paymentService';
+import { PaymentController } from './server/controllers/paymentController';
 import { TokenService } from './server/services/tokenService';
 import { InstallerService } from './server/installer';
 import {
@@ -2054,9 +2055,12 @@ async function startServer() {
 
       const regId = `REG-85-${Date.now().toString().slice(-4)}${Math.floor(10 + Math.random() * 90)}`;
 
+      // Generate unique, collision-safe, database-backed token code immediately server-side
+      const tokenCode = TokenService.generateFormattedTokenCode(year, batchInfo.batch_name);
+
       const newRegistration: Registration = {
         id: regId,
-        event_id: event_id || regConfig?.event_id || 'event-85th-anniversary',
+        event_id: targetEventId,
         full_name: full_name.trim(),
         dob,
         gender,
@@ -2075,15 +2079,13 @@ async function startServer() {
         currency,
         payment_status: 'pending',
         registration_status: 'pending',
+        token_code: tokenCode,
         checked_in: false,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
 
-      registrations.unshift(newRegistration);
-      db.set('registrations', registrations);
-
-      // Auto-create user profile if does not exist
+      // 1. Auto-create or find user profile first (satisfies event_registrations foreign key: user_id -> users)
       const users = db.get('users');
       let user = users.find(u => (email && u.email === email) || u.phone === phone);
       if (!user) {
@@ -2117,18 +2119,57 @@ async function startServer() {
 
       newRegistration.user_id = user.id;
 
+      // 2. Add registration record to database first (satisfies entry_tokens foreign key: registration_id -> event_registrations)
+      registrations.unshift(newRegistration);
+      db.set('registrations', registrations);
+
+      // 3. Pre-issue EntryToken record in database with status 'pending_payment'
+      const issuedToken = await TokenService.issueToken(newRegistration, 'pending_payment');
+      newRegistration.token_id = issuedToken.id;
+      newRegistration.qr_code_svg = issuedToken.qr_code_svg;
+      db.set('registrations', registrations);
+
+      // Retrieve CMS-configured manual payment accounts (bKash & Nagad)
+      const allGateways = db.get('payment_gateways') || [];
+      const manualGateways = allGateways
+        .filter((g: PaymentGatewayConfig) => g.is_enabled && (g.payment_mode === 'manual' || g.code === 'bkash' || g.code === 'nagad'))
+        .sort((a: PaymentGatewayConfig, b: PaymentGatewayConfig) => a.sort_order - b.sort_order)
+        .map((g: PaymentGatewayConfig) => ({
+          id: g.id,
+          code: g.code,
+          name: g.name,
+          display_name_en: g.display_name_en,
+          display_name_bn: g.display_name_bn,
+          account_type: g.account_type || (g.code === 'bkash' ? 'Merchant' : 'Personal'),
+          merchant_number: g.merchant_number || g.merchant_id || g.credentials?.merchant_number || (g.code === 'bkash' ? '01819-123456' : '01712-654321'),
+          instructions_en: g.instructions_en || 'Send the registration fee to this number using your Token Number as payment reference.',
+          instructions_bn: g.instructions_bn || 'পেমেন্ট রেফারেন্স হিসেবে আপনার Token Number ব্যবহার করে নির্ধারিত ফি পাঠান।',
+          sort_order: g.sort_order,
+        }));
+
       db.logAudit(
         newRegistration.full_name,
         email || phone,
         'REGISTRATION_SUBMITTED',
         'Registration',
-        `Initiated registration for ${batchInfo.batch_name} (Fee: ৳${feeAmount})`
+        `Submitted registration for ${batchInfo.batch_name} (Token: ${tokenCode}, Fee: ৳${feeAmount}). Awaiting manual payment confirmation.`
       );
 
       res.status(201).json({
         success: true,
         registration: newRegistration,
-        message: 'Registration initiated successfully. Please proceed to payment.',
+        token_code: tokenCode,
+        token: issuedToken,
+        manual_payment_info: {
+          token_code: tokenCode,
+          fee_amount: feeAmount,
+          currency,
+          gateways: manualGateways,
+          confirmation_instructions_en: '1. Send the registration fee to the displayed bKash/Nagad number.\n2. Use your generated Token Number as the Payment Reference.\n3. After completing the payment, click Confirm Payment below.\n4. Your registration will be confirmed after payment verification.',
+          confirmation_instructions_bn: '১. উপরের bKash/Nagad নম্বরে নির্ধারিত রেজিস্ট্রেশন ফি পাঠান।\n২. Payment Reference হিসেবে আপনার Token Number ব্যবহার করুন।\n৩. পেমেন্ট সম্পন্ন করার পর নিচের Confirm Payment বাটন ব্যবহার করুন।\n৪. আপনার পেমেন্ট যাচাই করার পর রেজিস্ট্রেশন চূড়ান্তভাবে নিশ্চিত করা হবে।',
+        },
+        message: 'Your registration form has been successfully submitted. Please complete the manual bKash or Nagad payment using your Token Number as payment reference.',
+        message_bn: 'আপনার রেজিস্ট্রেশন ফর্ম সফলভাবে জমা হয়েছে। আপনার পেমেন্ট রেফারেন্স হিসেবে Token Number ব্যবহার করে বিকাশ বা নগদ-এ ফি প্রদান করুন।',
       });
     } catch (err: any) {
       console.error('Registration creation error:', err);
@@ -2138,14 +2179,38 @@ async function startServer() {
 
   app.get('/api/registrations/:id', (req, res) => {
     const registrations = db.get('registrations');
-    const reg = registrations.find(r => r.id === req.params.id);
+    const reg = registrations.find(r => r.id === req.params.id || r.token_code === req.params.id);
     if (!reg) {
       return res.status(404).json({ message: 'Registration not found' });
     }
     res.json(reg);
   });
 
-  // Initiate Payment
+  // ==========================================
+  // MANUAL PAYMENT SUBMISSION (REGISTRANT)
+  // ==========================================
+  app.post('/api/payments/manual-submit', (req, res) => PaymentController.storeManualPayment(req, res));
+  app.post('/api/payments/confirm', (req, res) => PaymentController.storeManualPayment(req, res));
+  app.post('/api/payments/manual', (req, res) => PaymentController.storeManualPayment(req, res));
+  app.post('/api/registrations/:id/payment-confirmation', (req, res) => PaymentController.storeManualPayment(req, res));
+  app.get('/api/registrations/:id/payment', (req, res) => PaymentController.getPaymentDetails(req, res));
+
+  // ==========================================
+  // ADMIN MANUAL PAYMENT REVIEW & VERIFICATION
+  // ==========================================
+  // Separate admin method to update the registration and payment status after review
+  app.post('/api/admin/registrations/:id/review-payment', authenticate, requireRole(['super_admin', 'admin', 'finance_manager']), (req: AuthRequest, res) => PaymentController.updatePaymentStatusAfterReview(req, res));
+  app.put('/api/admin/registrations/:id/payment-status', authenticate, requireRole(['super_admin', 'admin', 'finance_manager']), (req: AuthRequest, res) => PaymentController.updatePaymentStatusAfterReview(req, res));
+  app.post('/api/admin/payments/review', authenticate, requireRole(['super_admin', 'admin', 'finance_manager']), (req: AuthRequest, res) => PaymentController.updatePaymentStatusAfterReview(req, res));
+
+  // Admin convenience routes for approving and rejecting
+  app.post('/api/admin/registrations/:id/verify-payment', authenticate, requireRole(['super_admin', 'admin', 'finance_manager']), (req: AuthRequest, res) => PaymentController.verifyManualPayment(req, res));
+  app.post('/api/admin/registrations/:id/reject-payment', authenticate, requireRole(['super_admin', 'admin', 'finance_manager']), (req: AuthRequest, res) => PaymentController.rejectManualPayment(req, res));
+
+  // Admin payment list
+  app.get('/api/admin/payments', authenticate, requireRole(['super_admin', 'admin', 'finance_manager']), (req: AuthRequest, res) => PaymentController.getAllPayments(req, res));
+
+  // Initiate Payment (Legacy / Automatic fallback)
   app.post('/api/payments/initiate', async (req, res) => {
     try {
       const result = await PaymentService.initiatePayment(req.body);
@@ -2155,7 +2220,7 @@ async function startServer() {
     }
   });
 
-  // Verify Payment & Issue Entry Token
+  // Verify Payment & Issue Entry Token (Automatic gateway webhook / callback)
   app.post('/api/payments/verify', async (req, res) => {
     try {
       const result = await PaymentService.verifyPayment(req.body);
@@ -2169,7 +2234,7 @@ async function startServer() {
   // ==========================================
   // TOKEN & GATEKEEPER CHECK-IN
   // ==========================================
-  app.get('/api/tokens/verify/:code', (req, res) => {
+  app.get(['/api/tokens/verify/:code', '/api/tokens/lookup/:code'], (req, res) => {
     const result = TokenService.verifyToken(req.params.code);
     res.json(result);
   });
@@ -2346,7 +2411,7 @@ async function startServer() {
         eventDate: 'Saturday, 16 January 2027 • 08:00 AM onwards',
         venue: 'Nanupur Abu Sobhan High School Premises, Fatikchhari, Chattogram',
         gateName,
-        status: token?.status || 'active',
+        status: reg?.payment_status || token?.status || 'pending',
       });
 
       res.setHeader('Content-Type', 'application/pdf');

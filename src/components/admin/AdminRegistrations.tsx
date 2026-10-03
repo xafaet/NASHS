@@ -6,6 +6,7 @@ import {
   Edit2,
   Trash2,
   CheckCircle2,
+  XCircle,
   Clock,
   Download,
   Upload,
@@ -280,27 +281,67 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
     }
   };
 
-  // Quick Mark as Paid
-  const handleMarkAsPaid = async (reg: RegistrationItem) => {
+  // Verify Manual Payment
+  const handleMarkAsPaid = async (reg: RegistrationItem, notes?: string) => {
     try {
-      const res = await apiFetch(`/api/admin/registrations/${reg.id}`, {
-        method: 'PUT',
+      const res = await apiFetch(`/api/admin/registrations/${reg.id}/verify-payment`, {
+        method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({
-          payment_status: 'paid',
-          payment_method: 'manual_verification',
+          admin_notes: notes || 'Verified by Admin',
         }),
       });
 
       if (res.ok) {
-        const updated = await res.json();
+        const result = await res.json();
+        const updated = result.registration || { ...reg, payment_status: 'paid', registration_status: 'confirmed' };
         setRegistrations(registrations.map(r => (r.id === reg.id ? updated : r)));
+        if (viewingRegistration?.id === reg.id) {
+          setViewingRegistration(updated);
+        }
         onDataChange?.();
-        onNotify?.(`Payment confirmed & token generated for ${reg.full_name}!`);
+        onNotify?.(`Payment verified & Entry Pass issued for ${reg.full_name}!`);
+      } else {
+        const err = await res.json();
+        onNotify?.(err.message || 'Payment verification failed.');
       }
     } catch (err) {
       console.error(err);
-      onNotify?.('Failed to update payment status.');
+      onNotify?.('Failed to verify payment status.');
+    }
+  };
+
+  // Reject Manual Payment
+  const handleRejectPayment = async (reg: RegistrationItem, reason?: string) => {
+    const inputReason = reason || prompt('Enter reason for payment rejection (e.g. Invalid TrxID, Statement mismatch):');
+    if (!inputReason) return;
+
+    try {
+      const res = await apiFetch(`/api/admin/registrations/${reg.id}/reject-payment`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          reason: inputReason,
+          admin_notes: inputReason,
+        }),
+      });
+
+      if (res.ok) {
+        const result = await res.json();
+        const updated = result.registration || { ...reg, payment_status: 'rejected', admin_notes: inputReason };
+        setRegistrations(registrations.map(r => (r.id === reg.id ? updated : r)));
+        if (viewingRegistration?.id === reg.id) {
+          setViewingRegistration(updated);
+        }
+        onDataChange?.();
+        onNotify?.(`Payment marked as rejected for ${reg.full_name}.`);
+      } else {
+        const err = await res.json();
+        onNotify?.(err.message || 'Payment rejection failed.');
+      }
+    } catch (err) {
+      console.error(err);
+      onNotify?.('Failed to reject payment.');
     }
   };
 
@@ -450,7 +491,13 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
       (r.token_code && r.token_code.toLowerCase().includes(q)) ||
       (r.passing_year && r.passing_year.toString().includes(q));
 
-    const matchesStatus = statusFilter === 'all' || r.payment_status === statusFilter;
+    const matchesStatus =
+      statusFilter === 'all' ||
+      (statusFilter === 'paid' && (r.payment_status === 'paid' || r.payment_status === 'verified')) ||
+      (statusFilter === 'payment_submitted' && (r.payment_status === 'payment_submitted' || r.payment_status === 'under_review')) ||
+      (statusFilter === 'pending' && r.payment_status === 'pending') ||
+      (statusFilter === 'rejected' && r.payment_status === 'rejected') ||
+      r.payment_status === statusFilter;
     const matchesBatch = batchFilter === 'all' || r.passing_year.toString() === batchFilter;
 
     return matchesSearch && matchesStatus && matchesBatch;
@@ -555,9 +602,10 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
               className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:outline-none"
             >
               <option value="all">All Statuses</option>
-              <option value="paid">Paid</option>
-              <option value="pending">Pending</option>
-              <option value="failed">Failed</option>
+              <option value="paid">Paid & Verified</option>
+              <option value="payment_submitted">Payment Submitted (Under Review)</option>
+              <option value="pending">Pending Payment</option>
+              <option value="rejected">Rejected</option>
             </select>
           </div>
 
@@ -687,15 +735,32 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                             className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                               isPaid
                                 ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                : reg.payment_status === 'payment_submitted' || reg.payment_status === 'under_review'
+                                ? 'bg-blue-100 text-blue-800 border border-blue-300'
+                                : reg.payment_status === 'rejected'
+                                ? 'bg-red-100 text-red-800 border border-red-300'
                                 : 'bg-amber-100 text-amber-800 border border-amber-300'
                             }`}
                           >
-                            {isPaid ? <CheckCircle2 className="w-3 h-3 text-emerald-600" /> : <Clock className="w-3 h-3 text-amber-600" />}
-                            <span>{reg.payment_status}</span>
+                            {isPaid ? (
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            ) : reg.payment_status === 'payment_submitted' || reg.payment_status === 'under_review' ? (
+                              <Clock className="w-3 h-3 text-blue-600" />
+                            ) : reg.payment_status === 'rejected' ? (
+                              <XCircle className="w-3 h-3 text-red-600" />
+                            ) : (
+                              <Clock className="w-3 h-3 text-amber-600" />
+                            )}
+                            <span>{reg.payment_status === 'payment_submitted' || reg.payment_status === 'under_review' ? 'Under Review' : reg.payment_status}</span>
                           </span>
                           <span className="text-[11px] font-mono text-slate-600 block font-semibold">
                             {reg.fee_amount || 1000} {reg.currency || 'BDT'}
                           </span>
+                          {reg.transaction_id && (
+                            <span className="text-[10px] font-mono text-indigo-700 font-bold block truncate max-w-[130px]" title={`TrxID: ${reg.transaction_id} (${reg.payment_method || 'bKash'})`}>
+                              Trx: {reg.transaction_id}
+                            </span>
+                          )}
                         </div>
                       </td>
 
@@ -752,15 +817,24 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                             <Eye className="w-4 h-4" />
                           </button>
 
-                          {/* Quick Mark Paid if pending */}
+                          {/* Quick Verify / Reject if not paid */}
                           {!isPaid && (
-                            <button
-                              onClick={() => handleMarkAsPaid(reg)}
-                              title="Mark Paid & Issue Pass"
-                              className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition cursor-pointer"
-                            >
-                              <CheckCircle2 className="w-4 h-4" />
-                            </button>
+                            <>
+                              <button
+                                onClick={() => handleMarkAsPaid(reg)}
+                                title="Verify Payment & Issue Pass"
+                                className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition cursor-pointer"
+                              >
+                                <CheckCircle2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleRejectPayment(reg)}
+                                title="Reject Payment"
+                                className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition cursor-pointer"
+                              >
+                                <XCircle className="w-4 h-4" />
+                              </button>
+                            </>
                           )}
 
                           {/* Edit */}
@@ -1387,8 +1461,36 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                 </div>
                 <div className="py-2 flex justify-between">
                   <span className="text-slate-500">Payment Status:</span>
-                  <span className="font-bold uppercase text-emerald-800">{viewingRegistration.payment_status}</span>
+                  <span className={`font-bold uppercase ${
+                    viewingRegistration.payment_status === 'paid' || viewingRegistration.payment_status === 'verified'
+                      ? 'text-emerald-700'
+                      : viewingRegistration.payment_status === 'payment_submitted' || viewingRegistration.payment_status === 'under_review'
+                      ? 'text-blue-700'
+                      : viewingRegistration.payment_status === 'rejected'
+                      ? 'text-red-700'
+                      : 'text-amber-700'
+                  }`}>
+                    {viewingRegistration.payment_status}
+                  </span>
                 </div>
+                {viewingRegistration.payment_method && (
+                  <div className="py-2 flex justify-between">
+                    <span className="text-slate-500">Payment Method:</span>
+                    <span className="font-semibold text-slate-900 uppercase">{viewingRegistration.payment_method}</span>
+                  </div>
+                )}
+                {viewingRegistration.transaction_id && (
+                  <div className="py-2 flex justify-between">
+                    <span className="text-slate-500">Transaction ID (TrxID):</span>
+                    <span className="font-mono font-bold text-indigo-700">{viewingRegistration.transaction_id}</span>
+                  </div>
+                )}
+                {viewingRegistration.admin_notes && (
+                  <div className="py-2 flex justify-between">
+                    <span className="text-slate-500">Admin Notes / Rejection Reason:</span>
+                    <span className="font-medium text-slate-800 text-right max-w-[200px]">{viewingRegistration.admin_notes}</span>
+                  </div>
+                )}
                 <div className="py-2 flex justify-between">
                   <span className="text-slate-500">Gate Check-in:</span>
                   <span className="font-bold text-slate-900">
@@ -1405,14 +1507,47 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                 )}
               </div>
 
-              <div className="pt-2 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setViewingRegistration(null)}
-                  className="w-full py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition cursor-pointer"
-                >
-                  Close Details
-                </button>
+              {/* Action Buttons in Modal */}
+              <div className="pt-2 flex flex-col gap-2">
+                {viewingRegistration.payment_status !== 'paid' && viewingRegistration.payment_status !== 'verified' && (
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleMarkAsPaid(viewingRegistration)}
+                      className="flex-1 py-2.5 rounded-xl bg-[#0f4d2a] hover:bg-[#135d34] text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                    >
+                      <CheckCircle2 className="w-4 h-4 text-amber-400" />
+                      <span>Verify Payment</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRejectPayment(viewingRegistration)}
+                      className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                    >
+                      <XCircle className="w-4 h-4" />
+                      <span>Reject Payment</span>
+                    </button>
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <a
+                    href={`/api/registrations/${viewingRegistration.id}/pdf`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 py-2 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-800 text-xs font-bold transition flex items-center justify-center gap-1.5 text-center"
+                  >
+                    <Download className="w-3.5 h-3.5 text-slate-600" />
+                    <span>Download PDF</span>
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => setViewingRegistration(null)}
+                    className="flex-1 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition cursor-pointer"
+                  >
+                    Close Details
+                  </button>
+                </div>
               </div>
             </div>
           </div>

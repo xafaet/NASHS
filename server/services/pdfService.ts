@@ -259,18 +259,38 @@ export async function generateEntryPassPDF(data: PassPDFData): Promise<Buffer> {
           align: 'center',
         });
 
-      // Verification Badge Box
+      // Dynamic Verification Badge Box based on payment / pass status
+      const isPaid = data.status === 'active' || data.status === 'paid' || data.status === 'confirmed';
+      const isSubmitted = data.status === 'payment_submitted' || data.status === 'under_review';
+      const isRejected = data.status === 'rejected';
+
+      const badgeColor = isPaid
+        ? '#059669' // Emerald
+        : isSubmitted
+        ? '#2563eb' // Blue
+        : isRejected
+        ? '#dc2626' // Red
+        : '#d97706'; // Amber for awaiting payment
+
+      const badgeText = isPaid
+        ? 'PAYMENT VERIFIED'
+        : isSubmitted
+        ? 'PAYMENT UNDER REVIEW'
+        : isRejected
+        ? 'PAYMENT REJECTED'
+        : 'AWAITING PAYMENT';
+
       doc
-        .roundedRect(rightColX + 10, y + 168, rightColW - 20, 20, 10)
-        .fillColor('#059669')
+        .roundedRect(rightColX + 8, y + 168, rightColW - 16, 20, 10)
+        .fillColor(badgeColor)
         .fill();
 
       doc
         .fillColor('#ffffff')
         .font('Helvetica-Bold')
-        .fontSize(8)
-        .text('PAYMENT VERIFIED', rightColX + 10, y + 174, {
-          width: rightColW - 20,
+        .fontSize(7.5)
+        .text(badgeText, rightColX + 8, y + 174, {
+          width: rightColW - 16,
           align: 'center',
         });
 

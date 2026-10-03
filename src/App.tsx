@@ -120,7 +120,15 @@ function MainLayout() {
       <main className="flex-1">
         {currentView === 'home' && <HomeView onNavigate={navigateTo} />}
         {currentView === 'register' && (
-          <RegistrationFlow onGoToPortal={() => navigateTo('member')} />
+          <RegistrationFlow
+            onGoToPortal={() => navigateTo('member')}
+            onGoToVerify={(code) => {
+              if (code) {
+                window.history.pushState({}, '', `?token=${encodeURIComponent(code)}`);
+              }
+              navigateTo('verify');
+            }}
+          />
         )}
         {currentView === 'verify' && <TokenVerificationView />}
         {currentView === 'member' && <MemberPortal initialTab="pass" />}

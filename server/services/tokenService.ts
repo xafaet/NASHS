@@ -97,18 +97,22 @@ export class TokenService {
   }
 
   /**
-   * Generate an Entry Token with QR Code for a confirmed registration
+   * Generate an Entry Token with QR Code for a registration (pre-issued or verified)
    */
-  static async issueToken(registration: Registration): Promise<EntryToken> {
+  static async issueToken(registration: Registration, status: 'active' | 'pending_payment' = 'active'): Promise<EntryToken> {
     const tokens = db.get('tokens') || [];
     
     // Check if token already exists for this registration
-    const existing = tokens.find(t => t.registration_id === registration.id);
-    if (existing) {
-      return existing;
+    const existingIndex = tokens.findIndex(t => t.registration_id === registration.id || (registration.token_code && t.token_code === registration.token_code));
+    if (existingIndex !== -1) {
+      if (tokens[existingIndex].status !== status && status === 'active') {
+        tokens[existingIndex].status = 'active';
+        db.set('tokens', tokens);
+      }
+      return tokens[existingIndex];
     }
 
-    const tokenCode = this.generateFormattedTokenCode(registration.passing_year, registration.batch_name);
+    const tokenCode = registration.token_code || this.generateFormattedTokenCode(registration.passing_year, registration.batch_name);
     const verificationUrl = `${process.env.APP_URL || ''}/verify?token=${tokenCode}`;
     
     // Generate QR code as SVG data URL
@@ -134,7 +138,7 @@ export class TokenService {
       member_name: registration.full_name,
       batch_name: registration.batch_name,
       batch_name_bn: registration.batch_name_bn,
-      status: 'active',
+      status: status,
       qr_code_svg: qrSvg,
       checked_in: false,
       created_at: new Date().toISOString(),
@@ -157,79 +161,189 @@ export class TokenService {
   }
 
   /**
-   * Public verification logic - sanitized, no private PII leaks
+   * Public verification logic - multi-identifier support (Token, Phone, Registration ID)
+   * Sanitized, secure, and supports full payment lifecycle statuses
    */
-  static verifyToken(tokenCode: string): {
+  static verifyToken(rawIdentifier: string): {
     isValid: boolean;
+    found: boolean;
+    is_verified: boolean;
     token?: {
       code: string;
+      registration_id: string;
       alumni_name: string;
+      phone_masked?: string;
+      phone?: string;
+      email?: string;
+      blood_group?: string;
+      t_shirt_size?: string;
       batch: string;
       batch_bn?: string;
+      passing_year?: number;
       event_title: string;
       event_title_bn: string;
       event_date: string;
       venue: string;
       venue_bn: string;
       status: string;
+      payment_status: string;
+      registration_status: string;
+      transaction_id?: string;
+      sender_number?: string;
+      payment_method?: string;
+      fee_amount: number;
+      currency: string;
+      payment_submitted_at?: string;
+      payment_verified_at?: string;
+      admin_notes?: string;
       checked_in: boolean;
       checked_in_at?: string;
       registered_date: string;
+      qr_code_svg?: string;
     };
+    manual_payment_info?: any;
     message?: string;
+    message_bn?: string;
   } {
-    const cleanCode = (tokenCode || '').trim().toUpperCase();
+    const input = (rawIdentifier || '').trim();
+    if (!input) {
+      return {
+        isValid: false,
+        found: false,
+        is_verified: false,
+        message: 'Please provide an Entry Token Code, Phone Number, or Registration ID.',
+        message_bn: 'অনুগ্রহ করে এন্ট্রি টোকেন কোড, মোবাইল নম্বর অথবা রেজিস্ট্রেশন আইডি দিন।'
+      };
+    }
+
+    const cleanInput = input.toUpperCase();
+    const cleanPhone = input.replace(/[\s\-\(\)]/g, '');
+    const normalizedPhone = cleanPhone.startsWith('+88')
+      ? cleanPhone.slice(3)
+      : cleanPhone.startsWith('880')
+      ? cleanPhone.slice(2)
+      : cleanPhone;
+
     const tokens = db.get('tokens') || [];
-    let token = tokens.find(t => (t.token_code || '').toUpperCase() === cleanCode);
+    const registrations = db.get('registrations') || [];
 
-    if (!token) {
-      // Check in registrations table as fallback
-      const registrations = db.get('registrations') || [];
-      const reg = registrations.find(
-        r => (r.token_code || '').toUpperCase() === cleanCode || (r.id || '').toUpperCase() === cleanCode
-      );
-      if (reg && reg.payment_status === 'paid') {
-        token = {
-          id: `tok-${reg.id}`,
-          token_code: reg.token_code || cleanCode,
-          registration_id: reg.id,
-          event_id: reg.event_id || 'event-85th-anniversary',
-          member_name: reg.full_name,
-          batch_name: reg.batch_name,
-          batch_name_bn: reg.batch_name_bn,
-          status: 'active',
-          qr_code_svg: reg.qr_code_svg || '',
-          checked_in: !!reg.checked_in,
-          checked_in_at: reg.checked_in_at,
-          created_at: reg.created_at || new Date().toISOString(),
-        };
-      }
+    // Find registration first or token first
+    let reg = registrations.find(r => {
+      const matchToken = (r.token_code || '').toUpperCase() === cleanInput;
+      const matchId = (r.id || '').toUpperCase() === cleanInput;
+      const rPhone = (r.phone || '').replace(/[\s\-\(\)]/g, '');
+      const rNormPhone = rPhone.startsWith('+88') ? rPhone.slice(3) : rPhone.startsWith('880') ? rPhone.slice(2) : rPhone;
+      const matchPhone = normalizedPhone.length >= 10 && rNormPhone === normalizedPhone;
+      return matchToken || matchId || matchPhone;
+    });
+
+    let token = tokens.find(t => (t.token_code || '').toUpperCase() === cleanInput || (reg && t.registration_id === reg.id));
+
+    if (!reg && !token) {
+      return {
+        isValid: false,
+        found: false,
+        is_verified: false,
+        message: 'No registration or entry pass found matching the provided code.',
+        message_bn: 'প্রদত্ত কোডের বিপরীতে কোনো রেজিস্ট্রেশন বা প্রবেশপত্র খুঁজে পাওয়া যায়নি।'
+      };
     }
 
-    if (!token) {
-      return { isValid: false, message: 'Invalid or unrecognized token code.' };
-    }
+    const events = db.get('events') || [];
+    const eventId = reg?.event_id || token?.event_id || 'event-85th-anniversary';
+    const event = events.find(e => e.id === eventId) || events[0];
 
-    const events = db.get('events');
-    const event = events.find(e => e.id === token.event_id) || events[0];
+    const tokenCode = token?.token_code || reg?.token_code || cleanInput;
+    const alumniName = reg?.full_name || token?.member_name || 'Alumni Member';
+    const batchName = reg?.batch_name || token?.batch_name || '';
+    const batchNameBn = reg?.batch_name_bn || token?.batch_name_bn || '';
+    const paymentStatus = reg?.payment_status || (token?.status === 'active' ? 'paid' : 'pending');
+    const isVerified = paymentStatus === 'paid' || paymentStatus === 'verified';
+
+    // Mask phone for public privacy: 018****1234
+    const rawPhone = reg?.phone || '';
+    const maskedPhone = rawPhone.length > 7
+      ? `${rawPhone.slice(0, 3)}****${rawPhone.slice(-4)}`
+      : rawPhone;
+
+    // Get enabled manual gateways for reference
+    const allGateways = db.get('payment_gateways') || [];
+    const enabledManualGateways = allGateways
+      .filter((g: any) => g.is_enabled && (g.payment_mode === 'manual' || g.code === 'bkash' || g.code === 'nagad'))
+      .map((g: any) => ({
+        id: g.id,
+        code: g.code,
+        name: g.name,
+        display_name_en: g.display_name_en,
+        display_name_bn: g.display_name_bn,
+        account_type: g.account_type || (g.code === 'bkash' ? 'Merchant' : 'Personal'),
+        merchant_number: g.merchant_number || g.merchant_id || g.credentials?.merchant_number || '01819-123456',
+        instructions_en: g.instructions_en || 'Send registration fee using your Token Number as payment reference.',
+        instructions_bn: g.instructions_bn || 'পেমেন্ট রেফারেন্স হিসেবে আপনার টোকেন নম্বর ব্যবহার করে ফি পাঠান।',
+      }));
+
+    let messageEn = 'Registration record found.';
+    let messageBn = 'রেজিস্ট্রেশন তথ্য পাওয়া গেছে।';
+
+    if (isVerified) {
+      messageEn = 'Registration Confirmed & Verified. Entry Pass is active.';
+      messageBn = 'রেজিস্ট্রেশন নিশ্চিত ও পেমেন্ট যাচাইকৃত। ডিজিটাল প্রবেশপত্র সক্রিয় রয়েছে।';
+    } else if (paymentStatus === 'payment_submitted' || paymentStatus === 'under_review') {
+      messageEn = 'Payment confirmation has been submitted and is currently under review by the finance committee.';
+      messageBn = 'পেমেন্ট তথ্য সফলভাবে জমা দেওয়া হয়েছে এবং বর্তমানে অর্থ উপ-কমিটি কর্তৃক যাচাই প্রক্রিয়াধীন রয়েছে।';
+    } else if (paymentStatus === 'rejected') {
+      messageEn = `Payment verification was rejected: ${reg?.admin_notes || 'Please resubmit valid TrxID'}`;
+      messageBn = `পেমেন্ট যাচাই প্রত্যাখ্যাত হয়েছে: ${reg?.admin_notes || 'সঠিক ট্রানজেকশন আইডি প্রদান করে পুনরায় জমা দিন'}`;
+    } else {
+      messageEn = 'Registration submitted. Awaiting manual payment confirmation.';
+      messageBn = 'রেজিস্ট্রেশন ফর্ম জমা হয়েছে। পেমেন্ট সম্পন্ন করে কনফার্মেশনের জন্য অপেক্ষা করা হচ্ছে।';
+    }
 
     return {
       isValid: true,
+      found: true,
+      is_verified: isVerified,
       token: {
-        code: token.token_code,
-        alumni_name: token.member_name,
-        batch: token.batch_name,
-        batch_bn: token.batch_name_bn,
-        event_title: event ? event.title_en : '85th Anniversary Celebration',
-        event_title_bn: event ? event.title_bn : '৮৫ বছর পূর্তি উৎসব',
+        code: tokenCode,
+        registration_id: reg?.id || token?.registration_id || '',
+        alumni_name: alumniName,
+        phone_masked: maskedPhone,
+        phone: reg?.phone,
+        email: reg?.email,
+        blood_group: reg?.blood_group,
+        t_shirt_size: reg?.t_shirt_size || 'L',
+        batch: batchName,
+        batch_bn: batchNameBn,
+        passing_year: reg?.passing_year,
+        event_title: event ? event.title_en : '85th Anniversary Celebration 2027',
+        event_title_bn: event ? event.title_bn : '৮৫ বছর পূর্তি উৎসব ২০২৭',
         event_date: event ? event.event_date : '2027-01-16',
-        venue: event ? event.venue_en : 'Nanupur Abu Sobhan High School Premises',
-        venue_bn: event ? event.venue_bn : 'নানুপুর আবু সোবহান উচ্চ বিদ্যালয় প্রাঙ্গণ',
-        status: token.status,
-        checked_in: token.checked_in,
-        checked_in_at: token.checked_in_at,
-        registered_date: token.created_at,
-      }
+        venue: event ? event.venue_en : 'Nanupur Abu Sobhan High School Premises, Fatikchhari',
+        venue_bn: event ? event.venue_bn : 'নানুপুর আবু সোবহান উচ্চ বিদ্যালয় প্রাঙ্গণ, ফটিকছড়ি',
+        status: token?.status || (isVerified ? 'active' : 'pending_payment'),
+        payment_status: paymentStatus,
+        registration_status: reg?.registration_status || (isVerified ? 'confirmed' : 'pending'),
+        transaction_id: reg?.transaction_id,
+        sender_number: reg?.sender_number,
+        payment_method: reg?.payment_method,
+        fee_amount: reg?.fee_amount || 1000,
+        currency: reg?.currency || 'BDT',
+        payment_submitted_at: reg?.payment_submitted_at,
+        payment_verified_at: reg?.payment_verified_at,
+        admin_notes: reg?.admin_notes,
+        checked_in: !!(token?.checked_in || reg?.checked_in),
+        checked_in_at: token?.checked_in_at || reg?.checked_in_at,
+        registered_date: reg?.created_at || token?.created_at || new Date().toISOString(),
+        qr_code_svg: token?.qr_code_svg || reg?.qr_code_svg,
+      },
+      manual_payment_info: {
+        token_code: tokenCode,
+        fee_amount: reg?.fee_amount || 1000,
+        currency: reg?.currency || 'BDT',
+        gateways: enabledManualGateways,
+      },
+      message: messageEn,
+      message_bn: messageBn,
     };
   }
 

@@ -138,6 +138,33 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         ? transactionId.trim().toUpperCase()
         : `TRX-${(selectedGateway || 'ONLINE').toUpperCase()}-${Date.now().toString().slice(-6)}`;
 
+      if (isManualGateway) {
+        const manualRes = await fetch('/api/payments/manual-submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            registration_id: registration.id,
+            token_code: registration.token_code,
+            gateway: selectedGateway,
+            sender_number: senderNumber.trim(),
+            transaction_id: finalTrxId,
+            amount: registration.fee_amount || 1000,
+          }),
+        });
+
+        const manualData = await manualRes.json();
+        if (!manualRes.ok || !manualData.success) {
+          throw new Error(manualData.message || 'Payment confirmation submission failed.');
+        }
+
+        onSuccess({
+          registration: manualData.registration,
+          token: manualData.token,
+          status: 'payment_submitted',
+        });
+        return;
+      }
+
       const verifyRes = await fetch('/api/payments/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -163,13 +190,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       }
 
       if (verifyData.success) {
-        // Trigger simulated confirmation email with PDF pass
-        try {
-          await fetch(`/api/registrations/${registration.id}/send-confirmation-email`, {
-            method: 'POST',
-          });
-        } catch (e) {}
-
         onSuccess(verifyData);
       } else {
         setError(verifyData.message || 'Payment was declined. You can retry with another payment method.');

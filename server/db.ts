@@ -359,6 +359,15 @@ class DatabaseEngine {
             }
           }
 
+          // Merge any existing local registered users so they are preserved
+          for (const lu of (this.data.users || [])) {
+            const found = remoteUsers.some(ru => ru.id === lu.id || (lu.email && ru.email?.toLowerCase() === lu.email?.toLowerCase()) || (lu.phone && ru.phone === lu.phone));
+            if (!found) {
+              remoteUsers.push(lu);
+              addedNew = true;
+            }
+          }
+
           this.data.users = remoteUsers;
           this.saveData();
           if (addedNew) {
@@ -377,9 +386,10 @@ class DatabaseEngine {
         const regRes = await this.pool.query('SELECT * FROM event_registrations ORDER BY created_at DESC');
         if (regRes.rows && regRes.rows.length > 0) {
           console.log(`Loaded ${regRes.rows.length} registrations from Supabase.`);
-          this.data.registrations = regRes.rows.map(r => ({
+          const remoteRegs: Registration[] = regRes.rows.map(r => ({
             id: r.id,
             event_id: r.event_id || 'event-85th-anniversary',
+            user_id: r.user_id || undefined,
             full_name: r.full_name,
             dob: r.dob,
             gender: r.gender,
@@ -403,6 +413,20 @@ class DatabaseEngine {
             created_at: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
             updated_at: r.updated_at ? new Date(r.updated_at).toISOString() : (r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString()),
           }));
+
+          let addedNewRegs = false;
+          for (const lr of (this.data.registrations || [])) {
+            const found = remoteRegs.some(r => r.id === lr.id || (lr.token_code && r.token_code === lr.token_code));
+            if (!found) {
+              remoteRegs.push(lr);
+              addedNewRegs = true;
+            }
+          }
+          this.data.registrations = remoteRegs;
+          this.saveData();
+          if (addedNewRegs) {
+            await this.persistKeyToSupabase('registrations', this.data.registrations);
+          }
         } else if (this.data.registrations && this.data.registrations.length > 0) {
           await this.persistKeyToSupabase('registrations', this.data.registrations);
         }
@@ -414,20 +438,34 @@ class DatabaseEngine {
       try {
         const tokRes = await this.pool.query('SELECT * FROM entry_tokens');
         if (tokRes.rows && tokRes.rows.length > 0) {
-          this.data.tokens = tokRes.rows.map(t => ({
+          const remoteTokens: EntryToken[] = tokRes.rows.map(t => ({
             id: t.id,
             token_code: t.token_code,
             registration_id: t.registration_id,
             event_id: t.event_id || 'event-85th-anniversary',
             member_name: t.member_name,
             batch_name: t.batch_name,
-            batch_name_bn: t.batch_name_bn,
+            batch_name_bn: t.batch_name_bn || undefined,
             qr_code_svg: t.qr_code_svg || '',
             status: t.status || 'active',
             checked_in: t.checked_in || false,
             checked_in_at: t.checked_in_at,
             created_at: t.created_at ? new Date(t.created_at).toISOString() : new Date().toISOString(),
           }));
+
+          let addedNewToks = false;
+          for (const lt of (this.data.tokens || [])) {
+            const found = remoteTokens.some(t => t.id === lt.id || t.token_code === lt.token_code);
+            if (!found) {
+              remoteTokens.push(lt);
+              addedNewToks = true;
+            }
+          }
+          this.data.tokens = remoteTokens;
+          this.saveData();
+          if (addedNewToks) {
+            await this.persistKeyToSupabase('tokens', this.data.tokens);
+          }
         } else if (this.data.tokens && this.data.tokens.length > 0) {
           await this.persistKeyToSupabase('tokens', this.data.tokens);
         }
@@ -487,6 +525,230 @@ class DatabaseEngine {
     }
   }
 
+  public async syncSingleUser(u: any): Promise<void> {
+    if (!this.pool || !this.isSupabaseConnected || !u || !u.id) return;
+    await this.pool.query(
+      `INSERT INTO users (
+        id, username, name, name_bn, email, phone, password_hash, role, status,
+        passing_year, batch, dob, gender, blood_group, photo_url,
+        occupation, organization, designation, work_location,
+        business_name, business_type, business_address, business_website,
+        address, bio, privacy, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, NOW(), NOW())
+      ON CONFLICT (id) DO UPDATE SET
+        username = EXCLUDED.username,
+        name = EXCLUDED.name,
+        name_bn = EXCLUDED.name_bn,
+        email = EXCLUDED.email,
+        phone = EXCLUDED.phone,
+        password_hash = COALESCE(NULLIF(EXCLUDED.password_hash, ''), users.password_hash),
+        role = EXCLUDED.role,
+        status = EXCLUDED.status,
+        passing_year = EXCLUDED.passing_year,
+        batch = EXCLUDED.batch,
+        dob = EXCLUDED.dob,
+        gender = EXCLUDED.gender,
+        blood_group = EXCLUDED.blood_group,
+        photo_url = EXCLUDED.photo_url,
+        occupation = EXCLUDED.occupation,
+        organization = EXCLUDED.organization,
+        designation = EXCLUDED.designation,
+        work_location = EXCLUDED.work_location,
+        business_name = EXCLUDED.business_name,
+        business_type = EXCLUDED.business_type,
+        business_address = EXCLUDED.business_address,
+        business_website = EXCLUDED.business_website,
+        address = EXCLUDED.address,
+        bio = EXCLUDED.bio,
+        privacy = EXCLUDED.privacy,
+        updated_at = NOW()`,
+      [
+        u.id,
+        u.username || '',
+        u.name,
+        u.name_bn || '',
+        u.email,
+        u.phone || '',
+        u.password_hash || '',
+        u.role || 'alumni_member',
+        u.status || 'active',
+        u.passing_year || null,
+        u.batch || '',
+        u.dob || '',
+        u.gender || '',
+        u.blood_group || '',
+        u.photo_url || '',
+        u.occupation || '',
+        u.organization || '',
+        u.designation || '',
+        u.work_location || '',
+        u.business_name || '',
+        u.business_type || '',
+        u.business_address || '',
+        u.business_website || '',
+        u.address || '',
+        u.bio || '',
+        u.privacy ? JSON.stringify(u.privacy) : null,
+      ]
+    );
+  }
+
+  public async syncSingleRegistration(r: any): Promise<void> {
+    if (!this.pool || !this.isSupabaseConnected || !r || !r.id) return;
+
+    // Verify user exists or sync user first
+    let userIdToInsert: string | null = null;
+    if (r.user_id) {
+      try {
+        const uCheck = await this.pool.query('SELECT id FROM users WHERE id = $1', [r.user_id]);
+        if (uCheck.rows && uCheck.rows.length > 0) {
+          userIdToInsert = r.user_id;
+        } else {
+          // Check local users cache
+          const localUser = (this.data.users || []).find(u => u.id === r.user_id);
+          if (localUser) {
+            await this.syncSingleUser(localUser);
+            userIdToInsert = localUser.id;
+          } else if (r.email || r.phone) {
+            const altCheck = await this.pool.query(
+              'SELECT id FROM users WHERE (email IS NOT NULL AND email = $1) OR (phone IS NOT NULL AND phone = $2) LIMIT 1',
+              [r.email || '', r.phone || '']
+            );
+            if (altCheck.rows && altCheck.rows.length > 0) {
+              userIdToInsert = altCheck.rows[0].id;
+            }
+          }
+        }
+      } catch {
+        userIdToInsert = null;
+      }
+    }
+
+    // Verify event exists
+    let eventIdToInsert = r.event_id || 'event-85th-anniversary';
+    try {
+      const evCheck = await this.pool.query('SELECT id FROM events WHERE id = $1', [eventIdToInsert]);
+      if (!evCheck.rows || evCheck.rows.length === 0) {
+        await this.pool.query(`
+          INSERT INTO events (id, slug, title_en, title_bn, event_date, venue_en, registration_fee, currency)
+          VALUES ($1, '85th-anniversary', '85th Anniversary', '৮৫তম বার্ষিকী', '2027-01-16', 'School Grounds', 1000, 'BDT')
+          ON CONFLICT (id) DO NOTHING
+        `, [eventIdToInsert]);
+      }
+    } catch {}
+
+    // Verify batch exists or set null
+    let batchIdToInsert = r.batch_id || null;
+    if (batchIdToInsert) {
+      try {
+        const bCheck = await this.pool.query('SELECT id FROM batches WHERE id = $1', [batchIdToInsert]);
+        if (!bCheck.rows || bCheck.rows.length === 0) {
+          batchIdToInsert = null;
+        }
+      } catch {
+        batchIdToInsert = null;
+      }
+    }
+
+    await this.pool.query(
+      `INSERT INTO event_registrations (
+        id, event_id, user_id, full_name, dob, gender, blood_group, t_shirt_size,
+        phone, email, passing_year, batch_id, batch_name, batch_name_bn,
+        fee_amount, currency, payment_status, registration_status, payment_method,
+        token_id, token_code, checked_in, checked_in_at, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, NOW(), NOW())
+      ON CONFLICT (id) DO UPDATE SET
+        user_id = EXCLUDED.user_id,
+        full_name = EXCLUDED.full_name,
+        t_shirt_size = EXCLUDED.t_shirt_size,
+        phone = EXCLUDED.phone,
+        email = EXCLUDED.email,
+        blood_group = EXCLUDED.blood_group,
+        gender = EXCLUDED.gender,
+        dob = EXCLUDED.dob,
+        passing_year = EXCLUDED.passing_year,
+        batch_name = EXCLUDED.batch_name,
+        batch_name_bn = EXCLUDED.batch_name_bn,
+        fee_amount = EXCLUDED.fee_amount,
+        payment_status = EXCLUDED.payment_status,
+        registration_status = EXCLUDED.registration_status,
+        payment_method = EXCLUDED.payment_method,
+        token_id = EXCLUDED.token_id,
+        token_code = EXCLUDED.token_code,
+        checked_in = EXCLUDED.checked_in,
+        checked_in_at = EXCLUDED.checked_in_at,
+        updated_at = NOW()`,
+      [
+        r.id,
+        eventIdToInsert,
+        userIdToInsert,
+        r.full_name,
+        r.dob || '1990-01-01',
+        r.gender || 'male',
+        r.blood_group || 'B+',
+        r.t_shirt_size || 'L',
+        r.phone,
+        r.email || '',
+        r.passing_year || 2008,
+        batchIdToInsert,
+        r.batch_name || '',
+        r.batch_name_bn || '',
+        r.fee_amount || 1000,
+        r.currency || 'BDT',
+        r.payment_status || 'pending',
+        r.registration_status || 'pending',
+        r.payment_method || 'bKash',
+        r.token_id || '',
+        r.token_code || '',
+        r.checked_in || false,
+        r.checked_in_at || null,
+      ]
+    );
+  }
+
+  public async syncSingleToken(t: any): Promise<void> {
+    if (!this.pool || !this.isSupabaseConnected || !t || !t.id) return;
+
+    // Verify registration exists or sync registration first
+    let regIdToInsert: string | null = null;
+    if (t.registration_id) {
+      try {
+        const regCheck = await this.pool.query('SELECT id FROM event_registrations WHERE id = $1', [t.registration_id]);
+        if (regCheck.rows && regCheck.rows.length > 0) {
+          regIdToInsert = t.registration_id;
+        } else {
+          const localReg = (this.data.registrations || []).find(r => r.id === t.registration_id);
+          if (localReg) {
+            await this.syncSingleRegistration(localReg);
+            regIdToInsert = localReg.id;
+          }
+        }
+      } catch {
+        regIdToInsert = null;
+      }
+    }
+
+    let eventIdToInsert = t.event_id || 'event-85th-anniversary';
+    try {
+      const evCheck = await this.pool.query('SELECT id FROM events WHERE id = $1', [eventIdToInsert]);
+      if (!evCheck.rows || evCheck.rows.length === 0) {
+        await this.pool.query(`
+          INSERT INTO events (id, slug, title_en, title_bn, event_date, venue_en, registration_fee, currency)
+          VALUES ($1, '85th-anniversary', '85th Anniversary', '৮৫তম বার্ষিকী', '2027-01-16', 'School Grounds', 1000, 'BDT')
+          ON CONFLICT (id) DO NOTHING
+        `, [eventIdToInsert]);
+      }
+    } catch {}
+
+    await this.pool.query(
+      `INSERT INTO entry_tokens (id, token_code, registration_id, event_id, member_name, batch_name, status, checked_in, checked_in_at, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+       ON CONFLICT (id) DO UPDATE
+       SET token_code = $2, registration_id = $3, member_name = $5, batch_name = $6, status = $7, checked_in = $8, checked_in_at = $9`,
+      [t.id, t.token_code, regIdToInsert, eventIdToInsert, t.member_name, t.batch_name, t.status || 'active', t.checked_in || false, t.checked_in_at || null]
+    );
+  }
+
   public async persistKeyToSupabase(key: string, value: any) {
     if (!this.pool || !this.isSupabaseConnected) return;
     try {
@@ -503,70 +765,7 @@ class DatabaseEngine {
       if (key === 'users' && Array.isArray(value)) {
         for (const u of value) {
           try {
-            await this.pool.query(
-              `INSERT INTO users (
-                id, username, name, name_bn, email, phone, password_hash, role, status,
-                passing_year, batch, dob, gender, blood_group, photo_url,
-                occupation, organization, designation, work_location,
-                business_name, business_type, business_address, business_website,
-                address, bio, privacy, created_at, updated_at
-              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, NOW(), NOW())
-              ON CONFLICT (id) DO UPDATE SET
-                username = EXCLUDED.username,
-                name = EXCLUDED.name,
-                name_bn = EXCLUDED.name_bn,
-                email = EXCLUDED.email,
-                phone = EXCLUDED.phone,
-                password_hash = COALESCE(NULLIF(EXCLUDED.password_hash, ''), users.password_hash),
-                role = EXCLUDED.role,
-                status = EXCLUDED.status,
-                passing_year = EXCLUDED.passing_year,
-                batch = EXCLUDED.batch,
-                dob = EXCLUDED.dob,
-                gender = EXCLUDED.gender,
-                blood_group = EXCLUDED.blood_group,
-                photo_url = EXCLUDED.photo_url,
-                occupation = EXCLUDED.occupation,
-                organization = EXCLUDED.organization,
-                designation = EXCLUDED.designation,
-                work_location = EXCLUDED.work_location,
-                business_name = EXCLUDED.business_name,
-                business_type = EXCLUDED.business_type,
-                business_address = EXCLUDED.business_address,
-                business_website = EXCLUDED.business_website,
-                address = EXCLUDED.address,
-                bio = EXCLUDED.bio,
-                privacy = EXCLUDED.privacy,
-                updated_at = NOW()`,
-              [
-                u.id,
-                u.username || '',
-                u.name,
-                u.name_bn || '',
-                u.email,
-                u.phone || '',
-                u.password_hash || '',
-                u.role || 'alumni_member',
-                u.status || 'active',
-                u.passing_year || null,
-                u.batch || '',
-                u.dob || '',
-                u.gender || '',
-                u.blood_group || '',
-                u.photo_url || '',
-                u.occupation || '',
-                u.organization || '',
-                u.designation || '',
-                u.work_location || '',
-                u.business_name || '',
-                u.business_type || '',
-                u.business_address || '',
-                u.business_website || '',
-                u.address || '',
-                u.bio || '',
-                u.privacy ? JSON.stringify(u.privacy) : null,
-              ]
-            );
+            await this.syncSingleUser(u);
           } catch (uErr: any) {
             console.warn(`User row sync error (${u.email}):`, uErr.message);
           }
@@ -577,60 +776,7 @@ class DatabaseEngine {
       if (key === 'registrations' && Array.isArray(value)) {
         for (const r of value) {
           try {
-            await this.pool.query(
-              `INSERT INTO event_registrations (
-                id, event_id, user_id, full_name, dob, gender, blood_group, t_shirt_size,
-                phone, email, passing_year, batch_id, batch_name, batch_name_bn,
-                fee_amount, currency, payment_status, registration_status, payment_method,
-                token_id, token_code, checked_in, checked_in_at, created_at, updated_at
-              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, NOW(), NOW())
-              ON CONFLICT (id) DO UPDATE SET
-                user_id = EXCLUDED.user_id,
-                full_name = EXCLUDED.full_name,
-                t_shirt_size = EXCLUDED.t_shirt_size,
-                phone = EXCLUDED.phone,
-                email = EXCLUDED.email,
-                blood_group = EXCLUDED.blood_group,
-                gender = EXCLUDED.gender,
-                dob = EXCLUDED.dob,
-                passing_year = EXCLUDED.passing_year,
-                batch_name = EXCLUDED.batch_name,
-                batch_name_bn = EXCLUDED.batch_name_bn,
-                fee_amount = EXCLUDED.fee_amount,
-                payment_status = EXCLUDED.payment_status,
-                registration_status = EXCLUDED.registration_status,
-                payment_method = EXCLUDED.payment_method,
-                token_id = EXCLUDED.token_id,
-                token_code = EXCLUDED.token_code,
-                checked_in = EXCLUDED.checked_in,
-                checked_in_at = EXCLUDED.checked_in_at,
-                updated_at = NOW()`,
-              [
-                r.id,
-                r.event_id || 'event-85th-anniversary',
-                r.user_id || null,
-                r.full_name,
-                r.dob || '1990-01-01',
-                r.gender || 'male',
-                r.blood_group || 'B+',
-                r.t_shirt_size || 'L',
-                r.phone,
-                r.email || '',
-                r.passing_year || 2008,
-                r.batch_id || 'batch-2008',
-                r.batch_name || '',
-                r.batch_name_bn || '',
-                r.fee_amount || 1000,
-                r.currency || 'BDT',
-                r.payment_status || 'pending',
-                r.registration_status || 'pending',
-                r.payment_method || 'bKash',
-                r.token_id || '',
-                r.token_code || '',
-                r.checked_in || false,
-                r.checked_in_at || null,
-              ]
-            );
+            await this.syncSingleRegistration(r);
           } catch (rErr: any) {
             console.warn(`Registration row sync error (${r.id}):`, rErr.message);
           }
@@ -658,13 +804,7 @@ class DatabaseEngine {
       if (key === 'tokens' && Array.isArray(value)) {
         for (const t of value) {
           try {
-            await this.pool.query(
-              `INSERT INTO entry_tokens (id, token_code, registration_id, event_id, member_name, batch_name, status, checked_in, checked_in_at, created_at)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
-               ON CONFLICT (id) DO UPDATE
-               SET token_code = $2, member_name = $5, batch_name = $6, status = $7, checked_in = $8, checked_in_at = $9`,
-              [t.id, t.token_code, t.registration_id, t.event_id || 'event-85th-anniversary', t.member_name, t.batch_name, t.status || 'active', t.checked_in || false, t.checked_in_at || null]
-            );
+            await this.syncSingleToken(t);
           } catch (tErr: any) {
             console.warn(`Token row sync error (${t.id}):`, tErr.message);
           }

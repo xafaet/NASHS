@@ -21,15 +21,21 @@ import {
   Camera,
   FileText,
   Shirt,
+  Copy,
+  Check,
+  Download,
+  Printer,
+  Smartphone,
+  Info,
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { Registration, RegistrationFieldConfig } from '../types';
-import { PaymentModal } from './PaymentModal';
 import { DigitalEntryPass } from './DigitalEntryPass';
 import { apiFetch } from '../utils/api';
 
 interface RegistrationFlowProps {
   onGoToPortal?: () => void;
+  onGoToVerify?: (tokenCode?: string) => void;
 }
 
 const DEFAULT_REGISTRATION_FIELDS: RegistrationFieldConfig[] = [
@@ -176,7 +182,7 @@ const DEFAULT_REGISTRATION_FIELDS: RegistrationFieldConfig[] = [
   },
 ];
 
-export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({ onGoToPortal }) => {
+export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({ onGoToPortal, onGoToVerify }) => {
   const { language, t } = useLanguage();
 
   // Dynamic Form Configuration
@@ -195,13 +201,24 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({ onGoToPortal
   const [currency, setCurrency] = useState<string>('BDT');
   const [eventId, setEventId] = useState<string>('event-85th-anniversary');
 
-  // UI Flow Steps: 'form' | 'review' | 'success'
-  const [step, setStep] = useState<'form' | 'review' | 'success'>('form');
+  // UI Flow Steps: 'form' | 'review' | 'manual_payment' | 'success'
+  const [step, setStep] = useState<'form' | 'review' | 'manual_payment' | 'success'>('form');
   const [createdRegistration, setCreatedRegistration] = useState<Registration | null>(null);
   const [issuedToken, setIssuedToken] = useState<any>(null);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [manualPaymentInfo, setManualPaymentInfo] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Manual payment state
+  const [selectedGateway, setSelectedGateway] = useState<'bkash' | 'nagad'>('bkash');
+  const [senderNumber, setSenderNumber] = useState('');
+  const [transactionId, setTransactionId] = useState('');
+  const [paymentNotes, setPaymentNotes] = useState('');
+  const [paymentSubmitting, setPaymentSubmitting] = useState(false);
+  const [paymentSubmittedSuccess, setPaymentSubmittedSuccess] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [copiedToken, setCopiedToken] = useState(false);
+  const [copiedNumber, setCopiedNumber] = useState<string | null>(null);
 
   // Fetch dynamic registration form fields from CMS/Database
   useEffect(() => {
@@ -367,7 +384,21 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({ onGoToPortal
       }
 
       setCreatedRegistration(data.registration);
-      setShowPaymentModal(true);
+      setIssuedToken(data.token);
+      setManualPaymentInfo(data.manual_payment_info);
+      setSenderNumber(formValues.phone || data.registration.phone || '');
+      setStep('manual_payment');
+
+      try {
+        confetti({
+          particleCount: 90,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#0f4d2a', '#d4971c', '#229957'],
+        });
+      } catch (e) {
+        // Ignore in environments without canvas
+      }
     } catch (err: any) {
       setErrorMessage(err.message || 'Error creating registration.');
     } finally {
@@ -375,21 +406,70 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({ onGoToPortal
     }
   };
 
-  const handlePaymentSuccess = (verifyResult: any) => {
-    setShowPaymentModal(false);
-    setCreatedRegistration(verifyResult.registration);
-    setIssuedToken(verifyResult.token);
-    setStep('success');
+  const handleCopyToken = () => {
+    const token = createdRegistration?.token_code || manualPaymentInfo?.token_code || '';
+    if (!token) return;
+    navigator.clipboard.writeText(token);
+    setCopiedToken(true);
+    setTimeout(() => setCopiedToken(false), 2000);
+  };
 
+  const handleCopyNumber = (num: string, id: string) => {
+    navigator.clipboard.writeText(num.replace(/[\s-]/g, ''));
+    setCopiedNumber(id);
+    setTimeout(() => setCopiedNumber(null), 2000);
+  };
+
+  const handleSubmitManualPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!createdRegistration) return;
+    setPaymentError(null);
+
+    if (!senderNumber.trim()) {
+      setPaymentError(
+        language === 'bn'
+          ? 'অনুগ্রহ করে প্রেরক মোবাইল নম্বর লিখুন।'
+          : 'Please enter the sender mobile number used for payment.'
+      );
+      return;
+    }
+
+    if (!transactionId.trim() || transactionId.trim().length < 4) {
+      setPaymentError(
+        language === 'bn'
+          ? 'অনুগ্রহ করে সঠিক ট্রানজেকশন আইডি (TrxID) লিখুন।'
+          : 'Please enter a valid Transaction ID (TrxID) received from bKash or Nagad.'
+      );
+      return;
+    }
+
+    setPaymentSubmitting(true);
     try {
-      confetti({
-        particleCount: 120,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#0f4d2a', '#d4971c', '#c92a2a', '#229957'],
+      const res = await fetch('/api/payments/manual-submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          registration_id: createdRegistration.id,
+          token_code: createdRegistration.token_code,
+          gateway: selectedGateway,
+          sender_number: senderNumber.trim(),
+          transaction_id: transactionId.trim().toUpperCase(),
+          amount: createdRegistration.fee_amount || feeAmount,
+          notes: paymentNotes.trim(),
+        }),
       });
-    } catch (e) {
-      // Ignore in environments without canvas
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Payment confirmation submission failed.');
+      }
+
+      setCreatedRegistration(data.registration);
+      setPaymentSubmittedSuccess(true);
+    } catch (err: any) {
+      setPaymentError(err.message || 'Failed to submit payment confirmation. Please try again.');
+    } finally {
+      setPaymentSubmitting(false);
     }
   };
 
@@ -451,7 +531,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({ onGoToPortal
               className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition ${
                 step === 'review'
                   ? 'bg-[#0f4d2a] text-white ring-4 ring-emerald-100 shadow-md'
-                  : step === 'success'
+                  : step === 'manual_payment' || step === 'success'
                   ? 'bg-emerald-600 text-white'
                   : 'bg-slate-200 text-slate-500'
               }`}
@@ -459,7 +539,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({ onGoToPortal
               2
             </div>
             <span className="text-xs font-semibold mt-1.5 text-slate-700">
-              {language === 'bn' ? 'যাচাই ও ফি' : 'Review & Fee'}
+              {language === 'bn' ? 'যাচাই ও নিশ্চিতকরণ' : 'Review & Submit'}
             </span>
           </div>
 
@@ -467,15 +547,17 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({ onGoToPortal
           <div className="flex flex-col items-center relative z-10">
             <div
               className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition ${
-                step === 'success'
+                step === 'manual_payment'
                   ? 'bg-[#0f4d2a] text-white ring-4 ring-emerald-100 shadow-md'
+                  : step === 'success'
+                  ? 'bg-emerald-600 text-white'
                   : 'bg-slate-200 text-slate-500'
               }`}
             >
               3
             </div>
             <span className="text-xs font-semibold mt-1.5 text-slate-700">
-              {language === 'bn' ? 'প্রবেশ টোকেন' : 'Entry Token'}
+              {language === 'bn' ? 'পেমেন্ট ও টোকেন' : 'Payment & Token'}
             </span>
           </div>
         </div>
@@ -750,23 +832,463 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({ onGoToPortal
                 disabled={loading}
                 className="flex-1 py-3.5 px-6 bg-[#0f4d2a] hover:bg-[#135d34] active:bg-[#0a331c] text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-xl shadow-emerald-950/20 transition cursor-pointer disabled:opacity-50"
               >
-                <CreditCard className="w-5 h-5 text-amber-400" />
-                <span>
-                  {language === 'bn'
-                    ? `পেমেন্ট করুন (৳${feeAmount.toLocaleString()})`
-                    : `Proceed to Payment (৳${feeAmount.toLocaleString()} BDT)`}
-                </span>
-                <ArrowRight className="w-4 h-4 text-amber-400" />
+                {loading ? (
+                  <>
+                    <Clock className="w-5 h-5 animate-spin" />
+                    <span>{language === 'bn' ? 'জমা দেওয়া হচ্ছে...' : 'Submitting Registration...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-5 h-5 text-amber-400" />
+                    <span>
+                      {language === 'bn'
+                        ? 'রেজিস্ট্রেশন জমা দিন'
+                        : 'Submit Registration'}
+                    </span>
+                    <ArrowRight className="w-4 h-4 text-amber-400" />
+                  </>
+                )}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* STEP 3: SUCCESS & DIGITAL ENTRY PASS */}
+      {/* STEP 3: REGISTRATION CONFIRMATION & MANUAL PAYMENT INSTRUCTIONS */}
+      {step === 'manual_payment' && createdRegistration && (
+        <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
+          {/* Official Bilingual Confirmation Card */}
+          <div className="bg-white rounded-2xl shadow-xl border-2 border-emerald-600/40 overflow-hidden">
+            <div className="bg-gradient-to-r from-[#0f4d2a] via-[#135d34] to-[#0f4d2a] text-white p-6 sm:p-8 text-center relative">
+              <div className="inline-flex p-3 bg-amber-400/20 rounded-full text-amber-300 mb-3">
+                <CheckCircle2 className="w-10 h-10 text-amber-400" />
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+                {language === 'bn' ? 'আপনার রেজিস্ট্রেশনের জন্য ধন্যবাদ!' : 'Thank you for registering!'}
+              </h2>
+              <p className="text-emerald-100 text-sm sm:text-base mt-2 max-w-2xl mx-auto leading-relaxed">
+                {language === 'bn'
+                  ? 'আপনার রেজিস্ট্রেশন ফর্ম সফলভাবে জমা হয়েছে। আপনার রেজিস্ট্রেশন এখন পেমেন্ট যাচাইয়ের অপেক্ষায় রয়েছে। পেমেন্ট যাচাই সম্পন্ন হওয়ার পর আপনার রেজিস্ট্রেশন চূড়ান্তভাবে নিশ্চিত করা হবে।'
+                  : 'Your registration form has been successfully submitted. Your registration is now awaiting payment verification. Your registration will be confirmed after payment verification.'}
+              </p>
+            </div>
+
+            {/* Token / Payment Reference Banner */}
+            <div className="p-6 sm:p-8 bg-amber-50/60 border-b border-amber-200/80">
+              <div className="max-w-xl mx-auto text-center space-y-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-amber-900 block">
+                  {language === 'bn'
+                    ? 'আপনার Registration Token / Payment Reference Number'
+                    : 'Your Registration Token / Payment Reference Number'}
+                </span>
+                
+                <div className="inline-flex items-center gap-3 bg-white px-5 py-3 rounded-2xl border-2 border-amber-400 shadow-md">
+                  <span className="font-mono text-2xl sm:text-3xl font-black text-[#0f4d2a] tracking-wider">
+                    {createdRegistration.token_code || manualPaymentInfo?.token_code}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleCopyToken}
+                    className="p-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 transition cursor-pointer flex items-center gap-1.5 text-xs font-bold"
+                    title="Copy Token"
+                  >
+                    {copiedToken ? (
+                      <>
+                        <Check className="w-4 h-4 text-emerald-700" />
+                        <span className="text-emerald-800 font-bold">{language === 'bn' ? 'কপি হয়েছে' : 'Copied!'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4 text-amber-800" />
+                        <span>{language === 'bn' ? 'কপি করুন' : 'Copy'}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <p className="text-xs sm:text-sm font-semibold text-amber-900 leading-normal">
+                  {language === 'bn'
+                    ? 'Use this Token/Reference Number as your bKash or Nagad Payment Reference.'
+                    : 'Use this Token/Reference Number as your bKash or Nagad Payment Reference.'}
+                </p>
+
+                <div className="pt-2 flex justify-center gap-3 flex-wrap">
+                  <a
+                    href={`/api/registrations/${createdRegistration.id}/pdf`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-800 rounded-xl text-xs font-bold shadow-xs transition"
+                  >
+                    <Download className="w-4 h-4 text-[#0f4d2a]" />
+                    <span>{language === 'bn' ? 'রেজিস্ট্রেশন স্লিপ ডাউনলোড (PDF)' : 'Download Registration Slip (PDF)'}</span>
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
+                  >
+                    <Printer className="w-4 h-4 text-slate-500" />
+                    <span>{language === 'bn' ? 'প্রিন্ট স্লিপ' : 'Print Summary'}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Content Body: Manual Payment Numbers & Instructions */}
+            <div className="p-6 sm:p-8 space-y-8">
+              {/* CMS-Driven Payment Accounts */}
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
+                  <Smartphone className="w-5 h-5 text-[#0f4d2a]" />
+                  <span>
+                    {language === 'bn'
+                      ? 'ম্যানুয়াল পেমেন্ট নম্বর (bKash ও Nagad)'
+                      : 'Manual Payment Numbers (bKash & Nagad)'}
+                  </span>
+                </h3>
+                <p className="text-xs text-slate-500 mb-4">
+                  {language === 'bn'
+                    ? 'নির্ধারিত ফি পাঠানোর জন্য নিচের যেকোনো একটি নম্বরে টাকা পাঠান:'
+                    : 'Send your registration fee to any of the verified official numbers below:'}
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* bKash Card */}
+                  {(() => {
+                    const bkashGw = manualPaymentInfo?.gateways?.find((g: any) => g.code === 'bkash') || {
+                      merchant_number: '01819-123456',
+                      account_type: 'Merchant (Payment)',
+                      display_name_bn: 'বিকাশ পেমেন্ট',
+                      display_name_en: 'bKash Payment',
+                    };
+                    const num = bkashGw.merchant_number || '01819-123456';
+                    return (
+                      <div className="p-5 rounded-2xl border-2 border-pink-200 bg-pink-50/50 flex flex-col justify-between space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <span className="font-bold text-pink-900 text-lg block">bKash</span>
+                            <span className="text-[11px] font-semibold text-pink-700 bg-pink-100 px-2 py-0.5 rounded-full inline-block mt-0.5">
+                              {bkashGw.account_type || 'Merchant'}
+                            </span>
+                          </div>
+                          <span className="text-xs font-bold text-slate-600 bg-white px-2.5 py-1 rounded-lg border border-pink-200 shadow-xs">
+                            ৳{createdRegistration.fee_amount || feeAmount} BDT
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-pink-200">
+                          <span className="font-mono text-lg font-black text-pink-950 tracking-wider">
+                            {num}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyNumber(num, 'bkash')}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-pink-100 hover:bg-pink-200 text-pink-900 rounded-lg text-xs font-bold transition cursor-pointer"
+                          >
+                            {copiedNumber === 'bkash' ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 text-pink-800" />
+                                <span>{language === 'bn' ? 'কপি হয়েছে' : 'Copied!'}</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3.5 h-3.5 text-pink-800" />
+                                <span>{language === 'bn' ? 'নম্বর কপি' : 'Copy Number'}</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+
+                        <p className="text-[11px] text-pink-800 leading-snug">
+                          {language === 'bn'
+                            ? bkashGw.instructions_bn || 'বিকাশ অ্যাপ থেকে পেমেন্ট করুন এবং রেফারেন্সে আপনার টোকেন নম্বর দিন।'
+                            : bkashGw.instructions_en || 'Send money or make payment from your bKash app using your Token Number as reference.'}
+                        </p>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Nagad Card */}
+                  {(() => {
+                    const nagadGw = manualPaymentInfo?.gateways?.find((g: any) => g.code === 'nagad') || {
+                      merchant_number: '01712-654321',
+                      account_type: 'Personal (Send Money)',
+                      display_name_bn: 'নগদ পেমেন্ট',
+                      display_name_en: 'Nagad Payment',
+                    };
+                    const num = nagadGw.merchant_number || '01712-654321';
+                    return (
+                      <div className="p-5 rounded-2xl border-2 border-orange-200 bg-orange-50/50 flex flex-col justify-between space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <span className="font-bold text-orange-900 text-lg block">Nagad</span>
+                            <span className="text-[11px] font-semibold text-orange-700 bg-orange-100 px-2 py-0.5 rounded-full inline-block mt-0.5">
+                              {nagadGw.account_type || 'Personal (Send Money)'}
+                            </span>
+                          </div>
+                          <span className="text-xs font-bold text-slate-600 bg-white px-2.5 py-1 rounded-lg border border-orange-200 shadow-xs">
+                            ৳{createdRegistration.fee_amount || feeAmount} BDT
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-orange-200">
+                          <span className="font-mono text-lg font-black text-orange-950 tracking-wider">
+                            {num}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyNumber(num, 'nagad')}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-orange-100 hover:bg-orange-200 text-orange-900 rounded-lg text-xs font-bold transition cursor-pointer"
+                          >
+                            {copiedNumber === 'nagad' ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 text-orange-800" />
+                                <span>{language === 'bn' ? 'কপি হয়েছে' : 'Copied!'}</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3.5 h-3.5 text-orange-800" />
+                                <span>{language === 'bn' ? 'নম্বর কপি' : 'Copy Number'}</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+
+                        <p className="text-[11px] text-orange-800 leading-snug">
+                          {language === 'bn'
+                            ? nagadGw.instructions_bn || 'নগদ অ্যাপ বা *১৬৭# ব্যবহার করে সেন্ড মানি করুন এবং রেফারেন্সে টোকেন নম্বর দিন।'
+                            : nagadGw.instructions_en || 'Send Money from your Nagad account and use your Token Number as payment reference.'}
+                        </p>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* Step-by-Step Instructions */}
+              <div className="bg-slate-50 rounded-2xl p-5 sm:p-6 border border-slate-200">
+                <h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
+                  <Info className="w-4 h-4 text-[#0f4d2a]" />
+                  <span>
+                    {language === 'bn' ? 'পেমেন্ট নির্দেশিকা (ধাপে ধাপে):' : 'Payment Instructions (Step-by-Step):'}
+                  </span>
+                </h4>
+                
+                {language === 'bn' ? (
+                  <ol className="space-y-2.5 text-xs sm:text-sm text-slate-700 list-decimal list-inside font-medium leading-relaxed">
+                    <li>উপরের <strong>bKash</strong> অথবা <strong>Nagad</strong> নম্বরে নির্ধারিত রেজিস্ট্রেশন ফি <strong>(৳{(createdRegistration.fee_amount || feeAmount).toLocaleString()})</strong> পাঠান।</li>
+                    <li>Payment Reference হিসেবে আপনার Token Number (<strong>{createdRegistration.token_code}</strong>) ব্যবহার করুন।</li>
+                    <li>পেমেন্ট সম্পন্ন করার পর নিচের <strong>Confirm Payment</strong> ফর্মটি পূরণ করে জমা দিন।</li>
+                    <li>এডমিন কর্তৃক আপনার পেমেন্ট যাচাই করার পর রেজিস্ট্রেশন চূড়ান্তভাবে নিশ্চিত করা হবে।</li>
+                  </ol>
+                ) : (
+                  <ol className="space-y-2.5 text-xs sm:text-sm text-slate-700 list-decimal list-inside font-medium leading-relaxed">
+                    <li>Send the registration fee <strong>(৳{(createdRegistration.fee_amount || feeAmount).toLocaleString()} BDT)</strong> to the displayed bKash or Nagad number.</li>
+                    <li>Use your generated Token Number (<strong>{createdRegistration.token_code}</strong>) as the Payment Reference.</li>
+                    <li>After completing the payment, fill out and submit the <strong>Confirm Payment</strong> form below.</li>
+                    <li>Your registration will be confirmed after payment verification by our administration.</li>
+                  </ol>
+                )}
+              </div>
+
+              {/* Interactive Confirm Payment Form */}
+              <div className="bg-emerald-50/40 rounded-2xl p-6 border-2 border-emerald-500/40">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h4 className="text-base font-bold text-slate-900">
+                      {language === 'bn' ? 'পেমেন্ট নিশ্চিতকরণ ফর্ম (Confirm Payment)' : 'Confirm Payment Submission'}
+                    </h4>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {language === 'bn'
+                        ? 'টাকা পাঠানোর পর প্রাপ্ত ট্রানজেকশন আইডি (TrxID) নিচে প্রদান করুন'
+                        : 'Submit your payment transaction details for administrative verification'}
+                    </p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300">
+                    {paymentSubmittedSuccess || createdRegistration.payment_status === 'payment_submitted'
+                      ? language === 'bn' ? 'যাচাইয়ের অপেক্ষায়' : 'Under Review'
+                      : language === 'bn' ? 'পেমেন্ট অপেক্ষমান' : 'Awaiting Payment'}
+                  </span>
+                </div>
+
+                {paymentSubmittedSuccess || createdRegistration.payment_status === 'payment_submitted' || createdRegistration.payment_status === 'under_review' ? (
+                  <div className="bg-white rounded-xl p-5 border border-emerald-200 space-y-3">
+                    <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                      <span>
+                        {language === 'bn'
+                          ? 'পেমেন্টের তথ্য সফলভাবে জমা হয়েছে!'
+                          : 'Payment confirmation details submitted successfully!'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                      {language === 'bn'
+                        ? `আপনার পেমেন্ট বর্তমানে এডমিন কমিটির যাচাইয়ের অপেক্ষায় রয়েছে (স্ট্যাটাস: Payment Under Review)। TrxID যাচাই সম্পন্ন হওয়ার সাথে সাথে আপনার প্রবেশপত্র সক্রিয় হবে। আপনি টোকেন ভেরিফিকেশন পেজে গিয়ে যেকোনো সময় অবস্থা দেখতে পারবেন।`
+                        : `Your payment is currently under review by our finance committee (Status: Payment Under Review). Once the TrxID is verified, your entry pass will be activated. You can track status anytime on the token verification page.`}
+                    </p>
+                    <div className="p-3 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 flex justify-between flex-wrap gap-2">
+                      <span>Gateway: <strong>{selectedGateway.toUpperCase()}</strong></span>
+                      <span>TrxID: <strong>{transactionId || createdRegistration.transaction_id || 'Submitted'}</strong></span>
+                      <span>Sender: <strong>{senderNumber || createdRegistration.phone}</strong></span>
+                    </div>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSubmitManualPayment} className="space-y-4">
+                    {paymentError && (
+                      <div className="p-3 bg-red-50 border-l-4 border-red-500 rounded-r-lg text-red-800 text-xs flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                        <span>{paymentError}</span>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Payment Method Selector */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          {language === 'bn' ? 'পেমেন্ট মাধ্যম *' : 'Payment Method *'}
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedGateway('bkash')}
+                            className={`py-2 px-3 rounded-xl border-2 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                              selectedGateway === 'bkash'
+                                ? 'border-pink-500 bg-pink-50 text-pink-900 shadow-xs'
+                                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                            }`}
+                          >
+                            <span>bKash</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedGateway('nagad')}
+                            className={`py-2 px-3 rounded-xl border-2 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                              selectedGateway === 'nagad'
+                                ? 'border-orange-500 bg-orange-50 text-orange-900 shadow-xs'
+                                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                            }`}
+                          >
+                            <span>Nagad</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Sender Mobile Number */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          {language === 'bn' ? 'প্রেরক মোবাইল নম্বর *' : 'Sender Mobile Number *'}
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={senderNumber}
+                          onChange={e => setSenderNumber(e.target.value)}
+                          placeholder="e.g. 01819123456"
+                          className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-mono text-slate-900 focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                        />
+                      </div>
+
+                      {/* Transaction ID */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          {language === 'bn' ? 'ট্রানজেকশন আইডি (TrxID) *' : 'Transaction ID (TrxID) *'}
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={transactionId}
+                          onChange={e => setTransactionId(e.target.value.toUpperCase())}
+                          placeholder="e.g. BK89A2B4 or 9G8F7K"
+                          className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-mono uppercase text-slate-900 tracking-wider focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                        />
+                      </div>
+
+                      {/* Paid Amount */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          {language === 'bn' ? 'পরিশোধিত টাকার পরিমাণ' : 'Paid Amount'}
+                        </label>
+                        <input
+                          type="text"
+                          disabled
+                          value={`৳${(createdRegistration.fee_amount || feeAmount).toLocaleString()} ${currency}`}
+                          className="w-full px-3.5 py-2.5 bg-slate-100 border border-slate-300 rounded-xl text-xs font-bold text-slate-700"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Optional Notes */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        {language === 'bn' ? 'মন্তব্য বা অতিরিক্ত তথ্য (ঐচ্ছিক)' : 'Additional Notes (Optional)'}
+                      </label>
+                      <input
+                        type="text"
+                        value={paymentNotes}
+                        onChange={e => setPaymentNotes(e.target.value)}
+                        placeholder={language === 'bn' ? 'যেমন: ভাইয়ের নম্বর থেকে পাঠানো হয়েছে' : 'e.g. Sent from brother’s phone'}
+                        className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                      />
+                    </div>
+
+                    {/* Submit Button */}
+                    <button
+                      type="submit"
+                      disabled={paymentSubmitting}
+                      className="w-full py-3.5 px-6 bg-[#0f4d2a] hover:bg-[#135d34] active:bg-[#0a331c] text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/20 transition cursor-pointer disabled:opacity-50"
+                    >
+                      {paymentSubmitting ? (
+                        <>
+                          <Clock className="w-4 h-4 animate-spin" />
+                          <span>{language === 'bn' ? 'যাচাইয়ের জন্য পাঠানো হচ্ছে...' : 'Submitting Confirmation...'}</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-4 h-4 text-amber-400" />
+                          <span>{language === 'bn' ? 'Confirm Payment (পেমেন্ট নিশ্চিতকরণ জমা দিন)' : 'Confirm Payment Submission'}</span>
+                        </>
+                      )}
+                    </button>
+                  </form>
+                )}
+              </div>
+
+              {/* Bottom Actions */}
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onGoToVerify) {
+                      onGoToVerify(createdRegistration.token_code);
+                    } else {
+                      window.location.search = `?token=${encodeURIComponent(createdRegistration.token_code || '')}`;
+                    }
+                  }}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-md transition cursor-pointer"
+                >
+                  <ShieldCheck className="w-4 h-4 text-amber-400" />
+                  <span>{language === 'bn' ? 'টোকেন স্ট্যাটাস ও ভেরিফিকেশন পেজে যান' : 'Check Token Status & Verify'}</span>
+                </button>
+
+                {onGoToPortal && (
+                  <button
+                    type="button"
+                    onClick={onGoToPortal}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-800 text-xs font-bold shadow-xs transition cursor-pointer"
+                  >
+                    <span>{t('token.view_portal', 'Go to Member Portal')}</span>
+                    <ArrowRight className="w-4 h-4 text-slate-500" />
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* STEP 4: SUCCESS (IF ALREADY VERIFIED) */}
       {step === 'success' && createdRegistration && (
         <div className="space-y-8 animate-in fade-in zoom-in-95 duration-300">
-          {/* Celebratory Banner */}
           <div className="bg-gradient-to-r from-[#0f4d2a] via-[#135d34] to-[#0f4d2a] text-white rounded-2xl p-6 sm:p-8 text-center shadow-xl border-2 border-amber-400/50">
             <div className="inline-flex p-3 bg-amber-400/20 rounded-full text-amber-300 mb-3">
               <Sparkles className="w-8 h-8 text-amber-400 animate-pulse" />
@@ -781,7 +1303,6 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({ onGoToPortal
             </p>
           </div>
 
-          {/* Digital Entry Pass */}
           <DigitalEntryPass
             tokenCode={createdRegistration.token_code || 'NASH-85-2027-ABC123'}
             fullName={createdRegistration.full_name}
@@ -796,7 +1317,6 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({ onGoToPortal
             checkedIn={false}
           />
 
-          {/* Go to Member Portal Button */}
           {onGoToPortal && (
             <div className="text-center pt-4">
               <button
@@ -809,16 +1329,6 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({ onGoToPortal
             </div>
           )}
         </div>
-      )}
-
-      {/* Payment Gateway Modal */}
-      {createdRegistration && (
-        <PaymentModal
-          registration={createdRegistration}
-          isOpen={showPaymentModal}
-          onClose={() => setShowPaymentModal(false)}
-          onSuccess={handlePaymentSuccess}
-        />
       )}
     </div>
   );

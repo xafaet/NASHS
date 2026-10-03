@@ -112,8 +112,26 @@ export interface EventItem {
   terms_bn?: string;
 }
 
-export type PaymentStatus = 'pending' | 'processing' | 'paid' | 'failed' | 'cancelled' | 'refunded';
-export type RegistrationStatus = 'pending' | 'confirmed' | 'cancelled';
+export type PaymentStatus =
+  | 'pending'
+  | 'payment_submitted'
+  | 'processing'
+  | 'under_review'
+  | 'paid'
+  | 'verified'
+  | 'rejected'
+  | 'failed'
+  | 'cancelled'
+  | 'refunded';
+
+export type RegistrationStatus =
+  | 'pending'
+  | 'submitted'
+  | 'under_review'
+  | 'confirmed'
+  | 'rejected'
+  | 'cancelled';
+
 export type PaymentGateway = 'bkash' | 'nagad' | 'rocket' | 'sslcommerz' | 'card' | 'bank' | string;
 
 export interface Registration {
@@ -138,6 +156,15 @@ export interface Registration {
   currency: string;
   payment_status: PaymentStatus;
   payment_method?: string;
+  transaction_id?: string;
+  sender_number?: string;
+  paid_amount?: number;
+  payment_submitted_at?: string;
+  payment_verified_at?: string;
+  verified_by?: string;
+  payment_rejected_at?: string;
+  rejected_by?: string;
+  admin_notes?: string;
   notes?: string;
   registration_status: RegistrationStatus;
   token_id?: string;
@@ -161,6 +188,11 @@ export interface PaymentTransaction {
   amount: number;
   currency: string;
   status: PaymentStatus;
+  sender_mobile?: string;
+  token_code?: string;
+  notes?: string;
+  verified_at?: string;
+  verified_by?: string;
   gateway_ref?: string;
   gateway_response?: Record<string, any>;
   failure_reason?: string;
@@ -175,7 +207,7 @@ export interface EntryToken {
   member_name: string;
   batch_name: string;
   batch_name_bn?: string;
-  status: 'active' | 'used' | 'cancelled' | 'revoked';
+  status: 'active' | 'pending_payment' | 'used' | 'cancelled' | 'revoked';
   qr_code_svg: string;
   checked_in: boolean;
   checked_in_at?: string;
