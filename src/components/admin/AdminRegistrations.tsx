@@ -103,6 +103,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [importCsvText, setImportCsvText] = useState('');
   const [importing, setImporting] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   // Form State for Add
   const [formData, setFormData] = useState({
@@ -113,7 +114,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
     gender: 'male',
     passing_year: '2008',
     blood_group: '',
-    t_shirt_size: 'L',
+    t_shirt_size: '',
     address: '',
     occupation: '',
     fee_amount: 1000,
@@ -182,7 +183,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
           gender: 'male',
           passing_year: '2008',
           blood_group: '',
-          t_shirt_size: 'L',
+          t_shirt_size: '',
           address: '',
           occupation: '',
           fee_amount: 1000,
@@ -300,7 +301,10 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
           setViewingRegistration(updated);
         }
         onDataChange?.();
-        onNotify?.(`Payment verified & Entry Pass issued for ${reg.full_name}!`);
+        const emailNotice = result.email_delivery?.success
+          ? ` • Official PDF Entry Pass automatically emailed to ${reg.email}!`
+          : (reg.email ? ` • Email notice: ${result.email_delivery?.error || 'queued'}` : '');
+        onNotify?.(`Payment verified & Entry Pass issued for ${reg.full_name}!${emailNotice}`);
       } else {
         const err = await res.json();
         onNotify?.(err.message || 'Payment verification failed.');
@@ -345,6 +349,31 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
     }
   };
 
+  // Resend Official Confirmation Email with PDF Pass
+  const handleResendEmail = async (reg: RegistrationItem) => {
+    if (!reg.email || !reg.email.includes('@')) {
+      onNotify?.('No valid email address registered for this attendee.');
+      return;
+    }
+    setSendingEmail(true);
+    try {
+      const res = await apiFetch(`/api/registrations/${reg.id}/send-confirmation-email`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        onNotify?.(`Official PDF Pass emailed to ${reg.email}!`);
+      } else {
+        onNotify?.(data.message || 'Failed to dispatch email.');
+      }
+    } catch (e: any) {
+      onNotify?.(e.message || 'Email dispatch error.');
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
   // Export to CSV
   const handleExportCsv = () => {
     if (registrations.length === 0) {
@@ -378,10 +407,10 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
       `"${r.phone}"`,
       `"${r.email || ''}"`,
       r.passing_year,
-      `"${r.batch_name || ''}"`,
+      `"${r.passing_year ? `SSC Batch ${r.passing_year}` : (r.batch_name || '')}"`,
       `"${r.gender || ''}"`,
       `"${r.blood_group || ''}"`,
-      `"${r.t_shirt_size || 'L'}"`,
+      `"${r.t_shirt_size || 'N/A'}"`,
       `"${r.occupation || ''}"`,
       `"${(r.address || '').replace(/"/g, '""')}"`,
       r.fee_amount || 1000,
@@ -691,7 +720,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                               </span>
                             )}
                             <span className="inline-block ml-1 px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200" title="T-Shirt Size">
-                              Size: {reg.t_shirt_size || 'L'}
+                              Size: {reg.t_shirt_size || 'N/A'}
                             </span>
                           </div>
                         </div>
@@ -700,7 +729,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                       {/* Passing Year & Batch */}
                       <td className="py-3.5 px-4">
                         <span className="font-bold text-emerald-900 block">
-                          {reg.batch_name || `Year ${reg.passing_year}`}
+                          {reg.passing_year ? `SSC Batch ${reg.passing_year}` : (reg.batch_name || 'Alumni')}
                         </span>
                         <span className="text-[11px] text-slate-500 font-medium">
                           Passing Year: <strong className="text-slate-700">{reg.passing_year}</strong>
@@ -979,6 +1008,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                     className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-600 focus:outline-none"
                     required
                   >
+                    <option value="">Select T-Shirt Size...</option>
                     <option value="M">M - Medium (মিডিয়াম)</option>
                     <option value="L">L - Large (লার্জ)</option>
                     <option value="XL">XL - Extra Large (এক্সট্রা লার্জ)</option>
@@ -1214,10 +1244,11 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                     T-Shirt Size (টি-শার্ট সাইজ)
                   </label>
                   <select
-                    value={editingRegistration.t_shirt_size || 'L'}
+                    value={editingRegistration.t_shirt_size || ''}
                     onChange={e => setEditingRegistration({ ...editingRegistration, t_shirt_size: e.target.value })}
                     className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-600 focus:outline-none"
                   >
+                    <option value="">None / Not specified</option>
                     <option value="M">M - Medium (মিডিয়াম)</option>
                     <option value="L">L - Large (লার্জ)</option>
                     <option value="XL">XL - Extra Large (এক্সট্রা লার্জ)</option>
@@ -1410,7 +1441,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
               </span>
               <h3 className="text-xl font-black mt-1">{viewingRegistration.full_name}</h3>
               <p className="text-xs text-emerald-200 mt-0.5">
-                {viewingRegistration.batch_name || `Passing Year ${viewingRegistration.passing_year}`}
+                {viewingRegistration.passing_year ? `SSC Batch ${viewingRegistration.passing_year}` : (viewingRegistration.batch_name || 'Alumni')}
               </p>
             </div>
 
@@ -1456,7 +1487,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                 <div className="py-2 flex justify-between">
                   <span className="text-slate-500">T-Shirt Size:</span>
                   <span className="font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
-                    {viewingRegistration.t_shirt_size || 'L'}
+                    {viewingRegistration.t_shirt_size || 'Not specified'}
                   </span>
                 </div>
                 <div className="py-2 flex justify-between">
@@ -1530,20 +1561,33 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                   </div>
                 )}
 
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <a
                     href={`/api/registrations/${viewingRegistration.id}/pdf`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 py-2 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-800 text-xs font-bold transition flex items-center justify-center gap-1.5 text-center"
+                    className="flex-1 min-w-[120px] py-2 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-800 text-xs font-bold transition flex items-center justify-center gap-1.5 text-center cursor-pointer"
                   >
                     <Download className="w-3.5 h-3.5 text-slate-600" />
                     <span>Download PDF</span>
                   </a>
+
+                  {viewingRegistration.email && (
+                    <button
+                      type="button"
+                      disabled={sendingEmail}
+                      onClick={() => handleResendEmail(viewingRegistration)}
+                      className="flex-1 min-w-[120px] py-2 rounded-xl bg-emerald-800 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+                    >
+                      <Mail className="w-3.5 h-3.5" />
+                      <span>{sendingEmail ? 'Sending...' : 'Email PDF Pass'}</span>
+                    </button>
+                  )}
+
                   <button
                     type="button"
                     onClick={() => setViewingRegistration(null)}
-                    className="flex-1 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition cursor-pointer"
+                    className="flex-1 min-w-[100px] py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition cursor-pointer"
                   >
                     Close Details
                   </button>

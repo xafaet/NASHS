@@ -3,6 +3,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { CMSPage, PageSection } from '../types';
 import { INITIAL_CMS_PAGES } from '../constants/initialCmsData';
 import { School, Calendar, ArrowRight, CheckCircle2, ChevronDown, ChevronUp, Users, Award, Sparkles } from 'lucide-react';
+import { apiFetch, safeJson } from '../utils/api';
 
 interface Props {
   slug: string;
@@ -27,10 +28,10 @@ export const CMSPageView: React.FC<Props> = ({ slug, onNavigate }) => {
     }
     setNotFound(false);
 
-    fetch(`/api/pages/${slug}`)
-      .then(res => {
+    apiFetch(`/api/pages/${slug}`)
+      .then(async res => {
         if (!res.ok) throw new Error('Page not found');
-        return res.json();
+        return await safeJson(res, null);
       })
       .then(data => {
         if (data && data.title_en) {

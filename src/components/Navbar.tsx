@@ -293,14 +293,14 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenL
 
             {/* Right: Phone, Auth & Language Switcher */}
             <div className="flex items-center gap-3 sm:gap-4 text-[11px] sm:text-xs shrink-0">
-              {(topbar?.show_contact_info ?? true) && (
+              {(topbar?.show_contact_info ?? true) && (topbar?.contact_phone || settings?.contact_phone) && (
                 <div className="hidden sm:flex items-center gap-1.5 text-emerald-200 hover:text-white transition">
                   <Phone className="w-3 h-3 text-amber-400 shrink-0" />
                   <a
-                    href={`tel:${topbar?.contact_phone || settings?.contact_phone || '+8801819123456'}`}
+                    href={`tel:${topbar?.contact_phone || settings?.contact_phone}`}
                     className="font-mono hover:underline text-emerald-100"
                   >
-                    {topbar?.contact_phone || settings?.contact_phone || '+880 1819-123456'}
+                    {topbar?.contact_phone || settings?.contact_phone}
                   </a>
                 </div>
               )}

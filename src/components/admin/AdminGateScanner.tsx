@@ -326,7 +326,7 @@ export const AdminGateScanner: React.FC<Props> = ({ onNotify, getHeaders }) => {
                   type="text"
                   value={identifier}
                   onChange={e => setIdentifier(e.target.value)}
-                  placeholder="e.g. NASH-85-2027-A9F4K2 or 01819123456"
+                  placeholder="e.g. NASH-85-2027-A9F4K2 or 01XXXXXXXXX"
                   className="w-full px-4 py-3.5 bg-slate-50 border-2 border-slate-300 rounded-xl font-mono text-base uppercase tracking-wider focus:bg-white focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20 focus:outline-none"
                   autoFocus
                 />

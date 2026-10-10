@@ -1,5 +1,6 @@
 import PDFDocument from 'pdfkit';
 import QRCode from 'qrcode';
+import { db } from '../db';
 
 export interface PassPDFData {
   tokenCode: string;
@@ -369,11 +370,16 @@ export async function generateEntryPassPDF(data: PassPDFData): Promise<Buffer> {
           { width: contentWidth - 20, align: 'center' }
         );
 
+      const siteSettings = (db.get('settings') || {}) as any;
+      const deskContact = siteSettings.contact_phone
+        ? `${siteSettings.contact_phone} / ${siteSettings.contact_email || 'info@nanupuralumni.org'}`
+        : (siteSettings.contact_email || 'info@nanupuralumni.org');
+
       doc
         .fillColor('#f59e0b')
         .font('Helvetica-Bold')
         .fontSize(7.5)
-        .text('FOR ANY ENTRY ASSISTANCE CONTACT ALUMNI DESK: +880 1819-123456 / info@nanupuralumni.org', margin + 10, footerY + 22, {
+        .text(`FOR ANY ENTRY ASSISTANCE CONTACT ALUMNI DESK: ${deskContact}`, margin + 10, footerY + 22, {
           width: contentWidth - 20,
           align: 'center',
         });

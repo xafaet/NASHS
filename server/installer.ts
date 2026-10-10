@@ -151,11 +151,24 @@ export class InstallerService {
 
     if (dbConfig.driver === 'mysql') {
       try {
-        const host = dbConfig.host || 'localhost';
+        const host = (dbConfig.host || '').trim() || 'localhost';
         const port = Number(dbConfig.port) || 3306;
-        const database = dbConfig.database || 'alumni_platform';
-        const user = dbConfig.username || 'root';
+        const database = (dbConfig.database || '').trim();
+        const user = (dbConfig.username || '').trim();
         const password = dbConfig.password || '';
+
+        if (!host) {
+          return { success: false, message: 'MySQL Host is required (typically "localhost" or "127.0.0.1" on cPanel).' };
+        }
+        if (isNaN(port) || port < 1 || port > 65535) {
+          return { success: false, message: 'MySQL Port must be a valid number between 1 and 65535 (standard: 3306).' };
+        }
+        if (!database) {
+          return { success: false, message: 'MySQL Database Name is required (e.g. "cpaneluser_alumni").' };
+        }
+        if (!user) {
+          return { success: false, message: 'MySQL DB Username is required (e.g. "cpaneluser_admin").' };
+        }
 
         const conn = await mysql.createConnection({
           host,
@@ -179,9 +192,19 @@ export class InstallerService {
           },
         };
       } catch (err: any) {
+        let hint = '';
+        if (err.code === 'ER_ACCESS_DENIED_ERROR') {
+          hint = ' Access denied: Please verify the DB username and password in cPanel MySQL Databases.';
+        } else if (err.code === 'ER_BAD_DB_ERROR') {
+          hint = ` Database "${dbConfig.database}" does not exist. Please create it in cPanel first and include the cPanel user prefix.`;
+        } else if (err.code === 'ECONNREFUSED') {
+          hint = ` Connection refused to ${dbConfig.host}:${dbConfig.port}. Check if MySQL is running or if remote connections are blocked.`;
+        } else if (err.code === 'ENOTFOUND') {
+          hint = ` Host "${dbConfig.host}" not found. Verify the MySQL host hostname or use "localhost".`;
+        }
         return {
           success: false,
-          message: `cPanel MySQL connection failed: ${err.message}`,
+          message: `cPanel MySQL connection failed: ${err.message}.${hint}`,
         };
       }
     }
@@ -246,6 +269,37 @@ export class InstallerService {
     message: string;
     details?: any;
   }> {
+    // 0. Security Guard: Prevent unauthorized reconfiguration if already installed
+    const currentStatus = this.getStatus();
+    if (currentStatus.is_installed) {
+      throw new Error('SECURITY_RESTRICTION: The application is already installed and secured. Reconfiguration is blocked to prevent unauthorized access.');
+    }
+
+    // 0b. Payload Validation
+    if (!payload?.database?.driver) {
+      throw new Error('Database driver selection is required.');
+    }
+    if (payload.database.driver === 'mysql') {
+      const host = (payload.database.host || '').trim();
+      const dbName = (payload.database.database || '').trim();
+      const user = (payload.database.username || '').trim();
+      const port = Number(payload.database.port);
+
+      if (!host) throw new Error('MySQL host is required.');
+      if (isNaN(port) || port < 1 || port > 65535) throw new Error('MySQL port must be a valid number between 1 and 65535.');
+      if (!dbName) throw new Error('MySQL database name is required.');
+      if (!user) throw new Error('MySQL DB username is required.');
+    }
+    if (!payload.admin || !payload.admin.email?.trim()) {
+      throw new Error('Super Admin email is required.');
+    }
+    if (!payload.admin.password || payload.admin.password.length < 6) {
+      throw new Error('Super Admin password must be at least 6 characters.');
+    }
+    if (!payload.site || !payload.site.site_name?.trim()) {
+      throw new Error('Website name is required.');
+    }
+
     // 1. Verify connection first
     const testResult = await this.testConnection(payload.database);
     if (!testResult.success) {
@@ -295,7 +349,7 @@ export class InstallerService {
       username: (payload.admin.email || '').split('@')[0].toLowerCase() || 'superadmin',
       name: payload.admin.name || 'Super Administrator',
       email: payload.admin.email,
-      phone: payload.admin.phone || '01819123456',
+      phone: payload.admin.phone || '',
       role: 'super_admin',
       status: 'active',
       password_hash: passwordHash,
@@ -356,11 +410,11 @@ export class InstallerService {
         currency: payload.site.currency || 'BDT',
         transaction_prefix: 'BK',
         sort_order: 1,
-        merchant_id: payload.payments.bkash_number || '01819123456',
-        instructions_en: payload.payments.instructions_en || `1. Go to your bKash app or dial *247#\n2. Select 'Send Money' or 'Make Payment'\n3. Enter recipient account: ${payload.payments.bkash_number} (${payload.payments.bkash_type || 'Personal'})\n4. Enter Amount: ৳${payload.site.fee_amount}\n5. Enter Reference: Your Registered Mobile Number\n6. Copy the TrxID and enter it in the confirmation box below.`,
-        instructions_bn: payload.payments.instructions_bn || `১. বিকাশ অ্যাপে প্রবেশ করুন অথবা *২৪৭# ডায়াল করুন\n২. 'Send Money' অথবা 'Payment' অপশন নির্বাচন করুন\n৩. প্রাপকের নম্বর দিন: ${payload.payments.bkash_number} (${payload.payments.bkash_type === 'merchant' ? 'মার্চেন্ট' : 'ব্যক্তিগত'})\n৪. টাকার পরিমাণ দিন: ৳${payload.site.fee_amount}\n৫. রেফারেন্সে আপনার মোবাইল নম্বর দিন\n৬. সফল পেমেন্টের পর প্রাপ্ত TrxID টি নিচের বক্সে লিখে নিশ্চিত করুন।`,
+        merchant_id: payload.payments.bkash_number || '',
+        instructions_en: payload.payments.instructions_en || `1. Go to your bKash app or dial *247#\n2. Select 'Send Money' or 'Make Payment'\n3. Enter recipient account: ${payload.payments.bkash_number || ''} (${payload.payments.bkash_type || 'Personal'})\n4. Enter Amount: ৳${payload.site.fee_amount}\n5. Enter Reference: Your Registered Mobile Number\n6. Copy the TrxID and enter it in the confirmation box below.`,
+        instructions_bn: payload.payments.instructions_bn || `১. বিকাশ অ্যাপে প্রবেশ করুন অথবা *২৪৭# ডায়াল করুন\n২. 'Send Money' অথবা 'Payment' অপশন নির্বাচন করুন\n৩. প্রাপকের নম্বর দিন: ${payload.payments.bkash_number || ''} (${payload.payments.bkash_type === 'merchant' ? 'মার্চেন্ট' : 'ব্যক্তিগত'})\n৪. টাকার পরিমাণ দিন: ৳${payload.site.fee_amount}\n৫. রেফারেন্সে আপনার মোবাইল নম্বর দিন\n৬. সফল পেমেন্টের পর প্রাপ্ত TrxID টি নিচের বক্সে লিখে নিশ্চিত করুন।`,
         credentials: {
-          merchant_number: payload.payments.bkash_number,
+          merchant_number: payload.payments.bkash_number || '',
           account_type: payload.payments.bkash_type || 'personal',
           manual_mode: true,
         },
@@ -385,11 +439,11 @@ export class InstallerService {
         currency: payload.site.currency || 'BDT',
         transaction_prefix: 'NG',
         sort_order: 2,
-        merchant_id: payload.payments.nagad_number || '01712345678',
-        instructions_en: payload.payments.instructions_en || `1. Go to your Nagad app or dial *167#\n2. Select 'Send Money' or 'Payment'\n3. Enter recipient account: ${payload.payments.nagad_number} (${payload.payments.nagad_type || 'Personal'})\n4. Enter Amount: ৳${payload.site.fee_amount}\n5. Enter Reference: Your Registered Mobile Number\n6. Copy the TrxID and enter it in the confirmation box below.`,
-        instructions_bn: payload.payments.instructions_bn || `১. নগদ অ্যাপে প্রবেশ করুন অথবা *১৬৭# ডায়াল করুন\n২. 'Send Money' অথবা 'Payment' অপশন নির্বাচন করুন\n৩. প্রাপকের নম্বর দিন: ${payload.payments.nagad_number} (${payload.payments.nagad_type === 'merchant' ? 'মার্চেন্ট' : 'ব্যক্তিগত'})\n৪. টাকার পরিমাণ দিন: ৳${payload.site.fee_amount}\n৫. রেফারেন্সে আপনার মোবাইল নম্বর দিন\n৬. সফল পেমেন্টের পর প্রাপ্ত TrxID টি নিচের বক্সে লিখে নিশ্চিত করুন।`,
+        merchant_id: payload.payments.nagad_number || '',
+        instructions_en: payload.payments.instructions_en || `1. Go to your Nagad app or dial *167#\n2. Select 'Send Money' or 'Payment'\n3. Enter recipient account: ${payload.payments.nagad_number || ''} (${payload.payments.nagad_type || 'Personal'})\n4. Enter Amount: ৳${payload.site.fee_amount}\n5. Enter Reference: Your Registered Mobile Number\n6. Copy the TrxID and enter it in the confirmation box below.`,
+        instructions_bn: payload.payments.instructions_bn || `১. নগদ অ্যাপে প্রবেশ করুন অথবা *১৬৭# ডায়াল করুন\n২. 'Send Money' অথবা 'Payment' অপশন নির্বাচন করুন\n৩. প্রাপকের নম্বর দিন: ${payload.payments.nagad_number || ''} (${payload.payments.nagad_type === 'merchant' ? 'মার্চেন্ট' : 'ব্যক্তিগত'})\n৪. টাকার পরিমাণ দিন: ৳${payload.site.fee_amount}\n৫. রেফারেন্সে আপনার মোবাইল নম্বর দিন\n৬. সফল পেমেন্টের পর প্রাপ্ত TrxID টি নিচের বক্সে লিখে নিশ্চিত করুন।`,
         credentials: {
-          merchant_number: payload.payments.nagad_number,
+          merchant_number: payload.payments.nagad_number || '',
           account_type: payload.payments.nagad_type || 'personal',
           manual_mode: true,
         },

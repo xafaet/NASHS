@@ -30,6 +30,7 @@ import {
   User,
   Registration,
   PaymentTransaction,
+  PaymentStatus,
   EntryToken,
   AuditLog,
   MediaItem,
@@ -37,7 +38,9 @@ import {
   RegistrationFieldConfig,
   GateItem,
   HeroConfig,
+  MailSettings,
 } from '../src/types';
+import { initialMailSettings } from './services/mailService';
 import {
   initialBatches,
   initialEvent,
@@ -108,6 +111,7 @@ export interface DatabaseSchema {
   program_schedule: ProgramScheduleSectionConfig;
   registration_form_fields: RegistrationFieldConfig[];
   hero_config: HeroConfig;
+  mail_settings?: MailSettings;
 }
 
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -218,6 +222,30 @@ class DatabaseEngine {
           }
           await this.persistKeyToSupabase('pages', this.data.pages);
         }
+
+        // Ensure t_shirt_size field exists in registration_form_fields and registration_config
+        if (Array.isArray(this.data.registration_form_fields)) {
+          const hasTShirt = this.data.registration_form_fields.some((f: any) => f.name === 't_shirt_size');
+          if (!hasTShirt) {
+            const defaultTShirt = initialRegistrationFields.find(f => f.name === 't_shirt_size');
+            if (defaultTShirt) {
+              this.data.registration_form_fields.push(defaultTShirt);
+              this.data.registration_form_fields.sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
+              await this.persistKeyToSupabase('registration_form_fields', this.data.registration_form_fields);
+            }
+          }
+        }
+        if (this.data.registration_config && Array.isArray(this.data.registration_config.fields)) {
+          const hasTShirt = this.data.registration_config.fields.some((f: any) => f.name === 't_shirt_size');
+          if (!hasTShirt) {
+            const defaultTShirt = initialRegistrationFields.find(f => f.name === 't_shirt_size');
+            if (defaultTShirt) {
+              this.data.registration_config.fields.push(defaultTShirt);
+              this.data.registration_config.fields.sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
+              await this.persistKeyToSupabase('registration_config', this.data.registration_config);
+            }
+          }
+        }
       } catch (sErr: any) {
         console.warn('Site settings sync note:', sErr.message);
       }
@@ -313,19 +341,15 @@ class DatabaseEngine {
 
           // Purge any legacy dummy accounts to adhere strictly to requirement:
           // Retain ONLY the primary super admin account (super_admin / admin@nanupuralumni.org)
-          const dummyUsernames = ['exec', 'content', 'event', 'finance', 'contentmanager', 'eventmanager', 'financemanager', 'farhan', 'rahim', 'test'];
-          const dummyEmails = ['exec@nanupuralumni.org', 'content@nanupuralumni.org', 'event@nanupuralumni.org', 'finance@nanupuralumni.org', 'farhan@example.com', 'rahim@example.com', 'test@gmail.com', 'admin@dizency.com'];
-
+          // Purge ANY dummy, fake, or test users. Strictly preserve ONLY real super_admin account.
           remoteUsers = remoteUsers.filter(u => 
-            !dummyUsernames.includes((u.username || '').toLowerCase()) &&
-            !dummyEmails.includes((u.email || '').toLowerCase())
+            u.role === 'super_admin' || u.username === 'super_admin' || u.email === 'admin@nanupuralumni.org'
           );
 
           if (this.pool && this.isSupabaseConnected) {
             try {
               await this.pool.query(
-                `DELETE FROM public.users WHERE LOWER(username) = ANY($1) OR LOWER(email) = ANY($2)`,
-                [dummyUsernames, dummyEmails]
+                `DELETE FROM public.users WHERE role != 'super_admin' AND username != 'super_admin' AND email != 'admin@nanupuralumni.org'`
               );
             } catch (pErr: any) {
               console.warn('Database dummy purge note:', pErr.message);
@@ -381,96 +405,88 @@ class DatabaseEngine {
         console.warn('Users sync note:', uErr.message);
       }
 
-      // 5. Hydrate Registrations
+      // 5. Hydrate Registrations (Purging any test/dummy registrations)
       try {
-        const regRes = await this.pool.query('SELECT * FROM event_registrations ORDER BY created_at DESC');
-        if (regRes.rows && regRes.rows.length > 0) {
-          console.log(`Loaded ${regRes.rows.length} registrations from Supabase.`);
-          const remoteRegs: Registration[] = regRes.rows.map(r => ({
-            id: r.id,
-            event_id: r.event_id || 'event-85th-anniversary',
-            user_id: r.user_id || undefined,
-            full_name: r.full_name,
-            dob: r.dob,
-            gender: r.gender,
-            blood_group: r.blood_group,
-            t_shirt_size: r.t_shirt_size,
-            phone: r.phone,
-            email: r.email,
-            passing_year: r.passing_year,
-            batch_id: r.batch_id,
-            batch_name: r.batch_name,
-            batch_name_bn: r.batch_name_bn,
-            fee_amount: Number(r.fee_amount) || 1000,
-            currency: r.currency || 'BDT',
-            payment_status: r.payment_status || 'pending',
-            registration_status: r.registration_status || 'pending',
-            payment_method: r.payment_method,
-            token_id: r.token_id,
-            token_code: r.token_code,
-            checked_in: r.checked_in || false,
-            checked_in_at: r.checked_in_at,
-            created_at: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
-            updated_at: r.updated_at ? new Date(r.updated_at).toISOString() : (r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString()),
-          }));
+        const dummyNames = ['Mushtaq Ahmed', 'Sayem Sheikh', 'Mahbub Alam', 'Dr. Fazlul Karim', 'Professor Anisur Rahman', 'Engr. Zahidul Islam Chowdhury'];
+        const dummyIds = ['REG-85-186949', 'REG-85-704859', 'REG-85-340696', 'REG-85-055068', 'REG-85-299344', 'REG-85-955829', 'REG-85-862178763', 'REG-85-838121377', 'REG-85-520992996'];
 
-          let addedNewRegs = false;
-          for (const lr of (this.data.registrations || [])) {
-            const found = remoteRegs.some(r => r.id === lr.id || (lr.token_code && r.token_code === lr.token_code));
-            if (!found) {
-              remoteRegs.push(lr);
-              addedNewRegs = true;
-            }
+        if (this.pool && this.isSupabaseConnected) {
+          try {
+            await this.pool.query(`DELETE FROM public.payment_transactions WHERE registration_id = ANY($1)`, [dummyIds]);
+            await this.pool.query(`DELETE FROM public.entry_tokens WHERE registration_id = ANY($1)`, [dummyIds]);
+            await this.pool.query(`DELETE FROM public.event_registrations WHERE id = ANY($1) OR full_name = ANY($2)`, [dummyIds, dummyNames]);
+          } catch (delErr: any) {
+            console.warn('Purge dummy registrations note:', delErr.message);
           }
-          this.data.registrations = remoteRegs;
-          this.saveData();
-          if (addedNewRegs) {
-            await this.persistKeyToSupabase('registrations', this.data.registrations);
-          }
-        } else if (this.data.registrations && this.data.registrations.length > 0) {
-          await this.persistKeyToSupabase('registrations', this.data.registrations);
         }
+
+        const regRes = await this.pool.query('SELECT * FROM event_registrations ORDER BY created_at DESC');
+        let remoteRegs: Registration[] = [];
+        if (regRes.rows && regRes.rows.length > 0) {
+          remoteRegs = regRes.rows
+            .filter(r => !dummyIds.includes(r.id) && !dummyNames.includes(r.full_name))
+            .map(r => ({
+              id: r.id,
+              event_id: r.event_id || 'event-85th-anniversary',
+              user_id: r.user_id || undefined,
+              full_name: r.full_name,
+              dob: r.dob,
+              gender: r.gender,
+              blood_group: r.blood_group,
+              t_shirt_size: r.t_shirt_size,
+              phone: r.phone,
+              email: r.email,
+              passing_year: r.passing_year,
+              batch_id: r.batch_id,
+              batch_name: r.passing_year ? `SSC Batch ${r.passing_year}` : r.batch_name,
+              batch_name_bn: r.passing_year ? `এসএসসি ব্যাচ ${r.passing_year}` : r.batch_name_bn,
+              fee_amount: Number(r.fee_amount) || 1000,
+              currency: r.currency || 'BDT',
+              payment_status: r.payment_status || 'pending',
+              registration_status: r.registration_status || 'pending',
+              payment_method: r.payment_method,
+              token_id: r.token_id,
+              token_code: r.token_code,
+              checked_in: r.checked_in || false,
+              checked_in_at: r.checked_in_at,
+              created_at: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+              updated_at: r.updated_at ? new Date(r.updated_at).toISOString() : (r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString()),
+            }));
+        }
+
+        this.data.registrations = remoteRegs;
+        this.saveData();
       } catch (regErr: any) {
         console.warn('Registrations sync note:', regErr.message);
       }
 
       // 6. Hydrate Tokens
       try {
+        const dummyIds = ['REG-85-186949', 'REG-85-704859', 'REG-85-340696', 'REG-85-055068', 'REG-85-299344', 'REG-85-955829', 'REG-85-862178763', 'REG-85-838121377', 'REG-85-520992996'];
         const tokRes = await this.pool.query('SELECT * FROM entry_tokens');
+        let remoteTokens: EntryToken[] = [];
         if (tokRes.rows && tokRes.rows.length > 0) {
-          const remoteTokens: EntryToken[] = tokRes.rows.map(t => ({
-            id: t.id,
-            token_code: t.token_code,
-            registration_id: t.registration_id,
-            event_id: t.event_id || 'event-85th-anniversary',
-            member_name: t.member_name,
-            batch_name: t.batch_name,
-            batch_name_bn: t.batch_name_bn || undefined,
-            qr_code_svg: t.qr_code_svg || '',
-            status: t.status || 'active',
-            checked_in: t.checked_in || false,
-            checked_in_at: t.checked_in_at,
-            created_at: t.created_at ? new Date(t.created_at).toISOString() : new Date().toISOString(),
-          }));
-
-          let addedNewToks = false;
-          for (const lt of (this.data.tokens || [])) {
-            const found = remoteTokens.some(t => t.id === lt.id || t.token_code === lt.token_code);
-            if (!found) {
-              remoteTokens.push(lt);
-              addedNewToks = true;
-            }
-          }
-          this.data.tokens = remoteTokens;
-          this.saveData();
-          if (addedNewToks) {
-            await this.persistKeyToSupabase('tokens', this.data.tokens);
-          }
-        } else if (this.data.tokens && this.data.tokens.length > 0) {
-          await this.persistKeyToSupabase('tokens', this.data.tokens);
+          remoteTokens = tokRes.rows
+            .filter(t => !dummyIds.includes(t.registration_id))
+            .map(t => ({
+              id: t.id,
+              token_code: t.token_code,
+              registration_id: t.registration_id,
+              event_id: t.event_id || 'event-85th-anniversary',
+              member_name: t.member_name,
+              batch_name: t.batch_name,
+              batch_name_bn: t.batch_name_bn || undefined,
+              qr_code_svg: t.qr_code_svg || '',
+              status: t.status || 'active',
+              checked_in: t.checked_in || false,
+              checked_in_at: t.checked_in_at,
+              created_at: t.created_at ? new Date(t.created_at).toISOString() : new Date().toISOString(),
+            }));
         }
-      } catch (tErr: any) {
-        console.warn('Tokens sync note:', tErr.message);
+        this.data.tokens = remoteTokens;
+        this.saveData();
+      } catch (tokErr: any) {
+        console.warn('Tokens sync note:', tokErr.message);
       }
 
       // 7. Hydrate Notices
@@ -516,6 +532,82 @@ class DatabaseEngine {
         }
       } catch (nwErr: any) {
         console.warn('News sync note:', nwErr.message);
+      }
+
+      // 9. Hydrate Payment Transactions
+      try {
+        const dummyIds = ['REG-85-186949', 'REG-85-704859', 'REG-85-340696', 'REG-85-055068', 'REG-85-299344', 'REG-85-955829', 'REG-85-862178763', 'REG-85-838121377', 'REG-85-520992996'];
+        const payRes = await this.pool.query('SELECT * FROM payment_transactions ORDER BY created_at DESC');
+        let remotePayments: PaymentTransaction[] = [];
+        if (payRes.rows && payRes.rows.length > 0) {
+          remotePayments = payRes.rows
+            .filter(p => !dummyIds.includes(p.registration_id))
+            .map(p => ({
+              id: p.id,
+              registration_id: p.registration_id || '',
+              transaction_id: p.transaction_id || `MANUAL-${Date.now()}`,
+              gateway: p.gateway || 'bkash',
+              method: p.method || 'Manual Payment',
+              amount: Number(p.amount) || 0,
+              currency: p.currency || 'BDT',
+              status: p.status as PaymentStatus,
+              sender_mobile: p.sender_mobile || undefined,
+              token_code: p.token_code || undefined,
+              verified_by: p.verified_by || undefined,
+              notes: p.notes || undefined,
+              verified_at: p.verified_at ? new Date(p.verified_at).toISOString() : undefined,
+              gateway_ref: p.gateway_ref || undefined,
+              gateway_response: p.gateway_response || undefined,
+              failure_reason: p.failure_reason || undefined,
+              created_at: p.created_at ? new Date(p.created_at).toISOString() : new Date().toISOString(),
+            }));
+        }
+
+        this.data.payments = remotePayments;
+        this.saveData();
+      } catch (payErr: any) {
+        console.warn('Payment transactions sync note:', payErr.message);
+      }
+
+      // 10. Hydrate Committee Members
+      try {
+        const cmRes = await this.pool.query('SELECT * FROM committee_members ORDER BY order_index ASC');
+        if (cmRes.rows && cmRes.rows.length > 0) {
+          console.log(`Loaded ${cmRes.rows.length} committee members from Supabase.`);
+          const remoteCM: CommitteeMemberItem[] = cmRes.rows.map(cm => ({
+            id: cm.id,
+            committee_id: cm.committee_id || 'comm-ec-2026',
+            user_id: cm.user_id || undefined,
+            custom_name_en: cm.name_en,
+            custom_name_bn: cm.name_bn,
+            designation_en: cm.designation_en,
+            designation_bn: cm.designation_bn,
+            batch_year: cm.batch_year || undefined,
+            photo_url: cm.photo_url || undefined,
+            phone: cm.phone || undefined,
+            email: cm.email || undefined,
+            order_index: Number(cm.order_index) || 1,
+            is_active: cm.is_active !== false,
+          }));
+
+          let addedNewCM = false;
+          for (const lcm of (this.data.committee_members || [])) {
+            const found = remoteCM.some(c => c.id === lcm.id);
+            if (!found) {
+              remoteCM.push(lcm);
+              addedNewCM = true;
+            }
+          }
+          this.data.committee_members = remoteCM;
+          this.saveData();
+          if (addedNewCM) {
+            await this.persistKeyToSupabase('committee_members', this.data.committee_members);
+          }
+        } else if (this.data.committee_members && this.data.committee_members.length > 0) {
+          await this.persistKeyToSupabase('committee_members', this.data.committee_members);
+        }
+      } catch (cmErr: any) {
+        console.warn('Committee members sync note:', cmErr.message);
       }
 
       // Update local file cache
@@ -685,8 +777,8 @@ class DatabaseEngine {
         r.full_name,
         r.dob || '1990-01-01',
         r.gender || 'male',
-        r.blood_group || 'B+',
-        r.t_shirt_size || 'L',
+        r.blood_group || null,
+        r.t_shirt_size || null,
         r.phone,
         r.email || '',
         r.passing_year || 2008,
@@ -746,6 +838,129 @@ class DatabaseEngine {
        ON CONFLICT (id) DO UPDATE
        SET token_code = $2, registration_id = $3, member_name = $5, batch_name = $6, status = $7, checked_in = $8, checked_in_at = $9`,
       [t.id, t.token_code, regIdToInsert, eventIdToInsert, t.member_name, t.batch_name, t.status || 'active', t.checked_in || false, t.checked_in_at || null]
+    );
+  }
+
+  public async syncSinglePayment(p: any): Promise<void> {
+    if (!this.pool || !this.isSupabaseConnected || !p || !p.id) return;
+
+    // Verify registration exists or sync registration first
+    let regIdToInsert: string | null = null;
+    if (p.registration_id) {
+      try {
+        const regCheck = await this.pool.query('SELECT id FROM event_registrations WHERE id = $1', [p.registration_id]);
+        if (regCheck.rows && regCheck.rows.length > 0) {
+          regIdToInsert = p.registration_id;
+        } else {
+          const localReg = (this.data.registrations || []).find(r => r.id === p.registration_id);
+          if (localReg) {
+            await this.syncSingleRegistration(localReg);
+            regIdToInsert = localReg.id;
+          }
+        }
+      } catch {
+        regIdToInsert = null;
+      }
+    }
+
+    const txId = p.transaction_id || `TRX-${Date.now()}`;
+    const gateway = p.gateway || 'bkash';
+    const method = p.method || 'Manual Payment';
+    const amount = Number(p.amount) || 1000;
+    const currency = p.currency || 'BDT';
+    const status = p.status || 'pending';
+    const senderMobile = p.sender_mobile || null;
+    const tokenCode = p.token_code || null;
+    const verifiedBy = p.verified_by || null;
+    const notes = p.notes || null;
+    const verifiedAt = p.verified_at ? new Date(p.verified_at).toISOString() : null;
+    const gatewayRef = p.gateway_ref || null;
+    const gatewayResponse = p.gateway_response ? JSON.stringify(p.gateway_response) : null;
+    const failureReason = p.failure_reason || null;
+    const createdAt = p.created_at ? new Date(p.created_at).toISOString() : new Date().toISOString();
+
+    await this.pool.query(
+      `INSERT INTO payment_transactions (
+        id, registration_id, transaction_id, gateway, method, amount, currency, status,
+        sender_mobile, token_code, verified_by, notes, verified_at,
+        gateway_ref, gateway_response, failure_reason, created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+      ON CONFLICT (id) DO UPDATE SET
+        registration_id = EXCLUDED.registration_id,
+        transaction_id = EXCLUDED.transaction_id,
+        gateway = EXCLUDED.gateway,
+        method = EXCLUDED.method,
+        amount = EXCLUDED.amount,
+        currency = EXCLUDED.currency,
+        status = EXCLUDED.status,
+        sender_mobile = EXCLUDED.sender_mobile,
+        token_code = EXCLUDED.token_code,
+        verified_by = EXCLUDED.verified_by,
+        notes = EXCLUDED.notes,
+        verified_at = EXCLUDED.verified_at,
+        gateway_ref = EXCLUDED.gateway_ref,
+        gateway_response = EXCLUDED.gateway_response,
+        failure_reason = EXCLUDED.failure_reason`,
+      [
+        p.id,
+        regIdToInsert,
+        txId,
+        gateway,
+        method,
+        amount,
+        currency,
+        status,
+        senderMobile,
+        tokenCode,
+        verifiedBy,
+        notes,
+        verifiedAt,
+        gatewayRef,
+        gatewayResponse,
+        failureReason,
+        createdAt,
+      ]
+    );
+  }
+
+  public async syncSingleCommitteeMember(cm: any): Promise<void> {
+    if (!this.pool || !this.isSupabaseConnected || !cm || !cm.id) return;
+
+    await this.pool.query(
+      `INSERT INTO committee_members (
+        id, committee_id, user_id, name_en, name_bn, designation_en, designation_bn,
+        batch_year, photo_url, phone, email, tenure, order_index, is_active, created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
+      ON CONFLICT (id) DO UPDATE SET
+        committee_id = EXCLUDED.committee_id,
+        user_id = EXCLUDED.user_id,
+        name_en = EXCLUDED.name_en,
+        name_bn = EXCLUDED.name_bn,
+        designation_en = EXCLUDED.designation_en,
+        designation_bn = EXCLUDED.designation_bn,
+        batch_year = EXCLUDED.batch_year,
+        photo_url = EXCLUDED.photo_url,
+        phone = EXCLUDED.phone,
+        email = EXCLUDED.email,
+        tenure = EXCLUDED.tenure,
+        order_index = EXCLUDED.order_index,
+        is_active = EXCLUDED.is_active`,
+      [
+        cm.id,
+        cm.committee_id || 'comm-ec-2026',
+        cm.user_id || null,
+        cm.custom_name_en || cm.name_en || cm.name || 'Member',
+        cm.custom_name_bn || cm.name_bn || cm.name_en || 'সদস্য',
+        cm.designation_en || 'Member',
+        cm.designation_bn || 'সদস্য',
+        cm.batch_year || null,
+        cm.photo_url || null,
+        cm.phone || null,
+        cm.email || null,
+        cm.tenure || '2026-2028',
+        cm.order_index || 1,
+        cm.is_active !== false,
+      ]
     );
   }
 
@@ -909,6 +1124,28 @@ class DatabaseEngine {
           // Table sync note
         }
       }
+
+      // 11. Dedicated sync for payments
+      if (key === 'payments' && Array.isArray(value)) {
+        for (const p of value) {
+          try {
+            await this.syncSinglePayment(p);
+          } catch (pErr: any) {
+            console.warn(`Payment row sync error (${p.id}):`, pErr.message);
+          }
+        }
+      }
+
+      // 12. Dedicated sync for committee members
+      if (key === 'committee_members' && Array.isArray(value)) {
+        for (const cm of value) {
+          try {
+            await this.syncSingleCommitteeMember(cm);
+          } catch (cmErr: any) {
+            console.warn(`Committee member row sync error (${cm.id}):`, cmErr.message);
+          }
+        }
+      }
     } catch (err: any) {
       console.warn(`Supabase background persistence note for key ${key}:`, err.message);
     }
@@ -921,6 +1158,8 @@ class DatabaseEngine {
       if (table === 'registrations') targetTable = 'event_registrations';
       if (table === 'tokens') targetTable = 'entry_tokens';
       if (table === 'news') targetTable = 'news_posts';
+      if (table === 'payments') targetTable = 'payment_transactions';
+      if (table === 'committee_members') targetTable = 'committee_members';
 
       await this.pool.query(`DELETE FROM public.${targetTable} WHERE id = $1`, [id]);
     } catch (err: any) {
@@ -1020,13 +1259,35 @@ class DatabaseEngine {
 
             return filtered;
           })(),
-          registrations: parsed.registrations || initialRegistrations,
-          payments: parsed.payments || [],
-          tokens: parsed.tokens || initialTokens,
+          registrations: (() => {
+            const raw = parsed.registrations || [];
+            const dummyNames = ['Mushtaq Ahmed', 'Sayem Sheikh', 'Mahbub Alam', 'Dr. Fazlul Karim', 'Professor Anisur Rahman', 'Engr. Zahidul Islam Chowdhury'];
+            return raw.filter((r: any) => !r.id.startsWith('REG-85-186949') && !r.id.startsWith('REG-85-704859') && !r.id.startsWith('REG-85-340696') && !dummyNames.includes(r.full_name));
+          })(),
+          payments: (() => {
+            const raw = parsed.payments || [];
+            const dummyIds = ['REG-85-186949', 'REG-85-704859', 'REG-85-340696', 'REG-85-055068', 'REG-85-299344', 'REG-85-955829', 'REG-85-862178763', 'REG-85-838121377', 'REG-85-520992996'];
+            return raw.filter((p: any) => !dummyIds.includes(p.registration_id));
+          })(),
+          tokens: (() => {
+            const raw = parsed.tokens || [];
+            const dummyIds = ['REG-85-186949', 'REG-85-704859', 'REG-85-340696', 'REG-85-055068', 'REG-85-299344', 'REG-85-955829', 'REG-85-862178763', 'REG-85-838121377', 'REG-85-520992996'];
+            return raw.filter((t: any) => !dummyIds.includes(t.registration_id));
+          })(),
           audit_logs: parsed.audit_logs || [],
           program_schedule: parsed.program_schedule || initialProgramSchedule,
-          registration_form_fields: parsed.registration_form_fields || initialRegistrationFields,
+          registration_form_fields: (() => {
+            let fields = parsed.registration_form_fields || initialRegistrationFields;
+            if (Array.isArray(fields) && !fields.some((f: any) => f.name === 't_shirt_size')) {
+              const defaultTShirt = initialRegistrationFields.find(f => f.name === 't_shirt_size');
+              if (defaultTShirt) {
+                fields = [...fields, defaultTShirt].sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
+              }
+            }
+            return fields;
+          })(),
           hero_config: parsed.hero_config || initialHeroConfig,
+          mail_settings: parsed.mail_settings || initialMailSettings,
         };
         this.saveData(resolved);
         return resolved;
@@ -1136,6 +1397,7 @@ class DatabaseEngine {
       program_schedule: initialProgramSchedule,
       registration_form_fields: initialRegistrationFields,
       hero_config: initialHeroConfig,
+      mail_settings: initialMailSettings,
     };
 
     this.saveData(initial);
@@ -1377,7 +1639,7 @@ class DatabaseEngine {
       escapeCsv(r.full_name),
       escapeCsv(r.passing_year),
       escapeCsv(r.batch_name || `Batch ${r.passing_year}`),
-      escapeCsv(r.t_shirt_size || 'L'),
+      escapeCsv(r.t_shirt_size || ''),
       escapeCsv(r.phone),
       escapeCsv(r.email || ''),
       escapeCsv(r.gender || ''),
@@ -1702,11 +1964,11 @@ class DatabaseEngine {
     for (const r of registrations) {
       if (isMySQL) {
         lines.push(
-          `INSERT INTO \`event_registrations\` (\`id\`, \`event_id\`, \`full_name\`, \`dob\`, \`gender\`, \`blood_group\`, \`t_shirt_size\`, \`phone\`, \`email\`, \`passing_year\`, \`batch_id\`, \`batch_name\`, \`batch_name_bn\`, \`fee_amount\`, \`currency\`, \`payment_status\`, \`registration_status\`, \`payment_method\`, \`token_id\`, \`token_code\`, \`checked_in\`, \`checked_in_at\`, \`created_at\`) VALUES (${sqlEscape(r.id)}, ${sqlEscape(r.event_id || 'event-85th-anniversary')}, ${sqlEscape(r.full_name)}, ${sqlEscape(r.dob)}, ${sqlEscape(r.gender)}, ${sqlEscape(r.blood_group)}, ${sqlEscape(r.t_shirt_size || 'L')}, ${sqlEscape(r.phone)}, ${sqlEscape(r.email)}, ${sqlEscape(r.passing_year)}, ${sqlEscape(r.batch_id)}, ${sqlEscape(r.batch_name)}, ${sqlEscape(r.batch_name_bn)}, ${sqlEscape(r.fee_amount || 1000)}, ${sqlEscape(r.currency || 'BDT')}, ${sqlEscape(r.payment_status || 'pending')}, ${sqlEscape(r.registration_status || 'pending')}, ${sqlEscape(r.payment_method)}, ${sqlEscape(r.token_id)}, ${sqlEscape(r.token_code)}, ${sqlEscape(r.checked_in || false)}, ${sqlEscape(r.checked_in_at)}, ${sqlEscape(r.created_at || timestamp)}) ON DUPLICATE KEY UPDATE \`payment_status\` = VALUES(\`payment_status\`);`
+          `INSERT INTO \`event_registrations\` (\`id\`, \`event_id\`, \`full_name\`, \`dob\`, \`gender\`, \`blood_group\`, \`t_shirt_size\`, \`phone\`, \`email\`, \`passing_year\`, \`batch_id\`, \`batch_name\`, \`batch_name_bn\`, \`fee_amount\`, \`currency\`, \`payment_status\`, \`registration_status\`, \`payment_method\`, \`token_id\`, \`token_code\`, \`checked_in\`, \`checked_in_at\`, \`created_at\`) VALUES (${sqlEscape(r.id)}, ${sqlEscape(r.event_id || 'event-85th-anniversary')}, ${sqlEscape(r.full_name)}, ${sqlEscape(r.dob)}, ${sqlEscape(r.gender)}, ${sqlEscape(r.blood_group)}, ${sqlEscape(r.t_shirt_size || null)}, ${sqlEscape(r.phone)}, ${sqlEscape(r.email)}, ${sqlEscape(r.passing_year)}, ${sqlEscape(r.batch_id)}, ${sqlEscape(r.batch_name)}, ${sqlEscape(r.batch_name_bn)}, ${sqlEscape(r.fee_amount || 1000)}, ${sqlEscape(r.currency || 'BDT')}, ${sqlEscape(r.payment_status || 'pending')}, ${sqlEscape(r.registration_status || 'pending')}, ${sqlEscape(r.payment_method)}, ${sqlEscape(r.token_id)}, ${sqlEscape(r.token_code)}, ${sqlEscape(r.checked_in || false)}, ${sqlEscape(r.checked_in_at)}, ${sqlEscape(r.created_at || timestamp)}) ON DUPLICATE KEY UPDATE \`payment_status\` = VALUES(\`payment_status\`);`
         );
       } else {
         lines.push(
-          `INSERT INTO event_registrations (id, event_id, full_name, dob, gender, blood_group, t_shirt_size, phone, email, passing_year, batch_id, batch_name, batch_name_bn, fee_amount, currency, payment_status, registration_status, payment_method, token_id, token_code, checked_in, checked_in_at, created_at) VALUES (${sqlEscape(r.id)}, ${sqlEscape(r.event_id || 'event-85th-anniversary')}, ${sqlEscape(r.full_name)}, ${sqlEscape(r.dob)}, ${sqlEscape(r.gender)}, ${sqlEscape(r.blood_group)}, ${sqlEscape(r.t_shirt_size || 'L')}, ${sqlEscape(r.phone)}, ${sqlEscape(r.email)}, ${sqlEscape(r.passing_year)}, ${sqlEscape(r.batch_id)}, ${sqlEscape(r.batch_name)}, ${sqlEscape(r.batch_name_bn)}, ${sqlEscape(r.fee_amount || 1000)}, ${sqlEscape(r.currency || 'BDT')}, ${sqlEscape(r.payment_status || 'pending')}, ${sqlEscape(r.registration_status || 'pending')}, ${sqlEscape(r.payment_method)}, ${sqlEscape(r.token_id)}, ${sqlEscape(r.token_code)}, ${sqlEscape(r.checked_in || false)}, ${sqlEscape(r.checked_in_at)}, ${sqlEscape(r.created_at || timestamp)}) ON CONFLICT (id) DO NOTHING;`
+          `INSERT INTO event_registrations (id, event_id, full_name, dob, gender, blood_group, t_shirt_size, phone, email, passing_year, batch_id, batch_name, batch_name_bn, fee_amount, currency, payment_status, registration_status, payment_method, token_id, token_code, checked_in, checked_in_at, created_at) VALUES (${sqlEscape(r.id)}, ${sqlEscape(r.event_id || 'event-85th-anniversary')}, ${sqlEscape(r.full_name)}, ${sqlEscape(r.dob)}, ${sqlEscape(r.gender)}, ${sqlEscape(r.blood_group)}, ${sqlEscape(r.t_shirt_size || null)}, ${sqlEscape(r.phone)}, ${sqlEscape(r.email)}, ${sqlEscape(r.passing_year)}, ${sqlEscape(r.batch_id)}, ${sqlEscape(r.batch_name)}, ${sqlEscape(r.batch_name_bn)}, ${sqlEscape(r.fee_amount || 1000)}, ${sqlEscape(r.currency || 'BDT')}, ${sqlEscape(r.payment_status || 'pending')}, ${sqlEscape(r.registration_status || 'pending')}, ${sqlEscape(r.payment_method)}, ${sqlEscape(r.token_id)}, ${sqlEscape(r.token_code)}, ${sqlEscape(r.checked_in || false)}, ${sqlEscape(r.checked_in_at)}, ${sqlEscape(r.created_at || timestamp)}) ON CONFLICT (id) DO NOTHING;`
         );
       }
     }

@@ -79,7 +79,12 @@ export const AdminRegistrationForm: React.FC<AdminRegistrationFormProps> = ({
   const loadFields = async () => {
     setLoading(true);
     try {
-      const res = await apiFetch('/api/registration/fields');
+      let res = await apiFetch('/api/admin/registration/fields', {
+        headers: getAuthHeaders(),
+      });
+      if (!res.ok) {
+        res = await apiFetch('/api/registration/fields');
+      }
       if (res.ok) {
         const data = await res.json();
         setFields(normalizeFields(data));

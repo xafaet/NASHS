@@ -55,6 +55,27 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ initialTab = 'pass' 
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordMsg, setPasswordMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [supportPhone, setSupportPhone] = useState('+880 1819-123456');
+
+  useEffect(() => {
+    apiFetch('/api/global-settings')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => {
+        if (d?.contact_phone) setSupportPhone(d.contact_phone);
+      })
+      .catch(() => {});
+  }, []);
+
+  const toBnNumerals = (n: number | string) =>
+    n.toString().replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
+
+  const formatBatchLabel = (passingYear?: number, rawBatch?: string, isBn?: boolean) => {
+    const year = passingYear || (rawBatch ? parseInt(rawBatch.match(/(?:19|20)\d{2}/)?.[0] || '0', 10) : 0);
+    if (year > 0) {
+      return isBn ? `এসএসসি ব্যাচ ${toBnNumerals(year)}` : `SSC Batch ${year}`;
+    }
+    return isBn ? 'প্রাক্তন শিক্ষার্থী পরিষদ' : (rawBatch || 'Batch Alumnus');
+  };
 
   // Profile editable state
   const [profileData, setProfileData] = useState<Partial<User>>({
@@ -293,7 +314,7 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ initialTab = 'pass' 
               {profileData.name || user?.name}
             </h1>
             <p className="text-emerald-200 text-sm mt-0.5 flex flex-wrap items-center gap-2">
-              <span className="font-semibold text-white">{user?.batch || 'Batch Alumnus'}</span>
+              <span className="font-semibold text-white">{formatBatchLabel(user?.passing_year, user?.batch, language === 'bn')}</span>
               <span>•</span>
               <span className="font-mono text-emerald-100">{user?.phone || user?.email}</span>
               {profileData.occupation && (
@@ -385,7 +406,9 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ initialTab = 'pass' 
                   <span className="text-xs text-slate-500 block">
                     {language === 'bn' ? 'পাসের বছর ও ব্যাচ' : 'Passing Year & Batch'}
                   </span>
-                  <span className="font-bold text-[#0f4d2a]">{user?.batch || 'Batch Alumnus'}</span>
+                  <span className="font-bold text-[#0f4d2a]">
+                    {formatBatchLabel(user?.passing_year, user?.batch, language === 'bn')}
+                  </span>
                 </div>
                 <div>
                   <span className="text-xs text-slate-500 block">
@@ -422,8 +445,8 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ initialTab = 'pass' 
               </h4>
               <p>
                 {language === 'bn'
-                  ? 'আপনার নিবন্ধন সংক্রান্ত কোনো প্রশ্ন থাকলে যোগাযোগ করুন: +৮৮০ ১৮১৯-১২৩৪৫৬'
-                  : 'For any event or pass issues, contact the Registration Sub-committee: +880 1819-123456'}
+                  ? `আপনার নিবন্ধন সংক্রান্ত কোনো প্রশ্ন থাকলে যোগাযোগ করুন: ${supportPhone}`
+                  : `For any event or pass issues, contact the Registration Sub-committee: ${supportPhone}`}
               </p>
             </div>
           </div>
@@ -451,7 +474,7 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ initialTab = 'pass' 
                   >
                     <div className="space-y-1">
                       <span className="font-bold text-slate-900 text-base block">
-                        {reg.full_name} — {language === 'bn' ? reg.batch_name_bn : reg.batch_name}
+                        {reg.full_name} — {formatBatchLabel(reg.passing_year, language === 'bn' ? reg.batch_name_bn : reg.batch_name, language === 'bn')}
                       </span>
                       <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600">
                         <span className="font-mono bg-white px-2 py-0.5 rounded border border-slate-300">
@@ -466,6 +489,14 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ initialTab = 'pass' 
                             <span>•</span>
                             <span className="font-mono font-bold text-[#0f4d2a]">
                               Token: {reg.token_code}
+                            </span>
+                          </>
+                        )}
+                        {reg.t_shirt_size && (
+                          <>
+                            <span>•</span>
+                            <span className="font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                              T-Shirt: {reg.t_shirt_size}
                             </span>
                           </>
                         )}
@@ -503,12 +534,13 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ initialTab = 'pass' 
                 <DigitalEntryPass
                   tokenCode={selectedPass.token_code}
                   fullName={selectedPass.full_name}
-                  batchName={selectedPass.batch_name}
-                  batchNameBn={selectedPass.batch_name_bn}
+                  batchName={formatBatchLabel(selectedPass.passing_year, selectedPass.batch_name, false)}
+                  batchNameBn={formatBatchLabel(selectedPass.passing_year, selectedPass.batch_name_bn, true)}
                   passingYear={selectedPass.passing_year}
                   qrCodeSvg={selectedPass.qr_code_svg}
                   photoUrl={selectedPass.photo_url || profileData.photo_url}
                   bloodGroup={selectedPass.blood_group || profileData.blood_group}
+                  tShirtSize={selectedPass.t_shirt_size}
                   occupation={selectedPass.occupation || profileData.occupation}
                   status={selectedPass.payment_status === 'paid' ? 'active' : 'pending'}
                   checkedIn={selectedPass.checked_in}

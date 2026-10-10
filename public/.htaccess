@@ -1,0 +1,45 @@
+# ==============================================================================
+# Apache Configuration for cPanel Deployment - Nanupur Abu Sobhan High School Alumni
+# ==============================================================================
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Enforce HTTPS / SSL
+    RewriteCond %{HTTPS} off
+    RewriteCond %{HTTP:X-Forwarded-Proto} !https
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # Handle Frontend SPA & Static Assets
+    # If file or directory exists in public, serve it directly
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Proxy or Route API requests to Node/Express backend if running as reverse proxy
+    # (If using cPanel Application Manager / Passenger, passenger handles /api automatically)
+    RewriteRule ^index\.html$ - [L]
+    RewriteRule . /index.html [L]
+</IfModule>
+
+# Security Headers & MIME Types
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Character Encoding for Bengali (UTF-8) Support
+AddDefaultCharset UTF-8
+AddCharset UTF-8 .html .css .js .json .svg
+
+# File Upload and Execution Constraints
+<IfModule mod_php.c>
+    php_value upload_max_filesize 10M
+    php_value post_max_size 12M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+    php_value memory_limit 256M
+</IfModule>

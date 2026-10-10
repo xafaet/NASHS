@@ -572,9 +572,12 @@ export const AdminAppearance: React.FC<Props> = ({ showToast, getHeaders }) => {
 
         {/* 4. FOOTER CONFIGURATION */}
         {activeSection === 'footer' && footer && (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="flex justify-between items-center pb-4 border-b border-slate-100">
-              <h3 className="font-bold text-slate-900 text-sm">Footer Content & Columns</h3>
+              <div>
+                <h3 className="font-bold text-slate-900 text-sm">Footer Content, Branding & Links</h3>
+                <p className="text-xs text-slate-500">Configure public footer branding, contact details, social channels, copyright, and menu columns.</p>
+              </div>
               <button
                 onClick={saveFooter}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-800 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
@@ -584,60 +587,334 @@ export const AdminAppearance: React.FC<Props> = ({ showToast, getHeaders }) => {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Logo & Description */}
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
+              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide">Footer Identity & About</h4>
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                  Footer Description (English)
+                  Footer Logo Image URL
                 </label>
-                <textarea
-                  rows={3}
-                  value={footer.description_en}
-                  onChange={e => setFooter({ ...footer, description_en: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
+                <input
+                  type="text"
+                  value={footer.logo_url || ''}
+                  onChange={e => setFooter({ ...footer, logo_url: e.target.value })}
+                  placeholder="https://... or /logo.png"
+                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white"
                 />
               </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                  Footer Description (Bengali)
-                </label>
-                <textarea
-                  rows={3}
-                  value={footer.description_bn}
-                  onChange={e => setFooter({ ...footer, description_bn: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
-                />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Footer Description (English)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={footer.description_en || ''}
+                    onChange={e => setFooter({ ...footer, description_en: e.target.value })}
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Footer Description (Bengali)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={footer.description_bn || ''}
+                    onChange={e => setFooter({ ...footer, description_bn: e.target.value })}
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="space-y-3 pt-2">
-              <h4 className="text-xs font-bold text-slate-700 uppercase">Footer Columns</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {footer.columns.map((col, idx) => (
-                  <div key={col.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-                    <span className="text-[10px] font-bold text-emerald-800 uppercase">Column {idx + 1}</span>
-                    <input
-                      type="text"
-                      value={col.title_en}
-                      onChange={e => {
-                        const updated = [...footer.columns];
-                        updated[idx].title_en = e.target.value;
-                        setFooter({ ...footer, columns: updated });
-                      }}
-                      className="w-full px-2 py-1 text-xs border border-slate-300 rounded-sm bg-white"
-                      placeholder="Title (EN)"
-                    />
-                    <input
-                      type="text"
-                      value={col.title_bn}
-                      onChange={e => {
-                        const updated = [...footer.columns];
-                        updated[idx].title_bn = e.target.value;
-                        setFooter({ ...footer, columns: updated });
-                      }}
-                      className="w-full px-2 py-1 text-xs border border-slate-300 rounded-sm bg-white"
-                      placeholder="Title (BN)"
-                    />
-                    <span className="text-[10px] text-slate-500 block">{col.links.length} active links</span>
+            {/* Contact Details & Copyright */}
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
+              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide">Contact Details & Copyright Notice</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Contact Phone / Hotline
+                  </label>
+                  <input
+                    type="text"
+                    value={footer.phone || ''}
+                    onChange={e => setFooter({ ...footer, phone: e.target.value })}
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Contact Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={footer.email || ''}
+                    onChange={e => setFooter({ ...footer, email: e.target.value })}
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Physical Address (English)
+                  </label>
+                  <input
+                    type="text"
+                    value={footer.address_en || ''}
+                    onChange={e => setFooter({ ...footer, address_en: e.target.value })}
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Physical Address (Bengali)
+                  </label>
+                  <input
+                    type="text"
+                    value={footer.address_bn || ''}
+                    onChange={e => setFooter({ ...footer, address_bn: e.target.value })}
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Copyright Text (English)
+                  </label>
+                  <input
+                    type="text"
+                    value={footer.copyright_en || ''}
+                    onChange={e => setFooter({ ...footer, copyright_en: e.target.value })}
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Copyright Text (Bengali)
+                  </label>
+                  <input
+                    type="text"
+                    value={footer.copyright_bn || ''}
+                    onChange={e => setFooter({ ...footer, copyright_bn: e.target.value })}
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Social Media Links */}
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
+              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide">Social Media Links</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Facebook URL</label>
+                  <input
+                    type="text"
+                    value={footer.social_links?.facebook || ''}
+                    onChange={e =>
+                      setFooter({
+                        ...footer,
+                        social_links: { ...(footer.social_links || {}), facebook: e.target.value },
+                      })
+                    }
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white"
+                    placeholder="https://facebook.com/..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">YouTube URL</label>
+                  <input
+                    type="text"
+                    value={footer.social_links?.youtube || ''}
+                    onChange={e =>
+                      setFooter({
+                        ...footer,
+                        social_links: { ...(footer.social_links || {}), youtube: e.target.value },
+                      })
+                    }
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white"
+                    placeholder="https://youtube.com/..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Twitter / X URL</label>
+                  <input
+                    type="text"
+                    value={footer.social_links?.twitter || ''}
+                    onChange={e =>
+                      setFooter({
+                        ...footer,
+                        social_links: { ...(footer.social_links || {}), twitter: e.target.value },
+                      })
+                    }
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white"
+                    placeholder="https://twitter.com/..."
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Navigation Columns & Links Management */}
+            <div className="space-y-4 pt-2">
+              <div className="flex justify-between items-center">
+                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide">Footer Columns & Useful Links</h4>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newCol = {
+                      id: `col-${Date.now()}`,
+                      title_en: 'New Column',
+                      title_bn: 'নতুন কলাম',
+                      order: (footer.columns?.length || 0) + 1,
+                      links: [
+                        {
+                          id: `lnk-${Date.now()}-1`,
+                          label_en: 'Sample Link',
+                          label_bn: 'লিংক',
+                          url: 'home',
+                          target: '_self',
+                          order: 1,
+                        },
+                      ],
+                    };
+                    setFooter({ ...footer, columns: [...(footer.columns || []), newCol] });
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg text-xs font-bold cursor-pointer transition"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Column</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {(footer.columns || []).map((col, idx) => (
+                  <div key={col.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                    <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                      <span className="text-[10px] font-bold text-emerald-800 uppercase">Column {idx + 1}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = footer.columns.filter((_, cIdx) => cIdx !== idx);
+                          setFooter({ ...footer, columns: updated });
+                        }}
+                        className="text-red-500 hover:text-red-700 text-xs font-bold p-1 cursor-pointer"
+                        title="Delete Column"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-600 uppercase">Column Heading (EN / BN)</label>
+                      <input
+                        type="text"
+                        value={col.title_en}
+                        onChange={e => {
+                          const updated = [...footer.columns];
+                          updated[idx].title_en = e.target.value;
+                          setFooter({ ...footer, columns: updated });
+                        }}
+                        className="w-full px-2 py-1 text-xs border border-slate-300 rounded-sm bg-white"
+                        placeholder="Title (EN)"
+                      />
+                      <input
+                        type="text"
+                        value={col.title_bn}
+                        onChange={e => {
+                          const updated = [...footer.columns];
+                          updated[idx].title_bn = e.target.value;
+                          setFooter({ ...footer, columns: updated });
+                        }}
+                        className="w-full px-2 py-1 text-xs border border-slate-300 rounded-sm bg-white"
+                        placeholder="Title (BN)"
+                      />
+                    </div>
+
+                    {/* Column Links List */}
+                    <div className="pt-2 border-t border-slate-200 space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-bold text-slate-700 uppercase">Links ({col.links?.length || 0})</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newLink = {
+                              id: `lnk-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+                              label_en: 'New Link',
+                              label_bn: 'নতুন লিংক',
+                              url: 'home',
+                              target: '_self',
+                              order: (col.links?.length || 0) + 1,
+                            };
+                            const updated = [...footer.columns];
+                            updated[idx].links = [...(updated[idx].links || []), newLink];
+                            setFooter({ ...footer, columns: updated });
+                          }}
+                          className="text-[11px] text-emerald-800 hover:text-emerald-950 font-bold flex items-center gap-1 cursor-pointer"
+                        >
+                          <Plus className="w-3 h-3" />
+                          <span>Add</span>
+                        </button>
+                      </div>
+
+                      <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                        {(col.links || []).map((lnk, lIdx) => (
+                          <div key={lnk.id} className="p-2 bg-white border border-slate-200 rounded-lg space-y-1.5 text-xs">
+                            <div className="flex items-center justify-between gap-1">
+                              <input
+                                type="text"
+                                value={lnk.label_en}
+                                onChange={e => {
+                                  const updated = [...footer.columns];
+                                  updated[idx].links[lIdx].label_en = e.target.value;
+                                  setFooter({ ...footer, columns: updated });
+                                }}
+                                placeholder="Label (EN)"
+                                className="w-1/2 px-1.5 py-0.5 border border-slate-200 rounded-sm text-[11px]"
+                              />
+                              <input
+                                type="text"
+                                value={lnk.label_bn || ''}
+                                onChange={e => {
+                                  const updated = [...footer.columns];
+                                  updated[idx].links[lIdx].label_bn = e.target.value;
+                                  setFooter({ ...footer, columns: updated });
+                                }}
+                                placeholder="Label (BN)"
+                                className="w-1/2 px-1.5 py-0.5 border border-slate-200 rounded-sm text-[11px]"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = [...footer.columns];
+                                  updated[idx].links = updated[idx].links.filter((_, linkIndex) => linkIndex !== lIdx);
+                                  setFooter({ ...footer, columns: updated });
+                                }}
+                                className="text-red-500 hover:text-red-700 p-0.5 cursor-pointer shrink-0"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                            <input
+                              type="text"
+                              value={lnk.url}
+                              onChange={e => {
+                                const updated = [...footer.columns];
+                                updated[idx].links[lIdx].url = e.target.value;
+                                setFooter({ ...footer, columns: updated });
+                              }}
+                              placeholder="Destination URL (e.g. notices, school, https://...)"
+                              className="w-full px-1.5 py-0.5 border border-slate-200 rounded-sm text-[11px] font-mono text-slate-600"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>

@@ -11,6 +11,7 @@ interface DigitalEntryPassProps {
   qrCodeSvg?: string;
   photoUrl?: string;
   bloodGroup?: string;
+  tShirtSize?: string;
   occupation?: string;
   status?: string;
   checkedIn: boolean;
@@ -30,6 +31,7 @@ export const DigitalEntryPass: React.FC<DigitalEntryPassProps> = ({
   qrCodeSvg,
   photoUrl,
   bloodGroup,
+  tShirtSize,
   occupation,
   status = 'active',
   checkedIn,
@@ -173,7 +175,18 @@ export const DigitalEntryPass: React.FC<DigitalEntryPassProps> = ({
                     {language === 'bn' ? 'নির্ধারিত ব্যাচ' : 'Alumni Batch'}
                   </span>
                   <span className="inline-block bg-amber-400 text-slate-950 font-bold px-2.5 py-0.5 rounded text-sm mt-0.5 shadow-sm">
-                    {language === 'bn' && batchNameBn ? batchNameBn : batchName}
+                    {(() => {
+                      const toBn = (n: number | string) => n.toString().replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
+                      if (passingYear) {
+                        return language === 'bn' ? `এসএসসি ব্যাচ ${toBn(passingYear)}` : `SSC Batch ${passingYear}`;
+                      }
+                      const b = language === 'bn' && batchNameBn ? batchNameBn : (batchName || 'Alumni');
+                      const m = b.match(/(?:19|20)\d{2}/);
+                      if (m) {
+                        return language === 'bn' ? `এসএসসি ব্যাচ ${toBn(m[0])}` : `SSC Batch ${m[0]}`;
+                      }
+                      return b;
+                    })()}
                   </span>
                 </div>
 
@@ -187,6 +200,11 @@ export const DigitalEntryPass: React.FC<DigitalEntryPassProps> = ({
                   {bloodGroup && (
                     <span className="ml-2 text-xs font-bold text-red-400 bg-red-950/60 border border-red-500/40 px-1.5 py-0.5 rounded">
                       {bloodGroup}
+                    </span>
+                  )}
+                  {tShirtSize && (
+                    <span className="ml-2 text-xs font-bold text-amber-300 bg-amber-950/60 border border-amber-500/40 px-1.5 py-0.5 rounded">
+                      Size: {tShirtSize}
                     </span>
                   )}
                 </div>

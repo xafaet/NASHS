@@ -16,7 +16,7 @@ import { NewsView } from './components/NewsView';
 import { CMSPageView } from './components/CMSPageView';
 import { LoginModal } from './components/LoginModal';
 import { SetupWizard } from './components/SetupWizard';
-import { apiFetch } from './utils/api';
+import { apiFetch, safeJson } from './utils/api';
 
 function MainLayout() {
   const { language } = useLanguage();
@@ -32,12 +32,16 @@ function MainLayout() {
   useEffect(() => {
     async function checkInstallation() {
       try {
-        const res = await fetch('/api/setup/status');
+        const res = await apiFetch('/api/setup/status');
         if (res.ok) {
-          const data = await res.json();
-          setIsInstalled(data.is_installed);
-          if (!data.is_installed) {
-            setSetupReason('Welcome! Please complete the first-time setup wizard to configure your database and alumni platform.');
+          const data = await safeJson<{ is_installed: boolean }>(res, { is_installed: true });
+          if (data) {
+            setIsInstalled(data.is_installed);
+            if (!data.is_installed) {
+              setSetupReason('Welcome! Please complete the first-time setup wizard to configure your database and alumni platform.');
+            }
+          } else {
+            setIsInstalled(true);
           }
         } else {
           setIsInstalled(true);
@@ -58,13 +62,24 @@ function MainLayout() {
     if (tokenParam || viewParam === 'verify') {
       setCurrentView('verify');
     } else if (viewParam === 'setup') {
-      setCurrentView('setup');
+      // If already installed, don't enter setup wizard; clear query param
+      if (isInstalled) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('view');
+        window.history.replaceState({}, '', url.toString());
+        setCurrentView('home');
+      } else {
+        setCurrentView('setup');
+      }
     } else if (viewParam) {
       setCurrentView(viewParam);
     }
-  }, []);
+  }, [isInstalled]);
 
   const navigateTo = (view: string) => {
+    if (view === 'setup' && isInstalled) {
+      return;
+    }
     if ((view === 'member' || view === 'profile') && !user) {
       setLoginModalOpen(true);
       return;
@@ -85,8 +100,8 @@ function MainLayout() {
     }
   };
 
-  // If application is not yet installed or user explicitly requested setup view
-  if (isInstalled === false || currentView === 'setup') {
+  // If application is not yet installed on server/database: Show professional Setup Wizard
+  if (isInstalled === false) {
     return (
       <SetupWizard
         reason={setupReason}

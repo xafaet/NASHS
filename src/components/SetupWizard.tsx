@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Database,
   Server,
@@ -13,15 +13,20 @@ import {
   Mail,
   Phone,
   Globe,
-  DollarSign,
   ShieldCheck,
+  ShieldAlert,
   Loader2,
   Check,
-  Layers,
   Sparkles,
-  Award,
+  Eye,
+  EyeOff,
+  HelpCircle,
+  Info,
+  RefreshCw,
+  ExternalLink,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { apiFetch, safeJson } from '../utils/api';
 
 interface SetupWizardProps {
   onComplete: () => void;
@@ -29,10 +34,23 @@ interface SetupWizardProps {
 }
 
 export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) => {
+  // Global Setup Lock State
+  const [checkingInitialStatus, setCheckingInitialStatus] = useState<boolean>(true);
+  const [alreadyInstalled, setAlreadyInstalled] = useState<boolean>(false);
+  const [installedInfo, setInstalledInfo] = useState<{
+    site_name?: string;
+    site_url?: string;
+    driver?: string;
+    installed_at?: string;
+  } | null>(null);
+
   const [currentStep, setCurrentStep] = useState<number>(1);
 
+  // Field-level validation errors
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
   // Step 2: Database Config
-  const [driver, setDriver] = useState<'supabase' | 'mysql' | 'local'>('supabase');
+  const [driver, setDriver] = useState<'supabase' | 'mysql' | 'local'>('mysql');
 
   // Supabase / Cloud Postgres details
   const [pgHost, setPgHost] = useState('aws-0-ap-southeast-1.pooler.supabase.com');
@@ -46,12 +64,14 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
   // cPanel MySQL details
   const [mysqlHost, setMysqlHost] = useState('localhost');
   const [mysqlPort, setMysqlPort] = useState('3306');
-  const [mysqlDatabase, setMysqlDatabase] = useState('alumni_platform');
-  const [mysqlUser, setMysqlUser] = useState('cpanel_user');
+  const [mysqlDatabase, setMysqlDatabase] = useState('');
+  const [mysqlUser, setMysqlUser] = useState('');
   const [mysqlPassword, setMysqlPassword] = useState('');
+  const [showMysqlPassword, setShowMysqlPassword] = useState(false);
 
   // Testing database connection
   const [testingDb, setTestingDb] = useState(false);
+  const [dbTested, setDbTested] = useState(false);
   const [dbTestResult, setDbTestResult] = useState<{
     success: boolean;
     message: string;
@@ -61,73 +81,317 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
   // Step 3: Super Admin details
   const [adminName, setAdminName] = useState('Super Administrator');
   const [adminEmail, setAdminEmail] = useState('admin@nanupuralumni.org');
-  const [adminPhone, setAdminPhone] = useState('01819123456');
-  const [adminPassword, setAdminPassword] = useState('Admin@Nash2027');
-  const [adminConfirmPassword, setAdminConfirmPassword] = useState('Admin@Nash2027');
+  const [adminPhone, setAdminPhone] = useState('01712345678');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [adminConfirmPassword, setAdminConfirmPassword] = useState('');
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
 
-  // Step 4: Site Information (Focused strictly on Website Setup)
+  // Step 4: Site Information
   const [siteName, setSiteName] = useState('Nanupur Abu Sobhan High School Alumni Association');
-  const [siteUrl, setSiteUrl] = useState(typeof window !== 'undefined' ? window.location.origin : 'https://nanupuralumni.org');
+  const [siteUrl, setSiteUrl] = useState(
+    typeof window !== 'undefined' ? window.location.origin : 'https://nanupuralumni.org'
+  );
   const [siteEmail, setSiteEmail] = useState('info@nanupuralumni.org');
   const [defaultLang, setDefaultLang] = useState<'bn' | 'en'>('bn');
 
-  // Installation state
+  // Installation execution state
   const [installing, setInstalling] = useState(false);
   const [installError, setInstallError] = useState<string | null>(null);
   const [installSuccess, setInstallSuccess] = useState(false);
 
-  // Test Database Connection
+  // Unverified connection bypass modal/warning
+  const [showUnverifiedWarning, setShowUnverifiedWarning] = useState(false);
+
+  // 1. Initial Mount Check: Detect if already installed to prevent unauthorized reconfiguration
+  useEffect(() => {
+    let isMounted = true;
+    async function checkStatus() {
+      try {
+        const res = await apiFetch('/api/setup/status');
+        if (res.ok) {
+          const data = await safeJson<{
+            is_installed: boolean;
+            site_name?: string;
+            site_url?: string;
+            driver?: string;
+            installed_at?: string;
+          }>(res, { is_installed: false });
+
+          if (isMounted && data && data.is_installed) {
+            setAlreadyInstalled(true);
+            setInstalledInfo(data);
+          }
+        }
+      } catch (err) {
+        console.warn('Could not query installation status:', err);
+      } finally {
+        if (isMounted) setCheckingInitialStatus(false);
+      }
+    }
+    checkStatus();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Clear specific field error when value changes
+  const clearError = (field: string) => {
+    if (errors[field]) {
+      setErrors(prev => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+
+  // Reset DB test status when database inputs change
+  const handleDbInputChange = (setter: (val: string) => void, field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setter(e.target.value);
+    clearError(field);
+    setDbTestResult(null);
+    setDbTested(false);
+    setShowUnverifiedWarning(false);
+  };
+
+  // -------------------------------------------------------------
+  // VALIDATION LOGIC
+  // -------------------------------------------------------------
+
+  const validateMysql = (): Record<string, string> => {
+    const errs: Record<string, string> = {};
+    const host = mysqlHost.trim();
+    const port = parseInt(mysqlPort, 10);
+    const dbName = mysqlDatabase.trim();
+    const user = mysqlUser.trim();
+
+    if (!host) {
+      errs.mysqlHost = 'MySQL Host is required (typically "localhost" or "127.0.0.1" on cPanel)';
+    } else if (/\s/.test(host)) {
+      errs.mysqlHost = 'Host cannot contain whitespace';
+    } else if (host.startsWith('http://') || host.startsWith('https://')) {
+      errs.mysqlHost = 'Enter hostname or IP without http:// or https:// prefix';
+    }
+
+    if (!mysqlPort.trim()) {
+      errs.mysqlPort = 'MySQL Port is required (default: 3306)';
+    } else if (isNaN(port) || port < 1 || port > 65535) {
+      errs.mysqlPort = 'Port must be a valid number between 1 and 65535';
+    }
+
+    if (!dbName) {
+      errs.mysqlDatabase = 'Database Name is required (e.g., cpaneluser_alumni)';
+    } else if (/\s/.test(dbName)) {
+      errs.mysqlDatabase = 'Database name cannot contain spaces';
+    }
+
+    if (!user) {
+      errs.mysqlUser = 'DB Username is required (e.g., cpaneluser_admin)';
+    } else if (/\s/.test(user)) {
+      errs.mysqlUser = 'DB Username cannot contain spaces';
+    }
+
+    return errs;
+  };
+
+  const validateSupabase = (): Record<string, string> => {
+    const errs: Record<string, string> = {};
+    if (pgConnString.trim()) {
+      if (!pgConnString.includes('postgres://') && !pgConnString.includes('postgresql://')) {
+        errs.pgConnString = 'Connection string must start with postgresql:// or postgres://';
+      }
+      return errs;
+    }
+
+    if (!pgHost.trim()) errs.pgHost = 'PostgreSQL Host/Pooler is required';
+    const port = parseInt(pgPort, 10);
+    if (!pgPort.trim() || isNaN(port) || port < 1 || port > 65535) errs.pgPort = 'Valid port required (e.g. 5432 or 6543)';
+    if (!pgDatabase.trim()) errs.pgDatabase = 'Database name is required (default: postgres)';
+    if (!pgUser.trim()) errs.pgUser = 'Database username is required';
+
+    return errs;
+  };
+
+  const validateStep2 = (): boolean => {
+    let errs: Record<string, string> = {};
+    if (driver === 'mysql') {
+      errs = validateMysql();
+    } else if (driver === 'supabase') {
+      errs = validateSupabase();
+    }
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const validateAdmin = (): Record<string, string> => {
+    const errs: Record<string, string> = {};
+    if (!adminName.trim() || adminName.trim().length < 2) {
+      errs.adminName = 'Full Name is required (at least 2 characters)';
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!adminEmail.trim()) {
+      errs.adminEmail = 'Official Admin Email is required';
+    } else if (!emailRegex.test(adminEmail.trim())) {
+      errs.adminEmail = 'Please provide a valid administrative email address';
+    }
+
+    const bdPhoneRegex = /^(?:\+?88)?01[3-9]\d{8}$/;
+    const cleanPhone = adminPhone.replace(/[\s-]/g, '');
+    if (!adminPhone.trim()) {
+      errs.adminPhone = 'Mobile phone number is required';
+    } else if (!bdPhoneRegex.test(cleanPhone) && cleanPhone.length < 10) {
+      errs.adminPhone = 'Please provide a valid mobile number (e.g. 01712345678)';
+    }
+
+    if (!adminPassword) {
+      errs.adminPassword = 'Password is required';
+    } else if (adminPassword.length < 6) {
+      errs.adminPassword = 'Password must be at least 6 characters long';
+    }
+
+    if (!adminConfirmPassword) {
+      errs.adminConfirmPassword = 'Password confirmation is required';
+    } else if (adminPassword !== adminConfirmPassword) {
+      errs.adminConfirmPassword = 'Passwords do not match';
+    }
+
+    return errs;
+  };
+
+  const validateStep3 = (): boolean => {
+    const errs = validateAdmin();
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const validateSite = (): Record<string, string> => {
+    const errs: Record<string, string> = {};
+    if (!siteName.trim() || siteName.trim().length < 3) {
+      errs.siteName = 'Website Name is required (minimum 3 characters)';
+    }
+
+    if (!siteUrl.trim()) {
+      errs.siteUrl = 'Website URL is required';
+    } else if (!/^https?:\/\//i.test(siteUrl.trim())) {
+      errs.siteUrl = 'Website URL must include http:// or https://';
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!siteEmail.trim()) {
+      errs.siteEmail = 'Public Contact Email is required';
+    } else if (!emailRegex.test(siteEmail.trim())) {
+      errs.siteEmail = 'Please provide a valid public contact email';
+    }
+
+    return errs;
+  };
+
+  const validateStep4 = (): boolean => {
+    const errs = validateSite();
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  // -------------------------------------------------------------
+  // TEST DATABASE CONNECTION
+  // -------------------------------------------------------------
   const handleTestConnection = async () => {
+    // Validate fields before sending request
+    if (!validateStep2()) {
+      return;
+    }
+
     setTestingDb(true);
     setDbTestResult(null);
 
     const payload: any = { driver };
 
     if (driver === 'mysql') {
-      payload.host = mysqlHost;
+      payload.host = mysqlHost.trim() || 'localhost';
       payload.port = parseInt(mysqlPort, 10) || 3306;
-      payload.database = mysqlDatabase;
-      payload.username = mysqlUser;
+      payload.database = mysqlDatabase.trim();
+      payload.username = mysqlUser.trim();
       payload.password = mysqlPassword;
     } else if (driver === 'supabase') {
       if (pgConnString.trim()) {
         payload.connectionString = pgConnString.trim();
       } else {
-        payload.host = pgHost;
+        payload.host = pgHost.trim();
         payload.port = parseInt(pgPort, 10) || 5432;
-        payload.database = pgDatabase;
-        payload.username = pgUser;
+        payload.database = pgDatabase.trim();
+        payload.username = pgUser.trim();
         payload.password = pgPassword;
         payload.ssl = pgSsl;
       }
     }
 
     try {
-      const res = await fetch('/api/setup/test-connection', {
+      const res = await apiFetch('/api/setup/test-connection', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
+      const data = await safeJson(res, {
+        success: false,
+        message: 'Unexpected server response while verifying connection.',
+      });
+
       setDbTestResult(data);
+      if (data?.success) {
+        setDbTested(true);
+        setShowUnverifiedWarning(false);
+      } else {
+        setDbTested(false);
+      }
     } catch (err: any) {
       setDbTestResult({
         success: false,
-        message: 'Could not communicate with the installation backend. Check server status.',
+        message: err.message || 'Could not communicate with the database verification service.',
       });
+      setDbTested(false);
     } finally {
       setTestingDb(false);
     }
   };
 
-  // Perform Final Installation
-  const handlePerformInstall = async () => {
-    if (adminPassword !== adminConfirmPassword) {
-      setInstallError('Admin passwords do not match. Please re-enter.');
+  // Step 2 Proceed Guard
+  const handleProceedFromStep2 = () => {
+    if (!validateStep2()) {
       return;
     }
-    if (adminPassword.length < 6) {
-      setInstallError('Password must be at least 6 characters.');
+
+    // If driver is not local, check if connection was tested successfully
+    if (driver !== 'local' && (!dbTested || !dbTestResult?.success)) {
+      setShowUnverifiedWarning(true);
+      return;
+    }
+
+    setCurrentStep(3);
+  };
+
+  // Step 3 Proceed Guard
+  const handleProceedFromStep3 = () => {
+    if (!validateStep3()) {
+      return;
+    }
+    setCurrentStep(4);
+  };
+
+  // -------------------------------------------------------------
+  // PERFORM INSTALLATION
+  // -------------------------------------------------------------
+  const handlePerformInstall = async () => {
+    if (!validateStep4()) {
+      return;
+    }
+    // Re-verify Step 2 and Step 3
+    if (!validateStep2()) {
+      setCurrentStep(2);
+      return;
+    }
+    if (!validateStep3()) {
+      setCurrentStep(3);
       return;
     }
 
@@ -137,47 +401,50 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
     const installPayload: any = {
       database: {
         driver,
-        host: driver === 'mysql' ? mysqlHost : pgHost,
+        host: driver === 'mysql' ? mysqlHost.trim() : pgHost.trim(),
         port: driver === 'mysql' ? parseInt(mysqlPort, 10) : parseInt(pgPort, 10),
-        database: driver === 'mysql' ? mysqlDatabase : pgDatabase,
-        username: driver === 'mysql' ? mysqlUser : pgUser,
+        database: driver === 'mysql' ? mysqlDatabase.trim() : pgDatabase.trim(),
+        username: driver === 'mysql' ? mysqlUser.trim() : pgUser.trim(),
         password: driver === 'mysql' ? mysqlPassword : pgPassword,
         ssl: pgSsl,
-        connectionString: driver === 'supabase' && pgConnString ? pgConnString : undefined,
+        connectionString: driver === 'supabase' && pgConnString.trim() ? pgConnString.trim() : undefined,
       },
       admin: {
-        name: adminName,
-        email: adminEmail,
-        phone: adminPhone,
+        name: adminName.trim(),
+        email: adminEmail.trim(),
+        phone: adminPhone.trim(),
         password: adminPassword,
       },
       site: {
-        site_name: siteName,
-        site_url: siteUrl,
-        site_email: siteEmail,
+        site_name: siteName.trim(),
+        site_url: siteUrl.trim(),
+        site_email: siteEmail.trim(),
         default_language: defaultLang,
       },
     };
 
     try {
-      const res = await fetch('/api/setup/install', {
+      const res = await apiFetch('/api/setup/install', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(installPayload),
       });
 
-      const data = await res.json();
+      const data = await safeJson(res, {
+        success: false,
+        message: 'Failed to process setup installation.',
+      });
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || 'Installation process failed.');
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.message || 'Installation process could not be completed.');
       }
 
       setInstallSuccess(true);
-      setCurrentStep(5); // Step 5: Finish / Congratulations
+      setCurrentStep(5);
       try {
         confetti({
-          particleCount: 100,
-          spread: 80,
+          particleCount: 120,
+          spread: 90,
           origin: { y: 0.5 },
           colors: ['#0f4d2a', '#f59e0b', '#10b981', '#ffffff'],
         });
@@ -189,6 +456,21 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
     }
   };
 
+  // Password Strength Estimator
+  const getPasswordStrength = () => {
+    if (!adminPassword) return { score: 0, label: 'Empty', color: 'bg-slate-700' };
+    let score = 0;
+    if (adminPassword.length >= 6) score += 1;
+    if (adminPassword.length >= 8) score += 1;
+    if (/[A-Z]/.test(adminPassword) && /[a-z]/.test(adminPassword)) score += 1;
+    if (/\d/.test(adminPassword)) score += 1;
+    if (/[^A-Za-z0-9]/.test(adminPassword)) score += 1;
+
+    if (score <= 2) return { score: 1, label: 'Fair (Min 6 chars)', color: 'bg-amber-500' };
+    if (score <= 4) return { score: 2, label: 'Good', color: 'bg-emerald-500' };
+    return { score: 3, label: 'Strong', color: 'bg-emerald-400' };
+  };
+
   const steps = [
     { num: 1, label: 'Welcome' },
     { num: 2, label: 'Database' },
@@ -197,6 +479,90 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
     { num: 5, label: 'Finish' },
   ];
 
+  // -------------------------------------------------------------
+  // VIEW: CHECKING INITIAL STATUS
+  // -------------------------------------------------------------
+  if (checkingInitialStatus) {
+    return (
+      <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col justify-center items-center py-10 px-4">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
+          <p className="text-sm font-medium text-slate-300">Checking system installation state...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // -------------------------------------------------------------
+  // VIEW: ALREADY INSTALLED & SECURED (PREVENTS UNAUTHORIZED CONFIGURATION)
+  // -------------------------------------------------------------
+  if (alreadyInstalled) {
+    return (
+      <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col justify-center items-center py-10 px-4 sm:px-6">
+        <div className="relative w-full max-w-xl bg-slate-950 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden p-8 text-center space-y-6">
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto shadow-lg">
+            <ShieldAlert className="w-8 h-8" />
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="text-2xl font-black text-white tracking-tight">Installation Locked</h2>
+            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+              The Nanupur Abu Sobhan High School Alumni Platform has already been successfully installed and is active in production.
+            </p>
+          </div>
+
+          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 text-xs text-left space-y-2 font-mono">
+            <div className="flex justify-between items-center text-slate-400">
+              <span>Platform Status:</span>
+              <span className="text-emerald-400 font-bold flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Installed & Active
+              </span>
+            </div>
+            {installedInfo?.site_name && (
+              <div className="flex justify-between items-center text-slate-400">
+                <span>Organization:</span>
+                <span className="text-slate-200 truncate max-w-[220px]">{installedInfo.site_name}</span>
+              </div>
+            )}
+            {installedInfo?.driver && (
+              <div className="flex justify-between items-center text-slate-400">
+                <span>Database Engine:</span>
+                <span className="text-amber-400 uppercase">{installedInfo.driver}</span>
+              </div>
+            )}
+            {installedInfo?.installed_at && (
+              <div className="flex justify-between items-center text-slate-400">
+                <span>Installed At:</span>
+                <span className="text-slate-300">{new Date(installedInfo.installed_at).toLocaleDateString()}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="bg-emerald-950/30 border border-emerald-800/40 rounded-xl p-3.5 text-xs text-emerald-300 text-left flex items-start gap-2.5">
+            <Lock className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+            <p className="leading-relaxed">
+              For security reasons, re-running the setup wizard is restricted to protect stored credentials and member records. To update database credentials, website settings, or administrators, please log in with your Super Administrator account.
+            </p>
+          </div>
+
+          <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              type="button"
+              onClick={onComplete}
+              className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-lg"
+            >
+              <span>Return to Website</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // -------------------------------------------------------------
+  // VIEW: SETUP WIZARD STEPS
+  // -------------------------------------------------------------
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col justify-center items-center py-10 px-4 sm:px-6">
       {/* Background glow effects */}
@@ -277,8 +643,8 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
                 </h2>
                 <p className="text-sm text-slate-400 leading-relaxed">
                   This quick setup wizard will guide you through connecting your database
-                  (Supabase Cloud or cPanel MySQL), creating your Super Administrator account, and configuring
-                  essential website information. Event and reunion-specific settings remain configurable later from the authenticated admin dashboard.
+                  (cPanel MySQL or Supabase Cloud), creating your Super Administrator account, and configuring
+                  essential website information. All reunion and event settings can be managed anytime from the authenticated admin dashboard.
                 </p>
               </div>
 
@@ -295,9 +661,9 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
                     </span>
                   </div>
                   <div className="py-2 flex items-center justify-between">
-                    <span className="text-slate-400">Database Driver Adapters (Supabase & cPanel MySQL):</span>
+                    <span className="text-slate-400">Database Driver Adapters (cPanel MySQL & Supabase):</span>
                     <span className="text-emerald-400 font-bold flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Installed (pg + mysql2)
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Installed (mysql2 + pg)
                     </span>
                   </div>
                   <div className="py-2 flex items-center justify-between">
@@ -307,9 +673,9 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
                     </span>
                   </div>
                   <div className="py-2 flex items-center justify-between">
-                    <span className="text-slate-400">QR Code & Entry Pass Engine:</span>
+                    <span className="text-slate-400">UTF-8 / Bengali Character Support:</span>
                     <span className="text-emerald-400 font-bold flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Enabled
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Verified (utf8mb4)
                     </span>
                   </div>
                 </div>
@@ -334,8 +700,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
               <div>
                 <h2 className="text-xl sm:text-2xl font-black text-white">Configure Database Connection</h2>
                 <p className="text-xs sm:text-sm text-slate-400 mt-1">
-                  Choose between a Cloud Database (Supabase PostgreSQL), a cPanel/Self-Hosted MySQL database, or
-                  the Resilient Local Store.
+                  Choose between cPanel/Self-Hosted MySQL (recommended for standard shared hosting), Supabase PostgreSQL, or the Resilient Embedded Store.
                 </p>
               </div>
 
@@ -344,8 +709,29 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
                 <button
                   type="button"
                   onClick={() => {
+                    setDriver('mysql');
+                    setDbTestResult(null);
+                    setDbTested(false);
+                    setErrors({});
+                  }}
+                  className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
+                    driver === 'mysql'
+                      ? 'border-amber-400 bg-amber-950/30 text-white ring-2 ring-amber-400/20'
+                      : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700'
+                  }`}
+                >
+                  <Server className="w-6 h-6 text-amber-400 mb-2" />
+                  <span className="text-sm font-bold block text-white">Option A: cPanel</span>
+                  <span className="text-[11px] text-slate-400">MySQL / MariaDB</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
                     setDriver('supabase');
                     setDbTestResult(null);
+                    setDbTested(false);
+                    setErrors({});
                   }}
                   className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
                     driver === 'supabase'
@@ -354,25 +740,8 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
                   }`}
                 >
                   <Cloud className="w-6 h-6 text-emerald-400 mb-2" />
-                  <span className="text-sm font-bold block">Option A: Cloud</span>
+                  <span className="text-sm font-bold block text-white">Option B: Cloud</span>
                   <span className="text-[11px] text-slate-400">Supabase (PostgreSQL)</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDriver('mysql');
-                    setDbTestResult(null);
-                  }}
-                  className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
-                    driver === 'mysql'
-                      ? 'border-emerald-500 bg-emerald-950/40 text-white ring-2 ring-emerald-500/20'
-                      : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700'
-                  }`}
-                >
-                  <Server className="w-6 h-6 text-amber-400 mb-2" />
-                  <span className="text-sm font-bold block">Option B: cPanel</span>
-                  <span className="text-[11px] text-slate-400">MySQL / MariaDB</span>
                 </button>
 
                 <button
@@ -380,25 +749,177 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
                   onClick={() => {
                     setDriver('local');
                     setDbTestResult(null);
+                    setDbTested(true);
+                    setErrors({});
                   }}
                   className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
                     driver === 'local'
-                      ? 'border-emerald-500 bg-emerald-950/40 text-white ring-2 ring-emerald-500/20'
+                      ? 'border-blue-500 bg-blue-950/40 text-white ring-2 ring-blue-500/20'
                       : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700'
                   }`}
                 >
                   <Database className="w-6 h-6 text-blue-400 mb-2" />
-                  <span className="text-sm font-bold block">Option C: Embedded</span>
-                  <span className="text-[11px] text-slate-400">Resilient High-Perf Store</span>
+                  <span className="text-sm font-bold block text-white">Option C: Embedded</span>
+                  <span className="text-[11px] text-slate-400">Zero-Config Store</span>
                 </button>
               </div>
 
-              {/* Form for Option A: Supabase */}
+              {/* Form for Option A: cPanel MySQL */}
+              {driver === 'mysql' && (
+                <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-4">
+                  <div className="flex items-center justify-between text-xs text-slate-400 border-b border-slate-800 pb-3">
+                    <span className="font-bold text-amber-300 flex items-center gap-1.5">
+                      <Server className="w-4 h-4 text-amber-400" />
+                      cPanel MySQL / MariaDB Credentials
+                    </span>
+                    <span className="text-slate-400">MySQL 8.0+ / MariaDB 10.5+</span>
+                  </div>
+
+                  {/* cPanel helpful tips card */}
+                  <div className="bg-amber-950/20 border border-amber-800/40 rounded-xl p-3 text-xs text-amber-200/90 space-y-1">
+                    <p className="font-bold flex items-center gap-1.5 text-amber-300">
+                      <Info className="w-3.5 h-3.5" />
+                      cPanel Hosting Guidance:
+                    </p>
+                    <p className="text-[11px] text-amber-200/80 leading-relaxed">
+                      On cPanel, database and usernames always begin with your cPanel username prefix (e.g., <code className="bg-slate-900 px-1 py-0.5 rounded text-amber-300 font-mono">cpaneluser_alumni</code>). Ensure the user is added to the database with <strong className="text-white">ALL PRIVILEGES</strong> granted in cPanel &gt; MySQL Databases.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-slate-300 font-medium mb-1">
+                        MySQL Host <span className="text-red-400">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={mysqlHost}
+                        onChange={handleDbInputChange(setMysqlHost, 'mysqlHost')}
+                        placeholder="localhost or 127.0.0.1"
+                        className={`w-full bg-slate-950 border rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none transition ${
+                          errors.mysqlHost
+                            ? 'border-red-500 ring-1 ring-red-500/40'
+                            : 'border-slate-700 focus:border-amber-400'
+                        }`}
+                      />
+                      {errors.mysqlHost ? (
+                        <p className="text-[11px] text-red-400 mt-1 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" /> {errors.mysqlHost}
+                        </p>
+                      ) : (
+                        <p className="text-[11px] text-slate-500 mt-1">Usually &quot;localhost&quot; or &quot;127.0.0.1&quot; on cPanel</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-xs text-slate-300 font-medium mb-1">
+                        MySQL Port <span className="text-red-400">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={mysqlPort}
+                        onChange={handleDbInputChange(setMysqlPort, 'mysqlPort')}
+                        placeholder="3306"
+                        className={`w-full bg-slate-950 border rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none transition ${
+                          errors.mysqlPort
+                            ? 'border-red-500 ring-1 ring-red-500/40'
+                            : 'border-slate-700 focus:border-amber-400'
+                        }`}
+                      />
+                      {errors.mysqlPort ? (
+                        <p className="text-[11px] text-red-400 mt-1 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" /> {errors.mysqlPort}
+                        </p>
+                      ) : (
+                        <p className="text-[11px] text-slate-500 mt-1">Standard MySQL port is 3306</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs text-slate-300 font-medium mb-1">
+                        Database Name <span className="text-red-400">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={mysqlDatabase}
+                        onChange={handleDbInputChange(setMysqlDatabase, 'mysqlDatabase')}
+                        placeholder="cpuser_alumni"
+                        className={`w-full bg-slate-950 border rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none transition ${
+                          errors.mysqlDatabase
+                            ? 'border-red-500 ring-1 ring-red-500/40'
+                            : 'border-slate-700 focus:border-amber-400'
+                        }`}
+                      />
+                      {errors.mysqlDatabase ? (
+                        <p className="text-[11px] text-red-400 mt-1 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" /> {errors.mysqlDatabase}
+                        </p>
+                      ) : (
+                        <p className="text-[11px] text-slate-500 mt-1">Full DB name with prefix</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-xs text-slate-300 font-medium mb-1">
+                        DB Username <span className="text-red-400">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={mysqlUser}
+                        onChange={handleDbInputChange(setMysqlUser, 'mysqlUser')}
+                        placeholder="cpuser_admin"
+                        className={`w-full bg-slate-950 border rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none transition ${
+                          errors.mysqlUser
+                            ? 'border-red-500 ring-1 ring-red-500/40'
+                            : 'border-slate-700 focus:border-amber-400'
+                        }`}
+                      />
+                      {errors.mysqlUser ? (
+                        <p className="text-[11px] text-red-400 mt-1 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" /> {errors.mysqlUser}
+                        </p>
+                      ) : (
+                        <p className="text-[11px] text-slate-500 mt-1">Full username with prefix</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-xs text-slate-300 font-medium mb-1">
+                        DB Password
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showMysqlPassword ? 'text' : 'password'}
+                          value={mysqlPassword}
+                          onChange={handleDbInputChange(setMysqlPassword, 'mysqlPassword')}
+                          placeholder="••••••••••••"
+                          className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none pr-8"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowMysqlPassword(!showMysqlPassword)}
+                          className="absolute right-2.5 top-2.5 text-slate-500 hover:text-slate-300 transition"
+                        >
+                          {showMysqlPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-1">cPanel MySQL user password</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Form for Option B: Supabase */}
               {driver === 'supabase' && (
                 <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-4">
-                  <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span className="font-bold text-slate-200">Supabase Connection Parameters</span>
-                    <span>PostgreSQL 15+ compatible</span>
+                  <div className="flex items-center justify-between text-xs text-slate-400 border-b border-slate-800 pb-3">
+                    <span className="font-bold text-emerald-300 flex items-center gap-1.5">
+                      <Cloud className="w-4 h-4 text-emerald-400" />
+                      Supabase Cloud PostgreSQL Parameters
+                    </span>
+                    <span className="text-slate-400">PostgreSQL 15+ compatible</span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -407,20 +928,22 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
                       <input
                         type="text"
                         value={pgHost}
-                        onChange={e => setPgHost(e.target.value)}
+                        onChange={handleDbInputChange(setPgHost, 'pgHost')}
                         placeholder="aws-0-ap-southeast-1.pooler.supabase.com"
                         className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
                       />
+                      {errors.pgHost && <p className="text-[11px] text-red-400 mt-1">{errors.pgHost}</p>}
                     </div>
                     <div>
                       <label className="block text-xs text-slate-300 font-medium mb-1">Port</label>
                       <input
                         type="text"
                         value={pgPort}
-                        onChange={e => setPgPort(e.target.value)}
+                        onChange={handleDbInputChange(setPgPort, 'pgPort')}
                         placeholder="6543 (Pooler) or 5432"
                         className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
                       />
+                      {errors.pgPort && <p className="text-[11px] text-red-400 mt-1">{errors.pgPort}</p>}
                     </div>
                   </div>
 
@@ -430,27 +953,29 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
                       <input
                         type="text"
                         value={pgDatabase}
-                        onChange={e => setPgDatabase(e.target.value)}
+                        onChange={handleDbInputChange(setPgDatabase, 'pgDatabase')}
                         placeholder="postgres"
                         className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
                       />
+                      {errors.pgDatabase && <p className="text-[11px] text-red-400 mt-1">{errors.pgDatabase}</p>}
                     </div>
                     <div>
                       <label className="block text-xs text-slate-300 font-medium mb-1">Username</label>
                       <input
                         type="text"
                         value={pgUser}
-                        onChange={e => setPgUser(e.target.value)}
+                        onChange={handleDbInputChange(setPgUser, 'pgUser')}
                         placeholder="postgres.yourproject"
                         className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
                       />
+                      {errors.pgUser && <p className="text-[11px] text-red-400 mt-1">{errors.pgUser}</p>}
                     </div>
                     <div>
                       <label className="block text-xs text-slate-300 font-medium mb-1">Password</label>
                       <input
                         type="password"
                         value={pgPassword}
-                        onChange={e => setPgPassword(e.target.value)}
+                        onChange={handleDbInputChange(setPgPassword, 'pgPassword')}
                         placeholder="••••••••••••"
                         className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
                       />
@@ -471,128 +996,101 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
                 </div>
               )}
 
-              {/* Form for Option B: cPanel MySQL */}
-              {driver === 'mysql' && (
-                <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-4">
-                  <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span className="font-bold text-slate-200">cPanel / Self-Hosted MySQL Credentials</span>
-                    <span>MySQL 8.0+ / MariaDB 10.5+</span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs text-slate-300 font-medium mb-1">MySQL Host</label>
-                      <input
-                        type="text"
-                        value={mysqlHost}
-                        onChange={e => setMysqlHost(e.target.value)}
-                        placeholder="localhost or 127.0.0.1"
-                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-slate-300 font-medium mb-1">MySQL Port</label>
-                      <input
-                        type="text"
-                        value={mysqlPort}
-                        onChange={e => setMysqlPort(e.target.value)}
-                        placeholder="3306"
-                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block text-xs text-slate-300 font-medium mb-1">Database Name</label>
-                      <input
-                        type="text"
-                        value={mysqlDatabase}
-                        onChange={e => setMysqlDatabase(e.target.value)}
-                        placeholder="cpaneluser_alumni"
-                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-slate-300 font-medium mb-1">DB Username</label>
-                      <input
-                        type="text"
-                        value={mysqlUser}
-                        onChange={e => setMysqlUser(e.target.value)}
-                        placeholder="cpaneluser_admin"
-                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-slate-300 font-medium mb-1">DB Password</label>
-                      <input
-                        type="password"
-                        value={mysqlPassword}
-                        onChange={e => setMysqlPassword(e.target.value)}
-                        placeholder="••••••••••••"
-                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {/* Form for Option C: Embedded */}
               {driver === 'local' && (
                 <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-2 text-xs text-slate-300">
-                  <p className="font-bold text-white text-sm">Resilient Embedded JSON Database Store</p>
+                  <p className="font-bold text-white text-sm">Resilient Embedded Database Engine</p>
                   <p className="text-slate-400">
                     Runs out-of-the-box inside the container with immediate zero-setup persistence in <code>data/db.json</code>.
-                    Allows seamless export to Supabase or MySQL anytime from the Admin Database Management panel.
+                    Allows seamless export to cPanel MySQL or Supabase anytime from the Super Admin Database Management panel.
                   </p>
                 </div>
               )}
 
               {/* TEST CONNECTION BUTTON & RESULT */}
-              <div className="space-y-3">
-                <button
-                  type="button"
-                  onClick={handleTestConnection}
-                  disabled={testingDb}
-                  className="w-full py-3 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 border border-slate-700 transition cursor-pointer"
-                >
-                  {testingDb ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
-                      <span>Testing Database Connection...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Database className="w-4 h-4 text-emerald-400" />
-                      <span>Test Database Connection Before Proceeding</span>
-                    </>
-                  )}
-                </button>
-
-                {dbTestResult && (
-                  <div
-                    className={`p-3.5 rounded-xl border text-xs flex items-start gap-2.5 animate-in fade-in ${
-                      dbTestResult.success
-                        ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300'
-                        : 'bg-red-950/40 border-red-500/50 text-red-300'
-                    }`}
+              {driver !== 'local' && (
+                <div className="space-y-3">
+                  <button
+                    type="button"
+                    onClick={handleTestConnection}
+                    disabled={testingDb}
+                    className="w-full py-3 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 border border-slate-700 transition cursor-pointer"
                   >
-                    {dbTestResult.success ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                    {testingDb ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+                        <span>Testing {driver === 'mysql' ? 'cPanel MySQL' : 'Supabase'} Connection...</span>
+                      </>
                     ) : (
-                      <XCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                      <>
+                        <Database className="w-4 h-4 text-emerald-400" />
+                        <span>Test Database Connection Before Proceeding</span>
+                      </>
                     )}
-                    <div>
-                      <p className="font-bold">{dbTestResult.message}</p>
-                      {dbTestResult.details && (
-                        <p className="font-mono text-[11px] opacity-80 mt-0.5">
-                          {JSON.stringify(dbTestResult.details)}
-                        </p>
+                  </button>
+
+                  {dbTestResult && (
+                    <div
+                      className={`p-3.5 rounded-xl border text-xs flex items-start gap-2.5 animate-in fade-in ${
+                        dbTestResult.success
+                          ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300'
+                          : 'bg-red-950/40 border-red-500/50 text-red-300'
+                      }`}
+                    >
+                      {dbTestResult.success ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
                       )}
+                      <div className="space-y-1">
+                        <p className="font-bold">{dbTestResult.message}</p>
+                        {dbTestResult.details && (
+                          <div className="bg-slate-950/60 p-2 rounded-lg font-mono text-[11px] space-y-0.5">
+                            {dbTestResult.details.server_version && (
+                              <p>Server Version: {dbTestResult.details.server_version}</p>
+                            )}
+                            {dbTestResult.details.database && (
+                              <p>Connected Database: {dbTestResult.details.database}</p>
+                            )}
+                            {dbTestResult.details.host && (
+                              <p>Endpoint: {dbTestResult.details.host}</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+
+                  {/* Warning if user tries to proceed without testing */}
+                  {showUnverifiedWarning && (
+                    <div className="p-3.5 rounded-xl border border-amber-500/50 bg-amber-950/40 text-amber-300 text-xs flex items-start gap-2.5">
+                      <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                      <div className="flex-1 space-y-2">
+                        <p className="font-bold">Database connection not verified</p>
+                        <p className="text-[11px] text-amber-200/80 leading-relaxed">
+                          Please click <strong>&quot;Test Database Connection Before Proceeding&quot;</strong> to confirm that your MySQL credentials work before continuing to Super Admin creation.
+                        </p>
+                        <div className="flex items-center gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={handleTestConnection}
+                            className="px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-lg text-xs"
+                          >
+                            Test Connection Now
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setCurrentStep(3)}
+                            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs"
+                          >
+                            Proceed Anyway (Offline/Isolated)
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="pt-4 flex items-center justify-between">
                 <button
@@ -606,7 +1104,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
 
                 <button
                   type="button"
-                  onClick={() => setCurrentStep(3)}
+                  onClick={handleProceedFromStep2}
                   className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold flex items-center gap-2 text-xs shadow-lg transition cursor-pointer"
                 >
                   <span>Continue to Super Admin</span>
@@ -622,88 +1120,159 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
               <div>
                 <h2 className="text-xl sm:text-2xl font-black text-white">Create Super Admin Account</h2>
                 <p className="text-xs sm:text-sm text-slate-400 mt-1">
-                  This primary administrative credential will grant full access to the CMS, RBAC, registrations, and
-                  gate entrance controls.
+                  This primary administrative credential grants complete access to the CMS, RBAC, registrations, payments, and gate entrance controls.
                 </p>
               </div>
 
               <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs text-slate-300 font-medium mb-1">Full Name</label>
+                    <label className="block text-xs text-slate-300 font-medium mb-1">
+                      Full Name <span className="text-red-400">*</span>
+                    </label>
                     <div className="relative">
                       <User className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
                       <input
                         type="text"
-                        required
                         value={adminName}
-                        onChange={e => setAdminName(e.target.value)}
+                        onChange={e => {
+                          setAdminName(e.target.value);
+                          clearError('adminName');
+                        }}
                         placeholder="Super Administrator"
-                        className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                        className={`w-full bg-slate-950 border rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none transition ${
+                          errors.adminName
+                            ? 'border-red-500 ring-1 ring-red-500/40'
+                            : 'border-slate-700 focus:border-emerald-500'
+                        }`}
                       />
                     </div>
+                    {errors.adminName && <p className="text-[11px] text-red-400 mt-1">{errors.adminName}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-xs text-slate-300 font-medium mb-1">Official Admin Email</label>
+                    <label className="block text-xs text-slate-300 font-medium mb-1">
+                      Official Admin Email <span className="text-red-400">*</span>
+                    </label>
                     <div className="relative">
                       <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
                       <input
                         type="email"
-                        required
                         value={adminEmail}
-                        onChange={e => setAdminEmail(e.target.value)}
+                        onChange={e => {
+                          setAdminEmail(e.target.value);
+                          clearError('adminEmail');
+                        }}
                         placeholder="admin@nanupuralumni.org"
-                        className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                        className={`w-full bg-slate-950 border rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none transition ${
+                          errors.adminEmail
+                            ? 'border-red-500 ring-1 ring-red-500/40'
+                            : 'border-slate-700 focus:border-emerald-500'
+                        }`}
                       />
                     </div>
+                    {errors.adminEmail && <p className="text-[11px] text-red-400 mt-1">{errors.adminEmail}</p>}
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs text-slate-300 font-medium mb-1">Mobile Phone Number</label>
+                  <label className="block text-xs text-slate-300 font-medium mb-1">
+                    Mobile Phone Number <span className="text-red-400">*</span>
+                  </label>
                   <div className="relative">
                     <Phone className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
                     <input
                       type="text"
-                      required
                       value={adminPhone}
-                      onChange={e => setAdminPhone(e.target.value)}
-                      placeholder="01819123456"
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
+                      onChange={e => {
+                        setAdminPhone(e.target.value);
+                        clearError('adminPhone');
+                      }}
+                      placeholder="01712345678"
+                      className={`w-full bg-slate-950 border rounded-xl pl-9 pr-3 py-2 text-xs font-mono text-white focus:outline-none transition ${
+                        errors.adminPhone
+                          ? 'border-red-500 ring-1 ring-red-500/40'
+                          : 'border-slate-700 focus:border-emerald-500'
+                      }`}
                     />
                   </div>
+                  {errors.adminPhone ? (
+                    <p className="text-[11px] text-red-400 mt-1">{errors.adminPhone}</p>
+                  ) : (
+                    <p className="text-[11px] text-slate-500 mt-1">11-digit Bangladeshi mobile number</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs text-slate-300 font-medium mb-1">Admin Password</label>
+                    <label className="block text-xs text-slate-300 font-medium mb-1">
+                      Admin Password <span className="text-red-400">*</span>
+                    </label>
                     <div className="relative">
                       <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
                       <input
-                        type="password"
-                        required
+                        type={showAdminPassword ? 'text' : 'password'}
                         value={adminPassword}
-                        onChange={e => setAdminPassword(e.target.value)}
+                        onChange={e => {
+                          setAdminPassword(e.target.value);
+                          clearError('adminPassword');
+                        }}
                         placeholder="••••••••••••"
-                        className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
+                        className={`w-full bg-slate-950 border rounded-xl pl-9 pr-9 py-2 text-xs font-mono text-white focus:outline-none transition ${
+                          errors.adminPassword
+                            ? 'border-red-500 ring-1 ring-red-500/40'
+                            : 'border-slate-700 focus:border-emerald-500'
+                        }`}
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowAdminPassword(!showAdminPassword)}
+                        className="absolute right-2.5 top-2.5 text-slate-500 hover:text-slate-300 transition"
+                      >
+                        {showAdminPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
                     </div>
+                    {errors.adminPassword && (
+                      <p className="text-[11px] text-red-400 mt-1">{errors.adminPassword}</p>
+                    )}
+                    {adminPassword && (
+                      <div className="mt-1 flex items-center gap-2 text-[10px]">
+                        <span className="text-slate-400">Strength:</span>
+                        <div className="h-1.5 w-16 bg-slate-800 rounded-full overflow-hidden flex">
+                          <div
+                            className={`h-full ${getPasswordStrength().color} transition-all`}
+                            style={{ width: `${(getPasswordStrength().score / 3) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-slate-300">{getPasswordStrength().label}</span>
+                      </div>
+                    )}
                   </div>
 
                   <div>
-                    <label className="block text-xs text-slate-300 font-medium mb-1">Confirm Password</label>
+                    <label className="block text-xs text-slate-300 font-medium mb-1">
+                      Confirm Password <span className="text-red-400">*</span>
+                    </label>
                     <div className="relative">
                       <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
                       <input
-                        type="password"
-                        required
+                        type={showAdminPassword ? 'text' : 'password'}
                         value={adminConfirmPassword}
-                        onChange={e => setAdminConfirmPassword(e.target.value)}
+                        onChange={e => {
+                          setAdminConfirmPassword(e.target.value);
+                          clearError('adminConfirmPassword');
+                        }}
                         placeholder="••••••••••••"
-                        className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
+                        className={`w-full bg-slate-950 border rounded-xl pl-9 pr-3 py-2 text-xs font-mono text-white focus:outline-none transition ${
+                          errors.adminConfirmPassword
+                            ? 'border-red-500 ring-1 ring-red-500/40'
+                            : 'border-slate-700 focus:border-emerald-500'
+                        }`}
                       />
                     </div>
+                    {errors.adminConfirmPassword && (
+                      <p className="text-[11px] text-red-400 mt-1">{errors.adminConfirmPassword}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -720,68 +1289,126 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
 
                 <button
                   type="button"
-                  onClick={() => setCurrentStep(4)}
+                  onClick={handleProceedFromStep3}
                   className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold flex items-center gap-2 text-xs shadow-lg transition cursor-pointer"
                 >
-                  <span>Continue to Website Info</span>
+                  <span>Continue to Website Setup</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
           )}
 
-          {/* STEP 4: WEBSITE SETUP */}
+          {/* STEP 4: WEBSITE SETUP & PRE-INSTALLATION REVIEW */}
           {currentStep === 4 && (
             <div className="space-y-5 animate-in fade-in">
               <div>
-                <h2 className="text-xl sm:text-2xl font-black text-white">Website Setup</h2>
+                <h2 className="text-xl sm:text-2xl font-black text-white">Website Setup & Final Review</h2>
                 <p className="text-xs sm:text-sm text-slate-400 mt-1">
-                  Configure essential website identity, public contact email, and default system language.
+                  Configure essential website identity, public contact email, and review your deployment parameters before finalizing.
                 </p>
               </div>
 
               <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-4">
                 <div>
-                  <label className="block text-xs text-slate-300 font-medium mb-1">Website & Organization Name</label>
+                  <label className="block text-xs text-slate-300 font-medium mb-1">
+                    Website & Organization Name <span className="text-red-400">*</span>
+                  </label>
                   <input
                     type="text"
                     value={siteName}
-                    onChange={e => setSiteName(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    onChange={e => {
+                      setSiteName(e.target.value);
+                      clearError('siteName');
+                    }}
+                    className={`w-full bg-slate-950 border rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition ${
+                      errors.siteName
+                        ? 'border-red-500 ring-1 ring-red-500/40'
+                        : 'border-slate-700 focus:border-emerald-500'
+                    }`}
                   />
+                  {errors.siteName && <p className="text-[11px] text-red-400 mt-1">{errors.siteName}</p>}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs text-slate-300 font-medium mb-1">Website URL</label>
+                    <label className="block text-xs text-slate-300 font-medium mb-1">
+                      Website URL <span className="text-red-400">*</span>
+                    </label>
                     <input
                       type="text"
                       value={siteUrl}
-                      onChange={e => setSiteUrl(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                      onChange={e => {
+                        setSiteUrl(e.target.value);
+                        clearError('siteUrl');
+                      }}
+                      className={`w-full bg-slate-950 border rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition ${
+                        errors.siteUrl
+                          ? 'border-red-500 ring-1 ring-red-500/40'
+                          : 'border-slate-700 focus:border-emerald-500'
+                      }`}
                     />
+                    {errors.siteUrl && <p className="text-[11px] text-red-400 mt-1">{errors.siteUrl}</p>}
                   </div>
+
                   <div>
-                    <label className="block text-xs text-slate-300 font-medium mb-1">Public Contact Email</label>
+                    <label className="block text-xs text-slate-300 font-medium mb-1">
+                      Public Contact Email <span className="text-red-400">*</span>
+                    </label>
                     <input
                       type="email"
                       value={siteEmail}
-                      onChange={e => setSiteEmail(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                      onChange={e => {
+                        setSiteEmail(e.target.value);
+                        clearError('siteEmail');
+                      }}
+                      className={`w-full bg-slate-950 border rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition ${
+                        errors.siteEmail
+                          ? 'border-red-500 ring-1 ring-red-500/40'
+                          : 'border-slate-700 focus:border-emerald-500'
+                      }`}
                     />
+                    {errors.siteEmail && <p className="text-[11px] text-red-400 mt-1">{errors.siteEmail}</p>}
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs text-slate-300 font-medium mb-1">Default Language</label>
+                  <label className="block text-xs text-slate-300 font-medium mb-1">Default System Language</label>
                   <select
                     value={defaultLang}
                     onChange={e => setDefaultLang(e.target.value as any)}
                     className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
                   >
-                    <option value="bn">বাংলা (Bengali)</option>
+                    <option value="bn">বাংলা (Bengali - Default)</option>
                     <option value="en">English</option>
                   </select>
+                </div>
+              </div>
+
+              {/* Summary Pre-flight Check */}
+              <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs space-y-2">
+                <p className="font-bold text-slate-300 flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  Pre-Installation Configuration Summary
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 font-mono text-[11px]">
+                  <div className="bg-slate-900 p-2.5 rounded-xl border border-slate-800">
+                    <span className="text-slate-500 block text-[10px] uppercase">Database Target:</span>
+                    <span className="text-amber-400 font-bold uppercase">{driver}</span>
+                    <span className="text-slate-400 block truncate mt-0.5">
+                      {driver === 'mysql' ? `${mysqlHost}:${mysqlPort} (${mysqlDatabase})` : driver === 'supabase' ? `${pgHost}:${pgPort}` : 'Embedded Local Store'}
+                    </span>
+                  </div>
+                  <div className="bg-slate-900 p-2.5 rounded-xl border border-slate-800">
+                    <span className="text-slate-500 block text-[10px] uppercase">Super Admin:</span>
+                    <span className="text-emerald-400 font-bold truncate block">{adminName}</span>
+                    <span className="text-slate-400 block truncate mt-0.5">{adminEmail}</span>
+                  </div>
+                  <div className="bg-slate-900 p-2.5 rounded-xl border border-slate-800">
+                    <span className="text-slate-500 block text-[10px] uppercase">Site Host:</span>
+                    <span className="text-white font-bold truncate block">{siteUrl}</span>
+                    <span className="text-slate-400 block truncate mt-0.5">{defaultLang === 'bn' ? 'বাংলা' : 'English'}</span>
+                  </div>
                 </div>
               </div>
 
@@ -789,7 +1416,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
               {installError && (
                 <div className="p-3.5 bg-red-950/50 border border-red-500/50 rounded-xl text-xs text-red-300 flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-                  <span>{installError}</span>
+                  <span className="leading-relaxed">{installError}</span>
                 </div>
               )}
 
@@ -812,7 +1439,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
                   {installing ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
-                      <span>Installing & Migrating Schema...</span>
+                      <span>Initializing Schema & Credentials...</span>
                     </>
                   ) : (
                     <>

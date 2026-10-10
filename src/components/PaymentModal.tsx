@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { PaymentGateway, Registration } from '../types';
 import { useLanguage } from '../context/LanguageContext';
+import { apiFetch, safeJson } from '../utils/api';
 
 interface PaymentModalProps {
   registration: Registration;
@@ -45,11 +46,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      fetch('/api/payment-gateways')
-        .then(res => res.json())
-        .then(data => {
-          if (Array.isArray(data) && data.length > 0) {
-            setGatewaysData(data);
+      apiFetch('/api/payment-gateways')
+        .then(async res => {
+          if (res.ok) {
+            const data = await safeJson(res, []);
+            if (Array.isArray(data) && data.length > 0) {
+              setGatewaysData(data);
+            }
           }
         })
         .catch(() => {});
@@ -64,13 +67,16 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   // Determine manual account numbers and instructions
   const isManualGateway = selectedGateway === 'bkash' || selectedGateway === 'nagad';
   const merchantNumber =
-    activeGatewayConfig?.merchant_id ||
     activeGatewayConfig?.merchant_number ||
-    (selectedGateway === 'bkash' ? '01819-123456' : '01712-654321');
+    activeGatewayConfig?.merchant_id ||
+    activeGatewayConfig?.credentials?.merchant_number ||
+    activeGatewayConfig?.credentials?.merchant_id ||
+    '';
 
   const accountType =
     activeGatewayConfig?.credentials?.account_type ||
-    (selectedGateway === 'bkash' ? 'Personal (Send Money)' : 'Personal (Send Money)');
+    activeGatewayConfig?.account_type ||
+    (selectedGateway === 'bkash' ? 'Merchant' : 'Personal (Send Money)');
 
   const instructionsEn =
     activeGatewayConfig?.instructions_en ||

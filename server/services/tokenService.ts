@@ -130,14 +130,18 @@ export class TokenService {
       console.error('Failed to generate QR Code SVG:', err);
     }
 
+    const toBn = (n: number | string) => n.toString().replace(/\d/g, (d: string) => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
+    const bName = registration.passing_year ? `SSC Batch ${registration.passing_year}` : (registration.batch_name || 'Alumni');
+    const bNameBn = registration.passing_year ? `এসএসসি ব্যাচ ${toBn(registration.passing_year)}` : (registration.batch_name_bn || '');
+
     const token: EntryToken = {
       id: `tok-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`,
       token_code: tokenCode,
       registration_id: registration.id,
       event_id: registration.event_id || 'event-85th-anniversary',
       member_name: registration.full_name,
-      batch_name: registration.batch_name,
-      batch_name_bn: registration.batch_name_bn,
+      batch_name: bName,
+      batch_name_bn: bNameBn,
       status: status,
       qr_code_svg: qrSvg,
       checked_in: false,
@@ -277,7 +281,7 @@ export class TokenService {
         display_name_en: g.display_name_en,
         display_name_bn: g.display_name_bn,
         account_type: g.account_type || (g.code === 'bkash' ? 'Merchant' : 'Personal'),
-        merchant_number: g.merchant_number || g.merchant_id || g.credentials?.merchant_number || '01819-123456',
+        merchant_number: g.merchant_number || g.merchant_id || g.credentials?.merchant_number || g.credentials?.merchant_id || '',
         instructions_en: g.instructions_en || 'Send registration fee using your Token Number as payment reference.',
         instructions_bn: g.instructions_bn || 'পেমেন্ট রেফারেন্স হিসেবে আপনার টোকেন নম্বর ব্যবহার করে ফি পাঠান।',
       }));
@@ -311,7 +315,7 @@ export class TokenService {
         phone: reg?.phone,
         email: reg?.email,
         blood_group: reg?.blood_group,
-        t_shirt_size: reg?.t_shirt_size || 'L',
+        t_shirt_size: reg?.t_shirt_size || undefined,
         batch: batchName,
         batch_bn: batchNameBn,
         passing_year: reg?.passing_year,

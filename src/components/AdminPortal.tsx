@@ -36,6 +36,7 @@ import {
   Calendar,
   Server,
   Sparkles,
+  Mail,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -69,6 +70,7 @@ import { AdminRegistrationForm } from './admin/AdminRegistrationForm';
 import { AdminDatabase } from './admin/AdminDatabase';
 import { AdminGateScanner } from './admin/AdminGateScanner';
 import { AdminNews } from './admin/AdminNews';
+import { AdminMailSettings } from './admin/AdminMailSettings';
 import { apiFetch } from '../utils/api';
 
 type AdminTab =
@@ -95,6 +97,7 @@ type AdminTab =
   | 'school'
   | 'committee'
   | 'database'
+  | 'mail_settings'
   | 'settings'
   | 'audit';
 
@@ -333,7 +336,7 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
       `"${r.full_name}"`,
       r.phone,
       r.passing_year,
-      `"${r.batch_name}"`,
+      `"${r.passing_year ? `SSC Batch ${r.passing_year}` : (r.batch_name || '')}"`,
       r.fee_amount,
       r.payment_status,
       r.token_code || '',
@@ -686,6 +689,16 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
             </button>
 
             <button
+              onClick={() => setActiveTab('mail_settings')}
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition cursor-pointer ${
+                activeTab === 'mail_settings' ? 'bg-[#0f4d2a] text-white shadow' : 'hover:bg-slate-700 text-slate-300'
+              }`}
+            >
+              <Mail className="w-4 h-4 text-amber-400" />
+              <span>Email & SMTP Config</span>
+            </button>
+
+            <button
               onClick={() => setActiveTab('settings')}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition cursor-pointer ${
                 activeTab === 'settings' ? 'bg-[#0f4d2a] text-white shadow' : 'hover:bg-slate-700 text-slate-300'
@@ -852,7 +865,7 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
                       <div key={r.id} className="py-2.5 flex items-center justify-between">
                         <div>
                           <span className="font-bold text-slate-800 block">{r.full_name}</span>
-                          <span className="text-slate-500 font-mono text-[11px]">{r.id} • {r.batch_name}</span>
+                          <span className="text-slate-500 font-mono text-[11px]">{r.id} • {r.passing_year ? `SSC Batch ${r.passing_year}` : (r.batch_name || 'Alumni')}</span>
                         </div>
                         <div className="text-right">
                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
@@ -1204,6 +1217,10 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
 
           {activeTab === 'database' && (
             <AdminDatabase onNotify={showToast} getHeaders={getHeaders} />
+          )}
+
+          {activeTab === 'mail_settings' && (
+            <AdminMailSettings showToast={showToast} getHeaders={getHeaders} />
           )}
         </main>
       </div>

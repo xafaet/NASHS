@@ -35,6 +35,7 @@ import {
 import PDFDocument from 'pdfkit';
 import QRCode from 'qrcode';
 import { generateEntryPassPDF } from './server/services/pdfService';
+import { MailService } from './server/services/mailService';
 
 dotenv.config();
 
@@ -73,6 +74,19 @@ async function startServer() {
 
   app.post('/api/setup/test-connection', async (req, res) => {
     try {
+      const status = InstallerService.getStatus();
+      if (status.is_installed) {
+        // When installed, only authorized Super Admin may test database connectivity
+        const authHeader = req.headers.authorization;
+        const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+        const user = token ? AuthService.verifyToken(token) : null;
+        if (!user || user.role !== 'super_admin') {
+          return res.status(403).json({
+            success: false,
+            message: 'Application is already installed. Testing database connections requires Super Admin authorization.',
+          });
+        }
+      }
       const result = await InstallerService.testConnection(req.body);
       res.json(result);
     } catch (err: any) {
@@ -82,6 +96,14 @@ async function startServer() {
 
   app.post('/api/setup/install', async (req, res) => {
     try {
+      const status = InstallerService.getStatus();
+      if (status.is_installed) {
+        return res.status(403).json({
+          success: false,
+          error: 'ALREADY_INSTALLED',
+          message: 'Security Alert: Application is already installed and locked. Re-running the installation wizard is strictly prohibited to prevent unauthorized configuration.',
+        });
+      }
       const result = await InstallerService.install(req.body);
       res.json(result);
     } catch (err: any) {
@@ -110,8 +132,8 @@ async function startServer() {
   // ==========================================
   app.post('/api/auth/login', async (req, res) => {
     try {
-      const { emailOrPhone, username, email, credential, password } = req.body;
-      const cred = (username || emailOrPhone || email || credential || '').trim();
+      const { emailOrPhone, username, email, credential, identifier, password } = req.body;
+      const cred = (username || emailOrPhone || email || credential || identifier || '').trim();
       const pass = (password || '').trim();
 
       if (!cred) {
@@ -1027,7 +1049,7 @@ async function startServer() {
   // ==========================================
   // PAYMENT GATEWAY MANAGEMENT (ADAPTER PATTERN)
   // ==========================================
-  app.get('/api/payment-gateways', (req, res) => {
+  app.get(['/api/payment-gateways', '/api/gateways'], (req, res) => {
     // Sanitized, safe public list of enabled gateways
     res.json(PaymentManager.getPublicGateways());
   });
@@ -1173,7 +1195,14 @@ async function startServer() {
   // ==========================================
   app.get('/api/registration/fields', (req, res) => {
     const regConfig = db.get('registration_config');
-    const fields = db.get('registration_form_fields') || regConfig?.fields || initialRegistrationFields;
+    let fields = db.get('registration_form_fields') || regConfig?.fields || initialRegistrationFields;
+    if (Array.isArray(fields) && !fields.some((f: any) => f.name === 't_shirt_size')) {
+      const defaultTShirt = initialRegistrationFields.find(f => f.name === 't_shirt_size');
+      if (defaultTShirt) {
+        fields = [...fields, defaultTShirt].sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
+        db.set('registration_form_fields', fields);
+      }
+    }
     // Return active fields sorted by order
     const active = fields
       .filter((f: any) => f.is_enabled !== false)
@@ -1183,7 +1212,14 @@ async function startServer() {
 
   app.get('/api/admin/registration/fields', authenticate, requireRole(['super_admin', 'admin', 'event_manager']), (req, res) => {
     const regConfig = db.get('registration_config');
-    const fields = db.get('registration_form_fields') || regConfig?.fields || initialRegistrationFields;
+    let fields = db.get('registration_form_fields') || regConfig?.fields || initialRegistrationFields;
+    if (Array.isArray(fields) && !fields.some((f: any) => f.name === 't_shirt_size')) {
+      const defaultTShirt = initialRegistrationFields.find(f => f.name === 't_shirt_size');
+      if (defaultTShirt) {
+        fields = [...fields, defaultTShirt].sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
+        db.set('registration_form_fields', fields);
+      }
+    }
     res.json([...fields].sort((a: any, b: any) => (a.order || 0) - (b.order || 0)));
   });
 
@@ -1233,11 +1269,11 @@ async function startServer() {
     });
   });
 
-  app.get('/api/batches/config', (req, res) => {
+  app.get(['/api/batches/config', '/api/admin/batch-config'], authenticate, (req, res) => {
     res.json(db.get('batch_config'));
   });
 
-  app.put('/api/admin/batches/config', authenticate, requireRole(['super_admin', 'admin']), (req: AuthRequest, res) => {
+  app.put(['/api/admin/batches/config', '/api/admin/batch-config'], authenticate, requireRole(['super_admin', 'admin']), (req: AuthRequest, res) => {
     const current = db.get('batch_config');
     const updated = { ...current, ...req.body };
     db.set('batch_config', updated);
@@ -1251,7 +1287,12 @@ async function startServer() {
     res.json(updated);
   });
 
-  app.post('/api/admin/batches/overrides', authenticate, requireRole(['super_admin', 'admin']), (req: AuthRequest, res) => {
+  app.get(['/api/admin/batches/overrides', '/api/admin/batch-overrides'], authenticate, requireRole(['super_admin', 'admin']), (req, res) => {
+    const config = (db.get('batch_config') || {}) as any;
+    res.json(config.overrides || []);
+  });
+
+  app.post(['/api/admin/batches/overrides', '/api/admin/batch-overrides'], authenticate, requireRole(['super_admin', 'admin']), (req: AuthRequest, res) => {
     const config = db.get('batch_config') || {
       reference_year: 2008,
       reference_batch: 65,
@@ -1280,7 +1321,7 @@ async function startServer() {
     res.json(config);
   });
 
-  app.delete('/api/admin/batches/overrides/:year', authenticate, requireRole(['super_admin', 'admin']), (req: AuthRequest, res) => {
+  app.delete(['/api/admin/batches/overrides/:year', '/api/admin/batch-overrides/:year'], authenticate, requireRole(['super_admin', 'admin']), (req: AuthRequest, res) => {
     const config = db.get('batch_config');
     const year = parseInt(req.params.year, 10);
     config.overrides = (config.overrides || []).filter(o => o.passing_year !== year);
@@ -1970,19 +2011,48 @@ async function startServer() {
         return res.status(400).json({ message: 'Please fill in all required fields: Full Name, Date of Birth, Gender, Passing Year, and Mobile Number.' });
       }
 
-      // Validate T-Shirt Size
-      const allowedTShirtSizes = ['M', 'L', 'XL', 'XXL', 'XXXL'];
+      // Retrieve dynamic registration configuration & form field schema
+      const regConfig = db.get('registration_config');
+      if (regConfig && !regConfig.is_enabled) {
+        return res.status(400).json({ message: 'Registration for the 85th Anniversary is currently closed.' });
+      }
+
+      const regFields = db.get('registration_form_fields') || regConfig?.fields || initialRegistrationFields;
+      const tShirtField = Array.isArray(regFields) ? regFields.find((f: any) => f.name === 't_shirt_size') : null;
+      const isTShirtEnabled = tShirtField ? (tShirtField.is_enabled !== false && tShirtField.enabled !== false) : true;
+      const isTShirtRequired = tShirtField ? (tShirtField.is_required === true || tShirtField.required === true) : true;
+
+      // Dynamic T-shirt size options from database CMS configuration
+      const allowedTShirtSizes: string[] = (tShirtField?.options && tShirtField.options.length > 0)
+        ? tShirtField.options.map((s: any) => String(s).trim().toUpperCase())
+        : (regConfig?.t_shirt_size_options && regConfig.t_shirt_size_options.length > 0)
+        ? regConfig.t_shirt_size_options.map((s: any) => String(s).trim().toUpperCase())
+        : ['M', 'L', 'XL', 'XXL', 'XXXL'];
+
       const rawTShirtSize = (t_shirt_size || '').toString().trim().toUpperCase();
-      const validTShirtSize = allowedTShirtSizes.includes(rawTShirtSize) ? rawTShirtSize : 'L';
+      let validTShirtSize: string | undefined = undefined;
+
+      if (isTShirtEnabled) {
+        if (isTShirtRequired && !rawTShirtSize) {
+          return res.status(400).json({
+            message: 'Please select a T-shirt size. (টি-শার্টের সাইজ নির্বাচন করা আবশ্যক)',
+            field: 't_shirt_size',
+          });
+        }
+        if (rawTShirtSize) {
+          if (!allowedTShirtSizes.includes(rawTShirtSize)) {
+            return res.status(400).json({
+              message: `Invalid T-shirt size "${rawTShirtSize}". Allowed options: ${allowedTShirtSizes.join(', ')}`,
+              field: 't_shirt_size',
+            });
+          }
+          validTShirtSize = rawTShirtSize;
+        }
+      }
 
       const year = parseInt(passing_year, 10);
       if (isNaN(year) || year < 1942 || year > 2035) {
         return res.status(400).json({ message: 'Invalid passing year.' });
-      }
-
-      const regConfig = db.get('registration_config');
-      if (regConfig && !regConfig.is_enabled) {
-        return res.status(400).json({ message: 'Registration for the 85th Anniversary is currently closed.' });
       }
 
       const registrations = db.get('registrations');
@@ -2234,7 +2304,7 @@ async function startServer() {
   // ==========================================
   // TOKEN & GATEKEEPER CHECK-IN
   // ==========================================
-  app.get(['/api/tokens/verify/:code', '/api/tokens/lookup/:code'], (req, res) => {
+  app.get(['/api/tokens/:code', '/api/tokens/verify/:code', '/api/tokens/lookup/:code'], (req, res) => {
     const result = TokenService.verifyToken(req.params.code);
     res.json(result);
   });
@@ -2405,7 +2475,7 @@ async function startServer() {
         passingYear,
         registrationId: reg?.id,
         bloodGroup,
-        tShirtSize: reg?.t_shirt_size || 'L',
+        tShirtSize: reg?.t_shirt_size || undefined,
         occupation,
         phone,
         eventDate: 'Saturday, 16 January 2027 • 08:00 AM onwards',
@@ -2424,24 +2494,97 @@ async function startServer() {
     }
   });
 
-  // Send / simulate confirmation email with printable token pass
-  app.post('/api/registrations/:id/send-confirmation-email', (req, res) => {
+  // Mail / Email Settings (Database & CMS Driven)
+  app.get('/api/admin/mail-settings', authenticate, requireRole(['super_admin', 'admin']), (req, res) => {
+    try {
+      const settings = MailService.getSettings(true);
+      res.json(settings);
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  });
+
+  app.put('/api/admin/mail-settings', authenticate, requireRole(['super_admin', 'admin']), (req: AuthRequest, res) => {
+    try {
+      const updated = MailService.updateSettings(req.body, req.user);
+      res.json({
+        success: true,
+        message: 'Email configuration successfully saved.',
+        settings: updated,
+      });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  });
+
+  app.post('/api/admin/mail-settings/test', authenticate, requireRole(['super_admin', 'admin']), async (req: AuthRequest, res) => {
+    try {
+      const toEmail = req.body.to_email || req.user?.email || 'admin@nanupuralumni.org';
+      const result = await MailService.sendTestEmail(toEmail, req.body.settings);
+      res.json(result);
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  });
+
+  // Send confirmation email with official PDF pass attachment
+  app.post('/api/registrations/:id/send-confirmation-email', async (req, res) => {
     const registrations = db.get('registrations');
+    const tokens = db.get('tokens') || [];
     const reg = registrations.find(r => r.id === req.params.id);
     if (!reg) return res.status(404).json({ message: 'Registration not found' });
 
-    db.logAudit(
-      'System Mailer',
-      reg.email || reg.phone,
-      'SEND_CONFIRMATION_EMAIL',
-      'Registration',
-      `Sent confirmation email with printable pass (Token: ${reg.token_code || 'N/A'}) to ${reg.email || reg.phone}`
-    );
+    let token = tokens.find(t => t.registration_id === reg.id || t.token_code === reg.token_code);
+    if (!token) {
+      token = {
+        id: `tok-${Date.now()}`,
+        token_code: reg.token_code || `NASH-85-${Date.now().toString().slice(-4)}`,
+        registration_id: reg.id,
+        event_id: reg.event_id || 'event-85th-anniversary',
+        member_name: reg.full_name,
+        batch_name: reg.batch_name || 'Alumni',
+        status: 'active',
+        qr_code_svg: reg.qr_code_svg || '',
+        checked_in: false,
+        created_at: new Date().toISOString(),
+      };
+    }
 
-    res.json({
-      success: true,
-      message: `Official confirmation email and PDF Entry Pass successfully dispatched to ${reg.email || reg.phone}.`,
-    });
+    try {
+      const gates = db.get('gates') || [];
+      const activeGates = gates.filter((g: any) => g.is_active).sort((a: any, b: any) => a.display_order - b.display_order);
+      const gateName = activeGates[0]?.gate_name || 'Gate 01 - Main Gate (VIP, Alumni & Delegates)';
+
+      const pdfBuffer = await generateEntryPassPDF({
+        tokenCode: reg.token_code || token.token_code,
+        fullName: reg.full_name,
+        batchName: reg.batch_name || token.batch_name || 'Alumni Batch',
+        batchNameBn: reg.batch_name_bn || token.batch_name_bn,
+        passingYear: reg.passing_year,
+        registrationId: reg.id,
+        bloodGroup: reg.blood_group,
+        tShirtSize: reg.t_shirt_size || undefined,
+        occupation: reg.occupation,
+        phone: reg.phone,
+        eventDate: 'Saturday, 16 January 2027 • 08:00 AM onwards',
+        venue: 'Nanupur Abu Sobhan High School Premises, Fatikchhari, Chattogram',
+        gateName,
+        status: reg.payment_status || 'paid',
+      });
+
+      const mailResult = await MailService.sendRegistrationConfirmationEmail(reg, token, pdfBuffer);
+
+      res.json({
+        success: mailResult.success,
+        message: mailResult.success
+          ? `Official confirmation email and PDF Entry Pass successfully dispatched to ${reg.email || reg.phone}.`
+          : `Email dispatch failed: ${mailResult.error}`,
+        mail_result: mailResult,
+      });
+    } catch (err: any) {
+      console.error('Failed to generate PDF pass or send email:', err);
+      res.status(500).json({ success: false, message: err.message });
+    }
   });
 
   // Download / view printable pass HTML
@@ -2633,11 +2776,12 @@ async function startServer() {
     const totalRevenue = paidRegs.reduce((sum, r) => sum + (r.fee_amount || 1000), 0);
     const checkedInCount = tokens.filter(t => t.checked_in).length;
 
-    // Batch breakdown
-    const batchMap = new Map<string, { count: number; paid: number }>();
+    // Batch breakdown using stored passing year
+    const batchMap = new Map<string, { count: number; paid: number; year: number }>();
     registrations.forEach(r => {
-      const bName = r.batch_name || `Batch ${r.passing_year}`;
-      const entry = batchMap.get(bName) || { count: 0, paid: 0 };
+      const year = r.passing_year || (r.batch_name ? parseInt(r.batch_name.match(/(?:19|20)\d{2}/)?.[0] || '0', 10) : 0);
+      const bName = year > 0 ? `SSC Batch ${year}` : (r.batch_name || 'Alumni Batch');
+      const entry = batchMap.get(bName) || { count: 0, paid: 0, year: year || 0 };
       entry.count += 1;
       if (r.payment_status === 'paid') {
         entry.paid += 1;
@@ -2649,6 +2793,7 @@ async function startServer() {
       batch,
       count: stat.count,
       paid: stat.paid,
+      year: stat.year,
     })).sort((a, b) => b.count - a.count).slice(0, 10);
 
     res.json({
@@ -3539,6 +3684,31 @@ async function startServer() {
     res.setHeader('Content-Type', 'application/sql; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="nash_alumni_cloudsql_postgres_dump_${dateStr}.sql"`);
     return res.send(sqlData);
+  });
+
+  // ==========================================
+  // API 404 & ERROR HANDLER (Ensures /api requests ALWAYS return JSON, never HTML)
+  // ==========================================
+  app.all(['/api', '/api/*'], (req, res) => {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.status(404).json({
+      error: 'Not Found',
+      message: `API route ${req.method} ${req.path} not found`,
+      path: req.path,
+    });
+  });
+
+  // Global API error handler
+  app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error(`[Server Error] ${req.method} ${req.path}:`, err);
+    if (req.path.startsWith('/api') || req.headers.accept?.includes('application/json')) {
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      return res.status(err.status || err.statusCode || 500).json({
+        error: err.name || 'Internal Server Error',
+        message: err.message || 'An unexpected error occurred',
+      });
+    }
+    next(err);
   });
 
   // ==========================================

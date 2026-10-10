@@ -28,6 +28,7 @@ export const TokenVerificationView: React.FC = () => {
 
   // Manual payment submission state inside verification view
   const [selectedGateway, setSelectedGateway] = useState<'bkash' | 'nagad'>('bkash');
+  const [gateways, setGateways] = useState<any[]>([]);
   const [senderNumber, setSenderNumber] = useState('');
   const [transactionId, setTransactionId] = useState('');
   const [paymentNotes, setPaymentNotes] = useState('');
@@ -38,6 +39,13 @@ export const TokenVerificationView: React.FC = () => {
 
   // Check query param if user scanned QR directly: /verify?token=...
   useEffect(() => {
+    fetch('/api/gateways')
+      .then(res => (res.ok ? res.json() : []))
+      .then(data => {
+        if (Array.isArray(data)) setGateways(data);
+      })
+      .catch(() => {});
+
     const params = new URLSearchParams(window.location.search);
     const code = params.get('token');
     if (code) {
@@ -178,7 +186,7 @@ export const TokenVerificationView: React.FC = () => {
                 type="text"
                 value={tokenInput}
                 onChange={(e) => setTokenInput(e.target.value.toUpperCase())}
-                placeholder={language === 'bn' ? 'যেমন: NASHS-2020-0001 অথবা 01819123456' : 'e.g. NASHS-2020-0001 or 01819123456'}
+                placeholder={language === 'bn' ? 'যেমন: NASH-85-2027-A9F4K2 অথবা 01XXXXXXXXX' : 'e.g. NASH-85-2027-A9F4K2 or 01XXXXXXXXX'}
                 className="w-full px-4 py-3.5 bg-slate-50 border-2 border-slate-300 rounded-xl font-mono text-base tracking-wider uppercase focus:bg-white focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20 focus:outline-none"
               />
             </div>
@@ -382,36 +390,48 @@ export const TokenVerificationView: React.FC = () => {
                       </span>
                     </div>
 
-                    {/* bKash & Nagad Accounts */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                      <div className="p-3 bg-white rounded-xl border border-pink-200 flex justify-between items-center">
-                        <div>
-                          <span className="font-bold text-pink-900 block">bKash (Merchant)</span>
-                          <span className="font-mono font-bold text-pink-950 text-sm">01819-123456</span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => handleCopyNumber('01819123456', 'v_bkash')}
-                          className="px-2.5 py-1 bg-pink-100 hover:bg-pink-200 text-pink-900 rounded-lg font-bold"
-                        >
-                          {copiedNumber === 'v_bkash' ? 'Copied' : 'Copy'}
-                        </button>
-                      </div>
+                    {/* Dynamic bKash & Nagad Accounts */}
+                    {(() => {
+                      const bkashGw = gateways.find((g: any) => g.code === 'bkash');
+                      const nagadGw = gateways.find((g: any) => g.code === 'nagad');
+                      const bkashNum = bkashGw?.merchant_number || bkashGw?.merchant_id || bkashGw?.credentials?.merchant_number || '';
+                      const nagadNum = nagadGw?.merchant_number || nagadGw?.merchant_id || nagadGw?.credentials?.merchant_number || '';
+                      return (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                          {bkashNum && (
+                            <div className="p-3 bg-white rounded-xl border border-pink-200 flex justify-between items-center">
+                              <div>
+                                <span className="font-bold text-pink-900 block">bKash ({bkashGw?.account_type || 'Merchant'})</span>
+                                <span className="font-mono font-bold text-pink-950 text-sm">{bkashNum}</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyNumber(bkashNum, 'v_bkash')}
+                                className="px-2.5 py-1 bg-pink-100 hover:bg-pink-200 text-pink-900 rounded-lg font-bold cursor-pointer"
+                              >
+                                {copiedNumber === 'v_bkash' ? 'Copied' : 'Copy'}
+                              </button>
+                            </div>
+                          )}
 
-                      <div className="p-3 bg-white rounded-xl border border-orange-200 flex justify-between items-center">
-                        <div>
-                          <span className="font-bold text-orange-900 block">Nagad (Send Money)</span>
-                          <span className="font-mono font-bold text-orange-950 text-sm">01712-654321</span>
+                          {nagadNum && (
+                            <div className="p-3 bg-white rounded-xl border border-orange-200 flex justify-between items-center">
+                              <div>
+                                <span className="font-bold text-orange-900 block">Nagad ({nagadGw?.account_type || 'Send Money'})</span>
+                                <span className="font-mono font-bold text-orange-950 text-sm">{nagadNum}</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyNumber(nagadNum, 'v_nagad')}
+                                className="px-2.5 py-1 bg-orange-100 hover:bg-orange-200 text-orange-900 rounded-lg font-bold cursor-pointer"
+                              >
+                                {copiedNumber === 'v_nagad' ? 'Copied' : 'Copy'}
+                              </button>
+                            </div>
+                          )}
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleCopyNumber('01712654321', 'v_nagad')}
-                          className="px-2.5 py-1 bg-orange-100 hover:bg-orange-200 text-orange-900 rounded-lg font-bold"
-                        >
-                          {copiedNumber === 'v_nagad' ? 'Copied' : 'Copy'}
-                        </button>
-                      </div>
-                    </div>
+                      );
+                    })()}
 
                     {paymentSubmitMsg && (
                       <div className="p-3 bg-emerald-100 border border-emerald-400 text-emerald-900 rounded-xl text-xs font-bold flex items-center gap-2">

@@ -86,6 +86,7 @@ CREATE TABLE IF NOT EXISTS registrations (
     `dob` VARCHAR(50) NOT NULL,
     `gender` ENUM('male', 'female', 'other') NOT NULL,
     `blood_group` VARCHAR(10),
+    `t_shirt_size` VARCHAR(10) DEFAULT NULL,
     `phone` VARCHAR(50) NOT NULL,
     `email` VARCHAR(191),
     `address` TEXT,
@@ -222,27 +223,7 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- ------------------------------------------------------------
--- 10. CHECK-IN AUDIT LOGS
--- ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS check_in_logs (
-    `id` VARCHAR(100) PRIMARY KEY,
-    `token_id` VARCHAR(100) NOT NULL,
-    `token_code` VARCHAR(100) NOT NULL,
-    `registration_id` VARCHAR(100) NOT NULL,
-    `event_id` VARCHAR(100) NOT NULL,
-    `member_name` VARCHAR(255) NOT NULL,
-    `batch_name` VARCHAR(100),
-    `checked_in_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    `operator_name` VARCHAR(255) DEFAULT 'Gate Officer',
-    `gate_name` VARCHAR(100) DEFAULT 'Main Gate',
-    `verification_method` VARCHAR(50) DEFAULT 'qr_scan',
-    `notes` TEXT,
-    INDEX `idx_checkin_token` (`token_code`),
-    INDEX `idx_checkin_reg` (`registration_id`)
-);
-
--- ------------------------------------------------------------
--- 11. AUTHORIZED REGISTRATION BOOTHS / CENTERS
+-- 10. AUTHORIZED REGISTRATION BOOTHS / CENTERS
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS offline_centers (
     `id` VARCHAR(100) PRIMARY KEY,

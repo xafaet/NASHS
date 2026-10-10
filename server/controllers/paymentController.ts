@@ -3,6 +3,8 @@ import { db } from '../db';
 import { AuthRequest } from '../auth';
 import { PaymentService, PaymentManager } from '../services/paymentService';
 import { TokenService } from '../services/tokenService';
+import { generateEntryPassPDF } from '../services/pdfService';
+import { MailService } from '../services/mailService';
 import { PaymentStatus, RegistrationStatus, Registration, PaymentTransaction } from '../../src/types';
 
 /**
@@ -136,6 +138,7 @@ export class PaymentController {
       const txIndex = payments.findIndex(p => p.registration_id === reg.id);
       let paymentTx: PaymentTransaction | null = txIndex !== -1 ? payments[txIndex] : null;
       let issuedToken = null;
+      let emailResult: any = null;
 
       // Allow admin to update or correct transaction ID and paid amount if provided
       if (correctedTrxId && typeof correctedTrxId === 'string' && correctedTrxId.trim()) {
@@ -201,6 +204,43 @@ export class PaymentController {
           db.set('tokens', tokens);
         }
 
+        // Generate official registration pass PDF and automatically email to registrant
+        if (reg.email && reg.email.includes('@')) {
+          try {
+            const gates = db.get('gates') || [];
+            const activeGates = gates.filter((g: any) => g.is_active).sort((a: any, b: any) => a.display_order - b.display_order);
+            let gateName = activeGates[0]?.gate_name || 'Gate 01 - Main Gate (VIP, Alumni & Delegates)';
+            if (reg.passing_year && activeGates.length > 1) {
+              const year = Number(reg.passing_year);
+              if (year <= 1990 && activeGates[1]) gateName = activeGates[1].gate_name;
+              else if (year <= 2010 && activeGates[2]) gateName = activeGates[2].gate_name;
+              else if (activeGates[3]) gateName = activeGates[3].gate_name;
+            }
+
+            const pdfBuffer = await generateEntryPassPDF({
+              tokenCode: reg.token_code,
+              fullName: reg.full_name,
+              batchName: reg.batch_name || issuedToken?.batch_name || 'Alumni Batch',
+              batchNameBn: reg.batch_name_bn || issuedToken?.batch_name_bn,
+              passingYear: reg.passing_year,
+              registrationId: reg.id,
+              bloodGroup: reg.blood_group,
+              tShirtSize: reg.t_shirt_size || undefined,
+              occupation: reg.occupation,
+              phone: reg.phone,
+              eventDate: 'Saturday, 16 January 2027 • 08:00 AM onwards',
+              venue: 'Nanupur Abu Sobhan High School Premises, Fatikchhari, Chattogram',
+              gateName,
+              status: 'paid',
+            });
+
+            emailResult = await MailService.sendRegistrationConfirmationEmail(reg, issuedToken, pdfBuffer);
+          } catch (pdfErr: any) {
+            console.error('Failed to generate PDF pass or send confirmation email:', pdfErr);
+            emailResult = { success: false, error: pdfErr.message };
+          }
+        }
+
         // Audit log
         const auditLogs = db.get('audit_logs') || [];
         auditLogs.push({
@@ -209,7 +249,7 @@ export class PaymentController {
           user_email: adminUser.email || 'admin@nanupuralumni.org',
           action: 'PAYMENT_VERIFIED',
           entity: 'Payment',
-          details: `Admin ${adminUser.name} approved and verified payment for ${reg.full_name} (${reg.id}). Token ${reg.token_code} activated. Notes: ${adminNotes || 'N/A'}`,
+          details: `Admin ${adminUser.name} approved and verified payment for ${reg.full_name} (${reg.id}). Token ${reg.token_code} activated. Automated PDF Pass email ${emailResult?.success ? 'dispatched' : 'skipped/failed'}. Notes: ${adminNotes || 'N/A'}`,
           ip: req.ip || '127.0.0.1',
           created_at: nowIso,
         });
@@ -302,6 +342,7 @@ export class PaymentController {
         registration: reg,
         transaction: paymentTx,
         token: issuedToken || undefined,
+        email_delivery: emailResult || undefined,
       });
     } catch (err: any) {
       console.error('PaymentController.updatePaymentStatusAfterReview error:', err);

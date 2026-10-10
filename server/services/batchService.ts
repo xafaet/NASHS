@@ -51,8 +51,8 @@ export class BatchService {
     const toBnNumerals = (n: number | string) =>
       n.toString().replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
 
-    const name_en = `${getOrdinal(batchNumber)} Batch (${passingYear})`;
-    const name_bn = `${toBnNumerals(batchNumber)}তম ব্যাচ (${toBnNumerals(passingYear)})`;
+    const name_en = `SSC Batch ${passingYear}`;
+    const name_bn = `এসএসসি ব্যাচ ${toBnNumerals(passingYear)}`;
     const id = `batch-${passingYear}`;
 
     // Ensure a batch entity is tracked in the batches collection
@@ -92,16 +92,21 @@ export class BatchService {
       overrides: [],
     };
 
+    const toBnNumerals = (n: number | string) =>
+      n.toString().replace(/\d/g, (d: string) => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
+
     return batches
       .map(batch => {
         const count = registrations.filter(
           (r: any) => r.passing_year === batch.passing_year && r.payment_status === 'paid'
         ).length;
         const override = (config.overrides || []).find(o => o.passing_year === batch.passing_year);
+        const nameEn = override ? override.batch_name_en : (batch.passing_year ? `SSC Batch ${batch.passing_year}` : batch.name_en);
+        const nameBn = override ? override.batch_name_bn : (batch.passing_year ? `এসএসসি ব্যাচ ${toBnNumerals(batch.passing_year)}` : batch.name_bn);
         return {
           ...batch,
-          name_en: override ? override.batch_name_en : batch.name_en,
-          name_bn: override ? override.batch_name_bn : batch.name_bn,
+          name_en: nameEn,
+          name_bn: nameBn,
           batch_number: override ? override.override_batch_number : batch.batch_number,
           registration_count: count,
           is_overridden: !!override,

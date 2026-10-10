@@ -119,8 +119,8 @@ const DEFAULT_REGISTRATION_FIELDS: RegistrationFieldConfig[] = [
     name: 't_shirt_size',
     label_en: 'T-Shirt Size',
     label_bn: 'টি-শার্টের সাইজ',
-    placeholder_en: 'Select size (M, L, XL, XXL, XXXL)',
-    placeholder_bn: 'সাইজ নির্বাচন করুন',
+    placeholder_en: 'Select T-shirt size (M, L, XL, XXL, XXXL)',
+    placeholder_bn: 'টি-শার্টের সাইজ নির্বাচন করুন',
     help_text_en: 'Commemorative 85th reunion polo shirt size',
     help_text_bn: '৮৫ বছর পূর্তির বিশেষ স্মারক টি-শার্টের সাইজ',
     type: 'select',
@@ -191,7 +191,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({ onGoToPortal
     gender: 'male',
     passing_year: '2005',
     blood_group: '',
-    t_shirt_size: 'L',
+    t_shirt_size: '',
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -232,7 +232,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({ onGoToPortal
       .catch(err => console.warn('Registration fields load fallback active:', err));
   }, []);
 
-  // Fetch current event & fee on mount
+  // Fetch current event & fee on mount, as well as active payment gateways
   useEffect(() => {
     apiFetch('/api/events/current')
       .then(res => (res.ok ? res.json() : null))
@@ -248,6 +248,18 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({ onGoToPortal
         }
       })
       .catch(err => console.warn('Event fee load paused:', err));
+
+    apiFetch('/api/gateways')
+      .then(res => (res.ok ? res.json() : []))
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setManualPaymentInfo((prev: any) => ({
+            ...(prev || {}),
+            gateways: data,
+          }));
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const handleInputChange = (fieldName: string, value: any) => {
@@ -363,7 +375,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({ onGoToPortal
           gender: formValues.gender || 'male',
           passing_year: parseInt(formValues.passing_year, 10) || 2005,
           blood_group: formValues.blood_group || undefined,
-          t_shirt_size: formValues.t_shirt_size || 'L',
+          t_shirt_size: formValues.t_shirt_size ? formValues.t_shirt_size.trim().toUpperCase() : undefined,
           phone: formValues.phone || '',
           email: formValues.email || undefined,
           address: formValues.address || undefined,
@@ -955,20 +967,16 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({ onGoToPortal
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* bKash Card */}
                   {(() => {
-                    const bkashGw = manualPaymentInfo?.gateways?.find((g: any) => g.code === 'bkash') || {
-                      merchant_number: '01819-123456',
-                      account_type: 'Merchant (Payment)',
-                      display_name_bn: 'বিকাশ পেমেন্ট',
-                      display_name_en: 'bKash Payment',
-                    };
-                    const num = bkashGw.merchant_number || '01819-123456';
+                    const bkashGw = manualPaymentInfo?.gateways?.find((g: any) => g.code === 'bkash');
+                    const num = bkashGw?.merchant_number || bkashGw?.merchant_id || bkashGw?.credentials?.merchant_number || '';
+                    if (!num) return null;
                     return (
                       <div className="p-5 rounded-2xl border-2 border-pink-200 bg-pink-50/50 flex flex-col justify-between space-y-3">
                         <div className="flex items-start justify-between">
                           <div>
                             <span className="font-bold text-pink-900 text-lg block">bKash</span>
                             <span className="text-[11px] font-semibold text-pink-700 bg-pink-100 px-2 py-0.5 rounded-full inline-block mt-0.5">
-                              {bkashGw.account_type || 'Merchant'}
+                              {bkashGw?.account_type || 'Merchant'}
                             </span>
                           </div>
                           <span className="text-xs font-bold text-slate-600 bg-white px-2.5 py-1 rounded-lg border border-pink-200 shadow-xs">
@@ -1001,8 +1009,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({ onGoToPortal
 
                         <p className="text-[11px] text-pink-800 leading-snug">
                           {language === 'bn'
-                            ? bkashGw.instructions_bn || 'বিকাশ অ্যাপ থেকে পেমেন্ট করুন এবং রেফারেন্সে আপনার টোকেন নম্বর দিন।'
-                            : bkashGw.instructions_en || 'Send money or make payment from your bKash app using your Token Number as reference.'}
+                            ? bkashGw?.instructions_bn || 'বিকাশ অ্যাপ থেকে পেমেন্ট করুন এবং রেফারেন্সে আপনার টোকেন নম্বর দিন।'
+                            : bkashGw?.instructions_en || 'Send money or make payment from your bKash app using your Token Number as reference.'}
                         </p>
                       </div>
                     );
@@ -1010,20 +1018,16 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({ onGoToPortal
 
                   {/* Nagad Card */}
                   {(() => {
-                    const nagadGw = manualPaymentInfo?.gateways?.find((g: any) => g.code === 'nagad') || {
-                      merchant_number: '01712-654321',
-                      account_type: 'Personal (Send Money)',
-                      display_name_bn: 'নগদ পেমেন্ট',
-                      display_name_en: 'Nagad Payment',
-                    };
-                    const num = nagadGw.merchant_number || '01712-654321';
+                    const nagadGw = manualPaymentInfo?.gateways?.find((g: any) => g.code === 'nagad');
+                    const num = nagadGw?.merchant_number || nagadGw?.merchant_id || nagadGw?.credentials?.merchant_number || '';
+                    if (!num) return null;
                     return (
                       <div className="p-5 rounded-2xl border-2 border-orange-200 bg-orange-50/50 flex flex-col justify-between space-y-3">
                         <div className="flex items-start justify-between">
                           <div>
                             <span className="font-bold text-orange-900 text-lg block">Nagad</span>
                             <span className="text-[11px] font-semibold text-orange-700 bg-orange-100 px-2 py-0.5 rounded-full inline-block mt-0.5">
-                              {nagadGw.account_type || 'Personal (Send Money)'}
+                              {nagadGw?.account_type || 'Personal (Send Money)'}
                             </span>
                           </div>
                           <span className="text-xs font-bold text-slate-600 bg-white px-2.5 py-1 rounded-lg border border-orange-200 shadow-xs">
@@ -1056,8 +1060,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({ onGoToPortal
 
                         <p className="text-[11px] text-orange-800 leading-snug">
                           {language === 'bn'
-                            ? nagadGw.instructions_bn || 'নগদ অ্যাপ বা *১৬৭# ব্যবহার করে সেন্ড মানি করুন এবং রেফারেন্সে টোকেন নম্বর দিন।'
-                            : nagadGw.instructions_en || 'Send Money from your Nagad account and use your Token Number as payment reference.'}
+                            ? nagadGw?.instructions_bn || 'নগদ অ্যাপ থেকে টাকা পাঠান এবং রেফারেন্সে আপনার টোকেন নম্বর দিন।'
+                            : nagadGw?.instructions_en || 'Send money from your Nagad app using your Token Number as reference.'}
                         </p>
                       </div>
                     );
@@ -1183,7 +1187,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({ onGoToPortal
                           required
                           value={senderNumber}
                           onChange={e => setSenderNumber(e.target.value)}
-                          placeholder="e.g. 01819123456"
+                          placeholder="e.g. 01XXXXXXXXX"
                           className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-mono text-slate-900 focus:ring-2 focus:ring-emerald-600 focus:outline-none"
                         />
                       </div>

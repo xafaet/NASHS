@@ -612,7 +612,7 @@ export const AdminOfflineCenters: React.FC<Props> = ({ showToast, getHeaders }) 
                     required
                     value={editingCenter.phone}
                     onChange={e => setEditingCenter({ ...editingCenter, phone: e.target.value })}
-                    placeholder="+880 1819-123456"
+                    placeholder="+880 18XXXXXXXXX"
                     className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-600 focus:outline-none font-mono"
                   />
                   <span className="text-[11px] text-slate-400 mt-0.5 block">

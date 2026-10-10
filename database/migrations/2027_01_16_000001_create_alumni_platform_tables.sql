@@ -98,6 +98,7 @@ CREATE TABLE IF NOT EXISTS event_registrations (
     dob DATE NOT NULL,
     gender VARCHAR(20) NOT NULL,
     blood_group VARCHAR(10),
+    t_shirt_size VARCHAR(10) DEFAULT NULL,
     phone VARCHAR(50) NOT NULL,
     email VARCHAR(255),
     passing_year INT NOT NULL,

@@ -1,0 +1,36 @@
+# ==============================================================================
+# Root Apache Configuration for cPanel Hosting
+# Nanupur Abu Sobhan High School Alumni Platform
+# ==============================================================================
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Prevent direct access to sensitive system files and directories
+    RewriteRule ^\.env.*$ - [F,L,NC]
+    RewriteRule ^data/.*$ - [F,L,NC]
+    RewriteRule ^database/.*$ - [F,L,NC]
+    RewriteRule ^server/.*$ - [F,L,NC]
+    RewriteRule ^node_modules/.*$ - [F,L,NC]
+    RewriteRule ^package(-lock)?\.json$ - [F,L,NC]
+    RewriteRule ^tsconfig\.json$ - [F,L,NC]
+
+    # Enforce HTTPS
+    RewriteCond %{HTTPS} off
+    RewriteCond %{HTTP:X-Forwarded-Proto} !https
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # If backend is running via Node.js Passenger or Proxy
+    # Route /api to Node server port if configured via ProxyPass:
+    # ProxyPass /api http://127.0.0.1:3000/api
+    # ProxyPassReverse /api http://127.0.0.1:3000/api
+</IfModule>
+
+# Block access to hidden dotfiles
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Character Encoding
+AddDefaultCharset UTF-8

@@ -770,6 +770,7 @@ export interface RegistrationConfig {
   instructions_bn: string;
   success_message_en: string;
   success_message_bn: string;
+  t_shirt_size_options?: string[];
   fields: RegistrationFieldConfig[];
 }
 
@@ -823,6 +824,26 @@ export interface GlobalSettings {
     twitter: string;
     linkedin: string;
     instagram: string;
+  };
+}
+
+export interface MailSettings {
+  mail_driver: 'smtp' | 'sendmail' | 'log';
+  smtp_host: string;
+  smtp_port: number;
+  smtp_encryption: 'tls' | 'ssl' | 'none';
+  smtp_username: string;
+  smtp_password?: string;
+  from_email: string;
+  from_name: string;
+  reply_to?: string;
+  timeout?: number;
+  email_notifications_enabled?: boolean;
+  templates?: {
+    confirmation_subject_en?: string;
+    confirmation_subject_bn?: string;
+    confirmation_body_en?: string;
+    confirmation_body_bn?: string;
   };
 }
 
