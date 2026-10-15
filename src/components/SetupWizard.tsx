@@ -10,6 +10,7 @@ import {
   ArrowLeft,
   Lock,
   User,
+  UserCheck,
   Mail,
   Phone,
   Globe,
@@ -79,9 +80,10 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
   } | null>(null);
 
   // Step 3: Super Admin details
-  const [adminName, setAdminName] = useState('Super Administrator');
-  const [adminEmail, setAdminEmail] = useState('admin@nanupuralumni.org');
-  const [adminPhone, setAdminPhone] = useState('01712345678');
+  const [adminName, setAdminName] = useState('');
+  const [adminUsername, setAdminUsername] = useState('');
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPhone, setAdminPhone] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [adminConfirmPassword, setAdminConfirmPassword] = useState('');
   const [showAdminPassword, setShowAdminPassword] = useState(false);
@@ -227,6 +229,14 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
     const errs: Record<string, string> = {};
     if (!adminName.trim() || adminName.trim().length < 2) {
       errs.adminName = 'Full Name is required (at least 2 characters)';
+    }
+
+    const rawUsername = adminUsername.trim();
+    const usernameRegex = /^[a-zA-Z0-9_-]{3,30}$/;
+    if (!rawUsername) {
+      errs.adminUsername = 'Super Admin Username is required';
+    } else if (!usernameRegex.test(rawUsername)) {
+      errs.adminUsername = 'Username must be 3-30 characters with letters, numbers, underscores, or hyphens (no spaces)';
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -411,9 +421,11 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
       },
       admin: {
         name: adminName.trim(),
+        username: adminUsername.trim(),
         email: adminEmail.trim(),
         phone: adminPhone.trim(),
         password: adminPassword,
+        password_confirmation: adminConfirmPassword,
       },
       site: {
         site_name: siteName.trim(),
@@ -1139,7 +1151,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
                           setAdminName(e.target.value);
                           clearError('adminName');
                         }}
-                        placeholder="Super Administrator"
+                        placeholder="e.g. Safaet Ullah"
                         className={`w-full bg-slate-950 border rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none transition ${
                           errors.adminName
                             ? 'border-red-500 ring-1 ring-red-500/40'
@@ -1150,6 +1162,36 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
                     {errors.adminName && <p className="text-[11px] text-red-400 mt-1">{errors.adminName}</p>}
                   </div>
 
+                  <div>
+                    <label className="block text-xs text-slate-300 font-medium mb-1">
+                      Super Admin Username <span className="text-red-400">*</span>
+                    </label>
+                    <div className="relative">
+                      <UserCheck className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                      <input
+                        type="text"
+                        value={adminUsername}
+                        onChange={e => {
+                          setAdminUsername(e.target.value);
+                          clearError('adminUsername');
+                        }}
+                        placeholder="e.g. safaet or admin"
+                        className={`w-full bg-slate-950 border rounded-xl pl-9 pr-3 py-2 text-xs font-mono text-white focus:outline-none transition ${
+                          errors.adminUsername
+                            ? 'border-red-500 ring-1 ring-red-500/40'
+                            : 'border-slate-700 focus:border-emerald-500'
+                        }`}
+                      />
+                    </div>
+                    {errors.adminUsername ? (
+                      <p className="text-[11px] text-red-400 mt-1">{errors.adminUsername}</p>
+                    ) : (
+                      <p className="text-[11px] text-slate-500 mt-1">Exact login username (3-30 letters, numbers, _, -)</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs text-slate-300 font-medium mb-1">
                       Official Admin Email <span className="text-red-400">*</span>
@@ -1163,7 +1205,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
                           setAdminEmail(e.target.value);
                           clearError('adminEmail');
                         }}
-                        placeholder="admin@nanupuralumni.org"
+                        placeholder="e.g. admin@nanupuralumni.org"
                         className={`w-full bg-slate-950 border rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none transition ${
                           errors.adminEmail
                             ? 'border-red-500 ring-1 ring-red-500/40'
@@ -1173,34 +1215,34 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
                     </div>
                     {errors.adminEmail && <p className="text-[11px] text-red-400 mt-1">{errors.adminEmail}</p>}
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-xs text-slate-300 font-medium mb-1">
-                    Mobile Phone Number <span className="text-red-400">*</span>
-                  </label>
-                  <div className="relative">
-                    <Phone className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
-                    <input
-                      type="text"
-                      value={adminPhone}
-                      onChange={e => {
-                        setAdminPhone(e.target.value);
-                        clearError('adminPhone');
-                      }}
-                      placeholder="01712345678"
-                      className={`w-full bg-slate-950 border rounded-xl pl-9 pr-3 py-2 text-xs font-mono text-white focus:outline-none transition ${
-                        errors.adminPhone
-                          ? 'border-red-500 ring-1 ring-red-500/40'
-                          : 'border-slate-700 focus:border-emerald-500'
-                      }`}
-                    />
+                  <div>
+                    <label className="block text-xs text-slate-300 font-medium mb-1">
+                      Mobile Phone Number <span className="text-red-400">*</span>
+                    </label>
+                    <div className="relative">
+                      <Phone className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                      <input
+                        type="text"
+                        value={adminPhone}
+                        onChange={e => {
+                          setAdminPhone(e.target.value);
+                          clearError('adminPhone');
+                        }}
+                        placeholder="01712345678"
+                        className={`w-full bg-slate-950 border rounded-xl pl-9 pr-3 py-2 text-xs font-mono text-white focus:outline-none transition ${
+                          errors.adminPhone
+                            ? 'border-red-500 ring-1 ring-red-500/40'
+                            : 'border-slate-700 focus:border-emerald-500'
+                        }`}
+                      />
+                    </div>
+                    {errors.adminPhone ? (
+                      <p className="text-[11px] text-red-400 mt-1">{errors.adminPhone}</p>
+                    ) : (
+                      <p className="text-[11px] text-slate-500 mt-1">11-digit Bangladeshi mobile number</p>
+                    )}
                   </div>
-                  {errors.adminPhone ? (
-                    <p className="text-[11px] text-red-400 mt-1">{errors.adminPhone}</p>
-                  ) : (
-                    <p className="text-[11px] text-slate-500 mt-1">11-digit Bangladeshi mobile number</p>
-                  )}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1401,7 +1443,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
                   </div>
                   <div className="bg-slate-900 p-2.5 rounded-xl border border-slate-800">
                     <span className="text-slate-500 block text-[10px] uppercase">Super Admin:</span>
-                    <span className="text-emerald-400 font-bold truncate block">{adminName}</span>
+                    <span className="text-emerald-400 font-bold truncate block font-mono">{adminUsername || 'admin'}</span>
                     <span className="text-slate-400 block truncate mt-0.5">{adminEmail}</span>
                   </div>
                   <div className="bg-slate-900 p-2.5 rounded-xl border border-slate-800">
@@ -1468,18 +1510,22 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
               </div>
 
               {/* Account summary pill */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 max-w-sm mx-auto text-xs space-y-1 text-left">
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 max-w-sm mx-auto text-xs space-y-1.5 text-left">
                 <div className="flex justify-between text-slate-400">
-                  <span>Super Admin:</span>
+                  <span>Super Admin Username:</span>
+                  <span className="text-emerald-400 font-mono font-bold">{adminUsername}</span>
+                </div>
+                <div className="flex justify-between text-slate-400">
+                  <span>Official Email:</span>
                   <span className="text-white font-mono">{adminEmail}</span>
                 </div>
                 <div className="flex justify-between text-slate-400">
                   <span>Database Driver:</span>
-                  <span className="text-emerald-400 font-mono uppercase">{driver}</span>
+                  <span className="text-amber-400 font-mono uppercase">{driver}</span>
                 </div>
                 <div className="flex justify-between text-slate-400">
                   <span>Website URL:</span>
-                  <span className="text-amber-400 font-mono">{siteUrl}</span>
+                  <span className="text-slate-200 font-mono">{siteUrl}</span>
                 </div>
               </div>
 

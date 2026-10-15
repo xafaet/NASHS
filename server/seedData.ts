@@ -28,6 +28,8 @@ import {
   ProgramScheduleSectionConfig,
   RegistrationFieldConfig,
   HeroConfig,
+  RegistrationConfirmationConfig,
+  SettingItem,
 } from '../src/types';
 
 // Batch calculation reference: 2008 = 65th Batch (Batch = 65 + PassingYear - 2008)
@@ -697,6 +699,8 @@ export const initialRegistrationConfig: RegistrationConfig = {
   currency: 'BDT',
   event_id: 'event-85th-anniversary',
   max_capacity: 5000,
+  max_image_size_mb: 1.5,
+  image_accepted_formats: ['image/jpeg', 'image/png', 'image/webp'],
   terms_en: 'I certify that the information provided is accurate and I agree to adhere to the code of conduct during the celebration.',
   terms_bn: 'আমি প্রত্যয়ন করছি যে প্রদত্ত তথ্য সত্য ও সঠিক এবং উৎসব চলাকালে শৃঙ্খলা বজায় রাখতে অঙ্গীকারাবদ্ধ।',
   instructions_en: 'Fill in your personal details accurately to register for the 85th Anniversary Grand Reunion celebration.',
@@ -704,6 +708,65 @@ export const initialRegistrationConfig: RegistrationConfig = {
   success_message_en: 'Your registration is confirmed! Download your Entry Pass below.',
   success_message_bn: 'আপনার নিবন্ধন সফল হয়েছে! নিচে আপনার ডিজিটাল প্রবেশ পাস ডাউনলোড করুন।',
   fields: initialRegistrationFields,
+};
+
+export const initialRegistrationConfirmationConfig: RegistrationConfirmationConfig = {
+  heading_en: 'Thank you for registering!',
+  heading_bn: 'আপনার রেজিস্ট্রেশনের জন্য ধন্যবাদ!',
+  subheading_en: '85th Anniversary Grand Reunion & Celebration — Nanupur Abu Sobhan High School',
+  subheading_bn: '৮৫ বছর পূর্তি উৎসব ও পুনর্মিলনী — নানুপুর আবু সোবহান উচ্চ বিদ্যালয়',
+  confirmation_message_en: 'Your registration form has been successfully submitted. Your registration is now awaiting payment verification. Your registration will be confirmed after payment verification.',
+  confirmation_message_bn: 'আপনার রেজিস্ট্রেশন ফর্ম সফলভাবে জমা হয়েছে। আপনার রেজিস্ট্রেশন এখন পেমেন্ট যাচাইয়ের অপেক্ষায় রয়েছে। পেমেন্ট যাচাই সম্পন্ন হওয়ার পর আপনার রেজিস্ট্রেশন চূড়ান্তভাবে নিশ্চিত করা হবে।',
+  supporting_text_en: 'Please keep your Registration Token safe. You will need this token to verify payment, download your entry pass, and check in at the anniversary venue.',
+  supporting_text_bn: 'অনুগ্রহ করে আপনার রেজিস্ট্রেশন টোকেনটি যত্নসহকারে সংরক্ষণ করুন। পেমেন্ট যাচাই, প্রবেশপত্র ডাউনলোড এবং অনুষ্ঠানস্থলে প্রবেশের জন্য এই টোকেনটি প্রয়োজন হবে।',
+
+  next_steps_title_en: 'Next Steps to Complete Your Registration',
+  next_steps_title_bn: 'রেজিস্ট্রেশন চূড়ান্ত করার পরবর্তী ধাপসমূহ',
+  next_steps_en: '1. Send the exact registration fee using bKash or Nagad.\n2. Submit your transaction ID (TrxID) in the form below.\n3. The alumni committee will verify your payment within 24 hours.\n4. Download your official digital entry pass from the token verification page or member portal.',
+  next_steps_bn: '১. বিকাশ অথবা নগদ এর মাধ্যমে নির্ধারিত রেজিস্ট্রেশন ফি পাঠান।\n২. পেমেন্ট সম্পন্ন করে ট্রানজেকশন আইডি (TrxID) নিচের ফর্মে জমা দিন।\n৩. অ্যালুমনাই কমিটি ২৪ ঘণ্টার মধ্যে আপনার পেমেন্ট যাচাই করবে।\n৪. পেমেন্ট নিশ্চিত হলে টোকেন ভেরিফিকেশন পেজ অথবা মেম্বার পোর্টাল থেকে ডিজিটাল প্রবেশপত্র ডাউনলোড করুন।',
+
+  payment_instructions_title_en: 'Payment Instructions (Step-by-Step):',
+  payment_instructions_title_bn: 'পেমেন্ট নির্দেশিকা (ধাপে ধাপে):',
+  payment_instructions_en: '1. Send the registration fee to the displayed bKash or Nagad number.\n2. Use your generated Token Number as the Payment Reference.\n3. After completing the payment, fill out and submit the Confirm Payment form below.\n4. Your registration will be confirmed after payment verification by our administration.',
+  payment_instructions_bn: '১. উপরের bKash অথবা Nagad নম্বরে নির্ধারিত রেজিস্ট্রেশন ফি পাঠান।\n২. Payment Reference হিসেবে আপনার Token Number ব্যবহার করুন।\n৩. পেমেন্ট সম্পন্ন করার পর নিচের Confirm Payment ফর্মটি পূরণ করে জমা দিন।\n৪. এডমিন কর্তৃক আপনার পেমেন্ট যাচাই করার পর রেজিস্ট্রেশন চূড়ান্তভাবে নিশ্চিত করা হবে।',
+
+  token_label_en: 'Your Registration Token / Payment Reference Number',
+  token_label_bn: 'আপনার Registration Token / Payment Reference Number',
+  token_help_text_en: 'Use this Token/Reference Number as your bKash or Nagad Payment Reference.',
+  token_help_text_bn: 'বিকাশ বা নগদ-এ পেমেন্ট করার সময় এই টোকেন নম্বরটি রেফারেন্স (Reference) হিসেবে ব্যবহার করুন।',
+
+  info_notes_title_en: 'Important Information & Rules',
+  info_notes_title_bn: 'জরুরি তথ্যাবলী ও নিয়মাবলী',
+  info_notes_en: '• Each registration token is unique and non-transferable.\n• Please preserve your SMS and email confirmations.\n• Bring your digital entry pass or printed slip with QR code to the entrance gate.\n• For any issues with payment verification, visit the registration booth on school premises or contact our helpline.',
+  info_notes_bn: '• প্রতিটি রেজিস্ট্রেশন টোকেন অনন্য ও অপরিবর্তনযোগ্য।\n• প্রাপ্ত এসএমএস ও ইমেইল নিশ্চিতকরণ সংরক্ষণ করুন।\n• অনুষ্ঠানস্থলে প্রবেশের সময় কিউআর কোডযুক্ত ডিজিটাল পাস বা প্রিন্ট কপি প্রদর্শন করতে হবে।\n• পেমেন্ট সংক্রান্ত কোনো সহযোগিতার জন্য বিদ্যালয় প্রাঙ্গণে স্থাপিত হেল্পডেস্কে যোগাযোগ করুন।',
+
+  support_title_en: 'Helpline & Assistance',
+  support_title_bn: 'হেল্পলাইন ও সহায়তা',
+  support_phone: '+880 1819-000000, +880 1711-000000',
+  support_email: 'support@nashalumni.org',
+  support_hours_en: '9:00 AM – 8:00 PM (Everyday)',
+  support_hours_bn: 'সকাল ৯:০০ – রাত ৮:০০ (প্রতিদিন)',
+  support_location_en: 'Alumni Office, Nanupur Abu Sobhan High School, Fatikchhari, Chattogram',
+  support_location_bn: 'অ্যালুমনাই অফিস, নানুপুর আবু সোবহান উচ্চ বিদ্যালয়, ফটিকছড়ি, চট্টগ্রাম',
+
+  show_token_box: true,
+  show_download_slip_button: true,
+  show_print_button: true,
+  show_manual_payment_accounts: true,
+  show_payment_instructions: true,
+  show_confirm_payment_form: true,
+  show_info_notes: true,
+  show_support_contact: true,
+  show_return_button: true,
+
+  return_button_label_en: 'Return to Homepage',
+  return_button_label_bn: 'মূল ওয়েবসাইটে ফিরে যান',
+  return_button_destination: '/',
+
+  verified_heading_en: '🎉 Registration Successful & Confirmed!',
+  verified_heading_bn: '🎉 অভিনন্দন! আপনার নিবন্ধন সফল হয়েছে',
+  verified_message_en: 'Payment verified successfully. Your official 85th Anniversary entry pass with verified QR code has been issued below.',
+  verified_message_bn: 'পেমেন্ট সফলভাবে সম্পন্ন হয়েছে। আপনার জন্য নির্ধারিত ডিজিটাল প্রবেশপত্র নিচে দেওয়া হলো। এটি প্রিন্ট বা সংরক্ষণ করে রাখুন।',
 };
 
 export const initialTokenFormatConfig: TokenFormatConfig = {
@@ -813,24 +876,7 @@ export const initialRoles: CustomRole[] = [
   },
 ];
 
-export const initialUsers: User[] = [
-  {
-    id: 'user-super-admin',
-    username: 'super_admin',
-    name: 'Chief Administrator (NASH Secretariat)',
-    name_bn: 'প্রধান প্রশাসক (সচিবালয়)',
-    email: 'admin@nanupuralumni.org',
-    phone: '01819000001',
-    role: 'super_admin',
-    gender: 'male',
-    blood_group: 'B+',
-    dob: '1976-01-01',
-    passing_year: 1992,
-    batch: 'SSC Batch 1992',
-    status: 'active',
-    created_at: '2026-01-01T00:00:00Z',
-  }
-];
+export const initialUsers: User[] = [];
 
 export const initialPages: CMSPage[] = [
   {
@@ -1600,4 +1646,48 @@ export const initialHeroConfig: HeroConfig = {
   overlay_opacity: 20,
   accent_color: '#fbbf24',
 };
+
+// Seeded Settings Table Records (Single Source of Truth)
+export const initialSettingsTable: SettingItem[] = [
+  {
+    id: 1,
+    key: 'registration_image_max_size',
+    value: '1.5',
+    group: 'registration',
+    type: 'numeric',
+    description: 'Maximum allowed registration photograph file size in Megabytes (MB). Default: 1.5MB.',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 2,
+    key: 'registration_fee',
+    value: '1000',
+    group: 'registration',
+    type: 'numeric',
+    description: 'Standard event registration fee in BDT.',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 3,
+    key: 'site_currency',
+    value: 'BDT',
+    group: 'general',
+    type: 'string',
+    description: 'Billing and transaction currency symbol/code.',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 4,
+    key: 'registration_open',
+    value: 'true',
+    group: 'registration',
+    type: 'boolean',
+    description: 'Controls public availability of online reunion registration.',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+];
 

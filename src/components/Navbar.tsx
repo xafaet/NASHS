@@ -60,18 +60,23 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenL
   const userMenuRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Close dropdowns on outside click
+  // Close dropdowns on outside click or touch
   useEffect(() => {
-    const handleOutsideClick = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+    const handleOutsideClick = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node;
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
         setActiveDropdown(null);
       }
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+      if (userMenuRef.current && !userMenuRef.current.contains(target)) {
         setUserDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleOutsideClick);
-    return () => document.removeEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('touchstart', handleOutsideClick);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('touchstart', handleOutsideClick);
+    };
   }, []);
 
   // Keyboard shortcut: Cmd+K / Ctrl+K for search, Escape to close modals
@@ -83,13 +88,16 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenL
       } else if (e.key === 'Escape') {
         setSearchModalOpen(false);
         setActiveDropdown(null);
-        setUserDropdownOpen(false);
+        if (userDropdownOpen) {
+          setUserDropdownOpen(false);
+          document.getElementById('user-profile-button')?.focus();
+        }
         setMobileMenuOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [userDropdownOpen]);
 
   // Close mobile menu on resize to desktop
   useEffect(() => {
@@ -271,13 +279,13 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenL
     <header className="w-full sticky top-0 z-40 transition-shadow">
       {/* 1. TOP UTILITY BAR (Refined, Modern, High-Contrast) */}
       {(topbar?.is_enabled ?? true) && (
-        <div className="bg-[#072615] text-emerald-100/90 text-xs py-2 px-4 sm:px-6 lg:px-8 border-b border-emerald-900/60 selection:bg-amber-400 selection:text-slate-950">
-          <div className="max-w-7xl mx-auto flex justify-between items-center gap-3">
+        <div className="bg-[#072615] text-emerald-100/90 text-xs py-1.5 sm:py-2 px-3 sm:px-6 lg:px-8 border-b border-emerald-900/60 selection:bg-amber-400 selection:text-slate-950 relative z-50 overflow-visible">
+          <div className="max-w-7xl mx-auto flex flex-wrap sm:flex-nowrap justify-between items-center gap-2 sm:gap-3">
             {/* Left: Event Highlight Badge */}
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-900/80 border border-emerald-700/60 text-amber-300 font-bold text-[11px] sm:text-xs shrink-0 shadow-xs">
-                <Calendar className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                <span>
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <div className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 rounded-full bg-emerald-900/80 border border-emerald-700/60 text-amber-300 font-bold text-[10px] sm:text-xs shrink-0 shadow-xs">
+                <Calendar className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-amber-400 shrink-0" />
+                <span className="truncate max-w-[170px] xs:max-w-none">
                   {language === 'bn'
                     ? topbar?.announcement_bn || '১৬ জানুয়ারি ২০২৭ • শনিবার'
                     : topbar?.announcement_en || '16 January 2027 • Saturday'}
@@ -292,7 +300,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenL
             </div>
 
             {/* Right: Phone, Auth & Language Switcher */}
-            <div className="flex items-center gap-3 sm:gap-4 text-[11px] sm:text-xs shrink-0">
+            <div className="flex items-center gap-2 sm:gap-4 text-[11px] sm:text-xs shrink-0 ml-auto">
               {(topbar?.show_contact_info ?? true) && (topbar?.contact_phone || settings?.contact_phone) && (
                 <div className="hidden sm:flex items-center gap-1.5 text-emerald-200 hover:text-white transition">
                   <Phone className="w-3 h-3 text-amber-400 shrink-0" />
@@ -307,6 +315,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenL
 
               {(topbar?.show_login_link ?? true) && !user && (
                 <button
+                  type="button"
                   onClick={onOpenLogin}
                   className="inline-flex items-center justify-center gap-1.5 px-3 py-1 sm:px-3.5 sm:py-1 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-slate-950 hover:brightness-105 font-extrabold text-xs tracking-wide shadow-xs hover:shadow transition-all duration-200 cursor-pointer border border-amber-300 active:scale-95 group"
                 >
@@ -316,10 +325,29 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenL
               )}
 
               {user && (
-                <div ref={userMenuRef} className="relative">
+                <div ref={userMenuRef} className="relative z-50">
                   <button
-                    onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-900/90 hover:bg-emerald-800 text-amber-300 font-bold text-xs border border-emerald-700/70 transition cursor-pointer shadow-xs active:scale-95"
+                    type="button"
+                    id="user-profile-button"
+                    aria-expanded={userDropdownOpen}
+                    aria-haspopup="menu"
+                    aria-controls="user-profile-menu"
+                    aria-label={user.name ? `${user.name} - Account Menu` : 'User Account Menu'}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setUserDropdownOpen(prev => !prev);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setUserDropdownOpen(true);
+                        setTimeout(() => {
+                          const firstItem = userMenuRef.current?.querySelector<HTMLElement>('[role="menuitem"]');
+                          firstItem?.focus();
+                        }, 50);
+                      }
+                    }}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-900/90 hover:bg-emerald-800 text-amber-300 font-bold text-xs border border-emerald-700/70 transition cursor-pointer shadow-xs active:scale-95 focus:outline-hidden focus:ring-2 focus:ring-amber-400/80"
                     title={user.name}
                   >
                     <div className="w-4 h-4 rounded-full bg-amber-400 text-emerald-950 flex items-center justify-center font-black text-[10px]">
@@ -334,8 +362,33 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenL
                   </button>
 
                   {userDropdownOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-2 z-50 animate-in fade-in zoom-in-95 duration-150 ring-1 ring-black/5 text-slate-900">
-                      <div className="px-3.5 py-2.5 border-b border-slate-100">
+                    <div
+                      id="user-profile-menu"
+                      role="menu"
+                      aria-labelledby="user-profile-button"
+                      tabIndex={-1}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                          e.preventDefault();
+                          setUserDropdownOpen(false);
+                          document.getElementById('user-profile-button')?.focus();
+                        } else if (e.key === 'ArrowDown') {
+                          e.preventDefault();
+                          const items = (Array.from(userMenuRef.current?.querySelectorAll('[role="menuitem"]') || [])) as HTMLElement[];
+                          const currentIndex = items.indexOf(document.activeElement as HTMLElement);
+                          const nextItem = items[(currentIndex + 1) % items.length];
+                          nextItem?.focus();
+                        } else if (e.key === 'ArrowUp') {
+                          e.preventDefault();
+                          const items = (Array.from(userMenuRef.current?.querySelectorAll('[role="menuitem"]') || [])) as HTMLElement[];
+                          const currentIndex = items.indexOf(document.activeElement as HTMLElement);
+                          const prevItem = items[(currentIndex - 1 + items.length) % items.length];
+                          prevItem?.focus();
+                        }
+                      }}
+                      className="absolute right-0 top-full mt-2 w-64 max-w-[calc(100vw-1.5rem)] sm:max-w-xs bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-2 z-[70] animate-in fade-in zoom-in-95 duration-150 ring-1 ring-black/5 text-slate-900"
+                    >
+                      <div className="px-3.5 py-2.5 border-b border-slate-100" role="none">
                         <span className="font-bold text-slate-900 text-xs block truncate">
                           {user.name}
                         </span>
@@ -351,24 +404,28 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenL
                         </div>
                       </div>
 
-                      <div className="py-1 space-y-0.5">
+                      <div className="py-1 space-y-0.5" role="none">
                         <button
+                          type="button"
+                          role="menuitem"
                           onClick={() => {
                             setUserDropdownOpen(false);
                             handleNavClick('member');
                           }}
-                          className="w-full px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-[#0f4d2a] rounded-xl transition flex items-center gap-2.5 cursor-pointer"
+                          className="w-full px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-[#0f4d2a] rounded-xl transition flex items-center gap-2.5 cursor-pointer focus:outline-hidden focus:bg-emerald-50 focus:text-[#0f4d2a]"
                         >
                           <UserIcon className="w-3.5 h-3.5 text-emerald-600" />
                           <span>{t('nav.member_portal', 'Member Portal / Dashboard')}</span>
                         </button>
 
                         <button
+                          type="button"
+                          role="menuitem"
                           onClick={() => {
                             setUserDropdownOpen(false);
                             handleNavClick('profile');
                           }}
-                          className="w-full px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-[#0f4d2a] rounded-xl transition flex items-center gap-2.5 cursor-pointer"
+                          className="w-full px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-[#0f4d2a] rounded-xl transition flex items-center gap-2.5 cursor-pointer focus:outline-hidden focus:bg-emerald-50 focus:text-[#0f4d2a]"
                         >
                           <FileText className="w-3.5 h-3.5 text-emerald-600" />
                           <span>{language === 'bn' ? 'আমার প্রোফাইল' : 'My Profile'}</span>
@@ -376,11 +433,13 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenL
 
                         {isAdmin && (
                           <button
+                            type="button"
+                            role="menuitem"
                             onClick={() => {
                               setUserDropdownOpen(false);
                               handleNavClick('admin');
                             }}
-                            className="w-full px-3 py-2 text-left text-xs font-bold text-emerald-900 hover:bg-emerald-50 rounded-xl transition flex items-center gap-2.5 cursor-pointer"
+                            className="w-full px-3 py-2 text-left text-xs font-bold text-emerald-900 hover:bg-emerald-50 rounded-xl transition flex items-center gap-2.5 cursor-pointer focus:outline-hidden focus:bg-emerald-50"
                           >
                             <School className="w-3.5 h-3.5 text-amber-600" />
                             <span>{t('nav.admin_portal', 'Admin Portal')}</span>
@@ -388,13 +447,15 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenL
                         )}
                       </div>
 
-                      <div className="border-t border-slate-100 pt-1">
+                      <div className="border-t border-slate-100 pt-1" role="none">
                         <button
+                          type="button"
+                          role="menuitem"
                           onClick={() => {
                             setUserDropdownOpen(false);
                             logout();
                           }}
-                          className="w-full px-3 py-2 text-left text-xs font-semibold text-red-600 hover:bg-red-50 rounded-xl transition flex items-center gap-2.5 cursor-pointer"
+                          className="w-full px-3 py-2 text-left text-xs font-semibold text-red-600 hover:bg-red-50 rounded-xl transition flex items-center gap-2.5 cursor-pointer focus:outline-hidden focus:bg-red-50"
                         >
                           <LogOut className="w-3.5 h-3.5 text-red-500" />
                           <span>{t('nav.logout', 'Logout')}</span>
@@ -427,34 +488,34 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenL
 
       {/* 2. MAIN NAVIGATION BAR */}
       <div className="bg-white/95 backdrop-blur-md border-b border-slate-200/90 transition-all duration-200 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-4">
           {/* Brand Crest & School Logo */}
           <button
             onClick={() => handleNavClick('home')}
-            className="flex items-center gap-3 text-left group cursor-pointer focus:outline-none shrink-0"
+            className="flex items-center gap-2 sm:gap-3 text-left group cursor-pointer focus:outline-none min-w-0 flex-1 max-w-[calc(100%-110px)] lg:max-w-none"
           >
             {settings?.logo_url && !logoError ? (
               <img
                 src={settings.logo_url}
                 alt="School Crest"
                 onError={() => setLogoError(true)}
-                className="w-11 h-11 sm:w-12 sm:h-12 object-contain group-hover:scale-105 transition-transform duration-200 rounded-xl shadow-xs"
+                className="w-10 h-10 sm:w-12 sm:h-12 object-contain group-hover:scale-105 transition-transform duration-200 rounded-xl shadow-xs shrink-0"
                 referrerPolicy="no-referrer"
               />
             ) : (
-              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-[#0f4d2a] via-[#135d34] to-[#0a2e19] text-white flex flex-col items-center justify-center p-1 shadow-sm border border-amber-400/90 shrink-0 group-hover:shadow group-hover:scale-105 transition-all duration-200">
-                <School className="w-5 h-5 sm:w-5.5 sm:h-5.5 text-amber-300" />
-                <span className="text-[8px] font-extrabold text-amber-300 tracking-tighter uppercase font-mono">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-[#0f4d2a] via-[#135d34] to-[#0a2e19] text-white flex flex-col items-center justify-center p-1 shadow-sm border border-amber-400/90 shrink-0 group-hover:shadow group-hover:scale-105 transition-all duration-200">
+                <School className="w-4 h-4 sm:w-5.5 sm:h-5.5 text-amber-300" />
+                <span className="text-[7px] sm:text-[8px] font-extrabold text-amber-300 tracking-tighter uppercase font-mono">
                   1942
                 </span>
               </div>
             )}
 
-            <div className="flex flex-col">
-              <span className="font-extrabold text-base sm:text-lg text-slate-900 leading-tight tracking-tight group-hover:text-[#0f4d2a] transition-colors">
+            <div className="flex flex-col min-w-0">
+              <span className="font-extrabold text-sm sm:text-base lg:text-lg text-slate-900 leading-tight tracking-tight group-hover:text-[#0f4d2a] transition-colors truncate">
                 {siteName}
               </span>
-              <span className="text-[11px] sm:text-xs text-slate-500 font-medium tracking-normal mt-0.5 line-clamp-1">
+              <span className="text-[10px] sm:text-[11px] lg:text-xs text-slate-500 font-medium tracking-normal mt-0.5 truncate">
                 {siteTagline}
               </span>
             </div>
@@ -753,8 +814,16 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenL
                       onClick={() => handleNavClick('member')}
                       className="w-full py-2 text-center text-xs font-bold text-emerald-800 bg-emerald-50 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer"
                     >
-                      <UserIcon className="w-3.5 h-3.5" />
+                      <UserIcon className="w-3.5 h-3.5 text-emerald-700" />
                       <span>{t('nav.member_portal', 'Member Portal')} ({user.name})</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleNavClick('profile')}
+                      className="w-full py-2 text-center text-xs font-bold text-emerald-800 bg-emerald-50 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <FileText className="w-3.5 h-3.5 text-emerald-700" />
+                      <span>{language === 'bn' ? 'আমার প্রোফাইল' : 'My Profile'}</span>
                     </button>
 
                     {isAdmin && (

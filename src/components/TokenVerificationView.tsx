@@ -19,6 +19,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { apiFetch } from '../utils/api';
 
 export const TokenVerificationView: React.FC = () => {
   const { language, t } = useLanguage();
@@ -39,7 +40,7 @@ export const TokenVerificationView: React.FC = () => {
 
   // Check query param if user scanned QR directly: /verify?token=...
   useEffect(() => {
-    fetch('/api/gateways')
+    apiFetch('/api/gateways')
       .then(res => (res.ok ? res.json() : []))
       .then(data => {
         if (Array.isArray(data)) setGateways(data);
@@ -63,7 +64,7 @@ export const TokenVerificationView: React.FC = () => {
     setPaymentSubmitMsg(null);
 
     try {
-      const res = await fetch(`/api/tokens/verify/${encodeURIComponent(code)}`);
+      const res = await apiFetch(`/api/tokens/verify/${encodeURIComponent(code)}`);
       const data = await res.json();
       setResult(data);
       if (data.registration?.phone) {
@@ -108,7 +109,7 @@ export const TokenVerificationView: React.FC = () => {
 
     setSubmittingPayment(true);
     try {
-      const res = await fetch('/api/payments/manual-submit', {
+      const res = await apiFetch('/api/payments/manual-submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

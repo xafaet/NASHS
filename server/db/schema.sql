@@ -13,6 +13,24 @@ CREATE TABLE IF NOT EXISTS site_settings (
 );
 
 -- ------------------------------------------------------------
+-- 1B. APPLICATION SYSTEM SETTINGS (Key-Value CMS Store)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS settings (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `key` VARCHAR(191) NOT NULL UNIQUE,
+    `value` LONGTEXT NULL,
+    `group` VARCHAR(100) DEFAULT 'general',
+    `type` VARCHAR(50) DEFAULT 'string',
+    `description` TEXT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+INSERT INTO settings (`key`, `value`, `group`, `type`, `description`)
+VALUES ('registration_image_max_size', '1.5', 'registration', 'numeric', 'Maximum allowed registration photograph file size in Megabytes (MB). Default: 1.5MB.')
+ON DUPLICATE KEY UPDATE `updated_at` = NOW();
+
+-- ------------------------------------------------------------
 -- 2. CMS PAGES (WordPress-like Page Management)
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS pages (
@@ -248,4 +266,104 @@ CREATE TABLE IF NOT EXISTS offline_centers (
     INDEX `idx_booths_order` (`order_index`),
     INDEX `idx_booths_active` (`is_active`, `is_trashed`)
 );
+
+-- ------------------------------------------------------------
+-- 11. BATCHES (Passing Year Groups)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS batches (
+    `id` VARCHAR(100) PRIMARY KEY,
+    `name_en` VARCHAR(100) NOT NULL,
+    `name_bn` VARCHAR(100),
+    `passing_year` INT NOT NULL,
+    `batch_number` VARCHAR(50),
+    `representative_name` VARCHAR(255),
+    `representative_phone` VARCHAR(50),
+    `is_active` BOOLEAN DEFAULT TRUE,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ------------------------------------------------------------
+-- 12. EVENTS & REUNIONS
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS events (
+    `id` VARCHAR(100) PRIMARY KEY,
+    `slug` VARCHAR(100) NOT NULL UNIQUE,
+    `title_en` VARCHAR(255) NOT NULL,
+    `title_bn` VARCHAR(255) NOT NULL,
+    `event_date` VARCHAR(50) NOT NULL,
+    `venue_en` VARCHAR(255),
+    `venue_bn` VARCHAR(255),
+    `registration_fee` DECIMAL(10, 2) DEFAULT 1000.00,
+    `currency` VARCHAR(10) DEFAULT 'BDT',
+    `registration_open` BOOLEAN DEFAULT TRUE,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ------------------------------------------------------------
+-- 13. COMMITTEE MEMBERS
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS committee_members (
+    `id` VARCHAR(100) PRIMARY KEY,
+    `committee_id` VARCHAR(100) DEFAULT 'comm-ec-2026',
+    `user_id` VARCHAR(100),
+    `name_en` VARCHAR(255) NOT NULL,
+    `name_bn` VARCHAR(255),
+    `designation_en` VARCHAR(255) NOT NULL,
+    `designation_bn` VARCHAR(255),
+    `batch_year` INT,
+    `photo_url` LONGTEXT,
+    `phone` VARCHAR(50),
+    `email` VARCHAR(191),
+    `tenure` VARCHAR(50) DEFAULT '2026-2028',
+    `order_index` INT DEFAULT 1,
+    `is_active` BOOLEAN DEFAULT TRUE,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ------------------------------------------------------------
+-- 14. NOTICES & ANNOUNCEMENTS
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS notices (
+    `id` VARCHAR(100) PRIMARY KEY,
+    `title_en` VARCHAR(255) NOT NULL,
+    `title_bn` VARCHAR(255) NOT NULL,
+    `content_en` LONGTEXT,
+    `content_bn` LONGTEXT,
+    `publish_date` VARCHAR(50),
+    `is_featured` BOOLEAN DEFAULT FALSE,
+    `is_active` BOOLEAN DEFAULT TRUE,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ------------------------------------------------------------
+-- 15. NEWS & STORIES
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS news_posts (
+    `id` VARCHAR(100) PRIMARY KEY,
+    `slug` VARCHAR(191) NOT NULL UNIQUE,
+    `title_en` VARCHAR(255) NOT NULL,
+    `title_bn` VARCHAR(255) NOT NULL,
+    `content_en` LONGTEXT,
+    `content_bn` LONGTEXT,
+    `category` VARCHAR(100) DEFAULT 'General',
+    `publish_date` VARCHAR(50),
+    `is_published` BOOLEAN DEFAULT TRUE,
+    `views` INT DEFAULT 0,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ------------------------------------------------------------
+-- 16. AUDIT LOGS
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS audit_logs (
+    `id` VARCHAR(100) PRIMARY KEY,
+    `user_name` VARCHAR(100) NOT NULL,
+    `user_email` VARCHAR(191),
+    `action` VARCHAR(100) NOT NULL,
+    `entity` VARCHAR(100) NOT NULL,
+    `details` TEXT,
+    `ip` VARCHAR(50),
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 

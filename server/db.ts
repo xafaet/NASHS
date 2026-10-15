@@ -72,11 +72,15 @@ import {
   initialTokens,
   initialGates,
   initialHeroConfig,
+  initialRegistrationConfirmationConfig,
+  initialSettingsTable,
 } from './seedData';
 import { portableDb } from './db/portableDb';
 import { parsePostgresUrl } from './db/config';
+import { RegistrationConfirmationConfig, SettingItem } from '../src/types';
 
 export interface DatabaseSchema {
+  settings_table?: SettingItem[];
   batches: Batch[];
   events: EventItem[];
   gates: GateItem[];
@@ -100,6 +104,7 @@ export interface DatabaseSchema {
   faqs: FAQItem[];
   payment_gateways: PaymentGatewayConfig[];
   registration_config: RegistrationConfig;
+  registration_confirmation_config: RegistrationConfirmationConfig;
   token_format_config: TokenFormatConfig;
   batch_config: BatchConfig;
   roles: CustomRole[];
@@ -111,6 +116,7 @@ export interface DatabaseSchema {
   program_schedule: ProgramScheduleSectionConfig;
   registration_form_fields: RegistrationFieldConfig[];
   hero_config: HeroConfig;
+  animations_config?: import('../src/types').AnimationConfig;
   mail_settings?: MailSettings;
 }
 
@@ -125,6 +131,31 @@ class DatabaseEngine {
   constructor() {
     this.data = this.loadInitialData();
     this.initSupabasePool();
+    this.hydrateFromConfiguredDatabase();
+  }
+
+  public async hydrateFromConfiguredDatabase(): Promise<void> {
+    try {
+      const dbData = await portableDb.loadAllEntities();
+      let hydratedAny = false;
+      for (const [key, val] of Object.entries(dbData)) {
+        if (val !== undefined && val !== null) {
+          if (Array.isArray(val) && val.length > 0) {
+            (this.data as any)[key] = val;
+            hydratedAny = true;
+          } else if (!Array.isArray(val) && typeof val === 'object' && Object.keys(val).length > 0) {
+            (this.data as any)[key] = val;
+            hydratedAny = true;
+          }
+        }
+      }
+      if (hydratedAny) {
+        this.saveData();
+        console.log('[DatabaseEngine] Authoritative database records successfully hydrated into runtime memory.');
+      }
+    } catch (err: any) {
+      console.warn('[DatabaseEngine] Database hydration note:', err.message);
+    }
   }
 
   private parsePostgresConfig(rawUrl?: string) {
@@ -245,6 +276,15 @@ class DatabaseEngine {
               await this.persistKeyToSupabase('registration_config', this.data.registration_config);
             }
           }
+          if (!this.data.registration_config.max_image_size_mb) {
+            this.data.registration_config.max_image_size_mb = 1.5;
+          }
+          if (!this.data.registration_config.image_accepted_formats) {
+            this.data.registration_config.image_accepted_formats = ['image/jpeg', 'image/png', 'image/webp'];
+          }
+          if (!this.data.registration_confirmation_config) {
+            this.data.registration_confirmation_config = initialRegistrationConfirmationConfig;
+          }
         }
       } catch (sErr: any) {
         console.warn('Site settings sync note:', sErr.message);
@@ -339,51 +379,28 @@ class DatabaseEngine {
             created_at: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
           }));
 
-          // Purge any legacy dummy accounts to adhere strictly to requirement:
-          // Retain ONLY the primary super admin account (super_admin / admin@nanupuralumni.org)
-          // Purge ANY dummy, fake, or test users. Strictly preserve ONLY real super_admin account.
+          // Purge legacy dummy accounts
+          const dummyUsernames = ['exec', 'content', 'event', 'finance', 'contentmanager', 'eventmanager', 'financemanager', 'farhan', 'rahim', 'test'];
+          const dummyEmails = ['exec@nanupuralumni.org', 'content@nanupuralumni.org', 'event@nanupuralumni.org', 'finance@nanupuralumni.org', 'farhan@example.com', 'rahim@example.com', 'test@gmail.com', 'admin@dizency.com'];
+
           remoteUsers = remoteUsers.filter(u => 
-            u.role === 'super_admin' || u.username === 'super_admin' || u.email === 'admin@nanupuralumni.org'
+            !dummyUsernames.includes((u.username || '').toLowerCase()) &&
+            !dummyEmails.includes((u.email || '').toLowerCase()) &&
+            !(u.email || '').endsWith('@example.com')
           );
 
           if (this.pool && this.isSupabaseConnected) {
             try {
               await this.pool.query(
-                `DELETE FROM public.users WHERE role != 'super_admin' AND username != 'super_admin' AND email != 'admin@nanupuralumni.org'`
+                `DELETE FROM public.users WHERE role != 'super_admin' AND (email LIKE '%@example.com' OR username IN ('exec', 'content', 'event', 'finance', 'farhan', 'rahim', 'test'))`
               );
             } catch (pErr: any) {
               console.warn('Database dummy purge note:', pErr.message);
             }
           }
 
-          // Ensure super_admin has the correct username
-          remoteUsers = remoteUsers.map(u => {
-            if (u.role === 'super_admin' && (u.username === 'admin' || u.username === 'superadmin')) {
-              return { ...u, username: 'super_admin' };
-            }
-            return u;
-          });
-
-          // Merge initialUsers if missing from database
-          let addedNew = false;
-          for (const iu of initialUsers) {
-            const foundIdx = remoteUsers.findIndex(ru => ru.role === 'super_admin' || ru.email?.toLowerCase() === iu.email?.toLowerCase() || ru.username?.toLowerCase() === iu.username?.toLowerCase());
-            if (foundIdx === -1) {
-              remoteUsers.push({
-                ...iu,
-                password_hash: iu.password_hash || bcrypt.hashSync('admin123', 10),
-              });
-              addedNew = true;
-            } else {
-              // Ensure canonical super_admin username and password hash
-              remoteUsers[foundIdx].username = 'super_admin';
-              if (!remoteUsers[foundIdx].password_hash) {
-                remoteUsers[foundIdx].password_hash = bcrypt.hashSync('admin123', 10);
-              }
-            }
-          }
-
           // Merge any existing local registered users so they are preserved
+          let addedNew = false;
           for (const lu of (this.data.users || [])) {
             const found = remoteUsers.some(ru => ru.id === lu.id || (lu.email && ru.email?.toLowerCase() === lu.email?.toLowerCase()) || (lu.phone && ru.phone === lu.phone));
             if (!found) {
@@ -1152,16 +1169,28 @@ class DatabaseEngine {
   }
 
   public async deleteRecord(table: string, id: string): Promise<void> {
-    if (!this.pool || !this.isSupabaseConnected) return;
     try {
-      let targetTable = table;
-      if (table === 'registrations') targetTable = 'event_registrations';
-      if (table === 'tokens') targetTable = 'entry_tokens';
-      if (table === 'news') targetTable = 'news_posts';
-      if (table === 'payments') targetTable = 'payment_transactions';
-      if (table === 'committee_members') targetTable = 'committee_members';
+      if (table === 'pages') await portableDb.deletePage(id);
+      else if (table === 'news') await portableDb.deleteNews(id);
+      else if (table === 'notices') await portableDb.deleteNotice(id);
+      else if (table === 'committee_members') await portableDb.deleteCommitteeMember(id);
+      else if (table === 'batches') await portableDb.deleteBatch(id);
+      else if (table === 'offline_centers') await portableDb.deleteOfflineCenter(id);
+      else if (table === 'registrations') await portableDb.deleteRegistration(id);
+      else if (table === 'tokens') await portableDb.deleteToken(id);
+      else if (table === 'payments') await portableDb.deletePayment(id);
+      else if (table === 'users') await portableDb.deleteUser(id);
 
-      await this.pool.query(`DELETE FROM public.${targetTable} WHERE id = $1`, [id]);
+      if (this.pool && this.isSupabaseConnected) {
+        let targetTable = table;
+        if (table === 'registrations') targetTable = 'event_registrations';
+        if (table === 'tokens') targetTable = 'entry_tokens';
+        if (table === 'news') targetTable = 'news_posts';
+        if (table === 'payments') targetTable = 'payment_transactions';
+        if (table === 'committee_members') targetTable = 'committee_members';
+
+        await this.pool.query(`DELETE FROM public.${targetTable} WHERE id = $1`, [id]);
+      }
     } catch (err: any) {
       console.warn(`Delete record error (${table} ${id}):`, err.message);
     }
@@ -1207,7 +1236,37 @@ class DatabaseEngine {
           pages: parsed.pages || initialPages,
           faqs: parsed.faqs || initialFAQs,
           payment_gateways: parsed.payment_gateways || initialPaymentGateways,
-          registration_config: parsed.registration_config || initialRegistrationConfig,
+          registration_config: (() => {
+            const cfg = parsed.registration_config ? { ...initialRegistrationConfig, ...parsed.registration_config } : initialRegistrationConfig;
+            if (!cfg.max_image_size_mb) {
+              cfg.max_image_size_mb = 1.5;
+            }
+            if (!Array.isArray(cfg.image_accepted_formats) || cfg.image_accepted_formats.length === 0) {
+              cfg.image_accepted_formats = ['image/jpeg', 'image/png', 'image/webp'];
+            }
+            return cfg;
+          })(),
+          registration_confirmation_config: parsed.registration_confirmation_config
+            ? { ...initialRegistrationConfirmationConfig, ...parsed.registration_confirmation_config }
+            : initialRegistrationConfirmationConfig,
+          settings_table: (() => {
+            let list: SettingItem[] = Array.isArray(parsed.settings_table)
+              ? [...parsed.settings_table]
+              : [...initialSettingsTable];
+            if (!list.some(s => s.key === 'registration_image_max_size')) {
+              list.unshift({
+                id: 1,
+                key: 'registration_image_max_size',
+                value: '1.5',
+                group: 'registration',
+                type: 'numeric',
+                description: 'Maximum allowed registration photograph file size in Megabytes (MB). Default: 1.5MB.',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              });
+            }
+            return list;
+          })(),
           token_format_config: parsed.token_format_config || initialTokenFormatConfig,
           batch_config: parsed.batch_config || initialBatchConfig,
           roles: parsed.roles || initialRoles,
@@ -1235,27 +1294,6 @@ class DatabaseEngine {
               !dummyEmails.includes((u.email || '').toLowerCase()) &&
               !(u.email || '').endsWith('@example.com')
             );
-
-            // Ensure super_admin canonical user exists
-            const superAdmin = initialUsers[0];
-            const hasSuperAdmin = filtered.some((u: any) => u.role === 'super_admin');
-            if (!hasSuperAdmin) {
-              filtered.unshift({
-                ...superAdmin,
-                password_hash: bcrypt.hashSync('admin123', 10),
-              });
-            } else {
-              filtered = filtered.map((u: any) => {
-                if (u.role === 'super_admin') {
-                  return {
-                    ...u,
-                    username: 'super_admin',
-                    password_hash: u.password_hash || bcrypt.hashSync('admin123', 10),
-                  };
-                }
-                return u;
-              });
-            }
 
             return filtered;
           })(),
@@ -1336,6 +1374,8 @@ class DatabaseEngine {
       faqs: initialFAQs,
       payment_gateways: initialPaymentGateways,
       registration_config: initialRegistrationConfig,
+      registration_confirmation_config: initialRegistrationConfirmationConfig,
+      settings_table: initialSettingsTable,
       token_format_config: initialTokenFormatConfig,
       batch_config: initialBatchConfig,
       roles: initialRoles,
@@ -1424,14 +1464,32 @@ class DatabaseEngine {
         !dummyUsernames.includes((u.username || '').toLowerCase()) &&
         !dummyEmails.includes((u.email || '').toLowerCase()) &&
         !(u.email || '').endsWith('@example.com')
-      ).map(u => {
-        if (u.role === 'super_admin' && u.username !== 'super_admin') {
-          return { ...u, username: 'super_admin' };
-        }
-        return u;
-      }) as DatabaseSchema[K];
+      ) as DatabaseSchema[K];
     }
     return this.data[key];
+  }
+
+  public async setAsync<K extends keyof DatabaseSchema>(key: K, value: DatabaseSchema[K]): Promise<void> {
+    if (key === 'users' && Array.isArray(value)) {
+      const dummyUsernames = ['exec', 'content', 'event', 'finance', 'contentmanager', 'eventmanager', 'financemanager', 'farhan', 'rahim', 'test'];
+      const dummyEmails = ['exec@nanupuralumni.org', 'content@nanupuralumni.org', 'event@nanupuralumni.org', 'finance@nanupuralumni.org', 'farhan@example.com', 'rahim@example.com', 'test@gmail.com', 'admin@dizency.com'];
+      value = (value as any[]).filter(u =>
+        !dummyUsernames.includes((u.username || '').toLowerCase()) &&
+        !dummyEmails.includes((u.email || '').toLowerCase()) &&
+        !(u.email || '').endsWith('@example.com')
+      ) as DatabaseSchema[K];
+    }
+    this.data[key] = value;
+    this.saveData();
+
+    // 1. Unified portableDb collection and setting persistence (MySQL & PostgreSQL)
+    if (Array.isArray(value)) {
+      await portableDb.syncCollection(key as string, value as any[]);
+    }
+    await portableDb.saveSetting(key as string, value);
+
+    // 2. Direct PostgreSQL pool sync if active
+    await this.persistKeyToSupabase(key as string, value);
   }
 
   public set<K extends keyof DatabaseSchema>(key: K, value: DatabaseSchema[K]) {
@@ -1446,9 +1504,93 @@ class DatabaseEngine {
     }
     this.data[key] = value;
     this.saveData();
-    this.persistKeyToSupabase(key as string, value);
-    portableDb.saveSetting(key as string, value).catch(() => {});
+
+    // Fire unified async persistence
+    this.setAsync(key, value).catch(err => {
+      console.warn(`[DatabaseEngine] Async persistence error for ${String(key)}:`, err.message);
+    });
+
+    // Bidirectional sync: If registration_config updated with max_image_size_mb, sync settings_table
+    if (key === 'registration_config' && (value as any)?.max_image_size_mb) {
+      const mbVal = String((value as any).max_image_size_mb);
+      this.setSetting('registration_image_max_size', mbVal, 'registration', 'Maximum allowed registration photograph file size in Megabytes (MB). Default: 1.5MB.', 'numeric').catch(() => {});
+    }
   }
+
+  public getAllSettings(): SettingItem[] {
+    if (!this.data.settings_table) {
+      this.data.settings_table = [...initialSettingsTable];
+    }
+    return this.data.settings_table;
+  }
+
+  public getSetting(key: string): string | null {
+    const table = this.getAllSettings();
+    const found = table.find(s => s.key === key);
+    return found ? found.value : null;
+  }
+
+  public async setSetting(
+    key: string,
+    value: string,
+    group: string = 'general',
+    description?: string,
+    type: string = 'string'
+  ): Promise<SettingItem> {
+    if (!this.data.settings_table) {
+      this.data.settings_table = [...initialSettingsTable];
+    }
+    const existingIdx = this.data.settings_table.findIndex(s => s.key === key);
+    const now = new Date().toISOString();
+    let item: SettingItem;
+
+    if (existingIdx >= 0) {
+      item = {
+        ...this.data.settings_table[existingIdx],
+        value,
+        group: group || this.data.settings_table[existingIdx].group || 'general',
+        description: description || this.data.settings_table[existingIdx].description,
+        type: type || this.data.settings_table[existingIdx].type || 'string',
+        updated_at: now,
+      };
+      this.data.settings_table[existingIdx] = item;
+    } else {
+      item = {
+        id: Date.now(),
+        key,
+        value,
+        group,
+        type: type || (isNaN(Number(value)) ? 'string' : 'numeric'),
+        description: description || '',
+        created_at: now,
+        updated_at: now,
+      };
+      this.data.settings_table.push(item);
+    }
+    this.saveData();
+
+    // Persist to underlying database settings table
+    try {
+      await portableDb.saveSettingRecord(key, value, group, item.type, description);
+    } catch (e: any) {
+      console.warn(`[DatabaseEngine] Could not persist to settings table:`, e.message);
+    }
+
+    // Two-way synchronization for registration_image_max_size
+    if (key === 'registration_image_max_size') {
+      const num = parseFloat(value);
+      if (!isNaN(num) && num > 0) {
+        if (!this.data.registration_config) {
+          this.data.registration_config = { ...initialRegistrationConfig };
+        }
+        this.data.registration_config.max_image_size_mb = num;
+        this.saveData();
+      }
+    }
+
+    return item;
+  }
+
 
   public logAudit(
     user_name: string,
@@ -1502,7 +1644,6 @@ class DatabaseEngine {
     const memoryMatch = users.find(u =>
       (u.email && u.email.toLowerCase() === clean) ||
       (u.username && u.username.toLowerCase() === clean) ||
-      ((clean === 'admin' || clean === 'super_admin') && u.role === 'super_admin') ||
       (u.phone && u.phone.trim() === credential.trim())
     );
     if (memoryMatch) return memoryMatch;
@@ -1546,24 +1687,6 @@ class DatabaseEngine {
       } catch (err: any) {
         console.warn('Direct user lookup warning:', err.message);
       }
-    }
-
-    // 3. Fallback to initialUsers
-    const initialMatch = initialUsers.find(u =>
-      (u.email && u.email.toLowerCase() === clean) ||
-      (u.username && u.username.toLowerCase() === clean) ||
-      (u.phone && u.phone.trim() === credential.trim())
-    );
-    if (initialMatch) {
-      const ensuredUser: User & { password_hash?: string } = {
-        ...initialMatch,
-        password_hash: initialMatch.password_hash || bcrypt.hashSync(initialMatch.role === 'super_admin' ? 'admin123' : 'password', 10),
-      };
-      if (!this.data.users.some(u => u.id === ensuredUser.id)) {
-        this.data.users.push(ensuredUser);
-        this.saveData();
-      }
-      return ensuredUser;
     }
 
     return null;

@@ -23,6 +23,25 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+html {
+  overflow-x: hidden;
+  width: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Ensure Bengali and long alphanumeric strings wrap naturally without horizontal viewport breaking */
+p, span, h1, h2, h3, h4, h5, h6, a, button {
+  overflow-wrap: break-word;
+}
+
+/* Safe media responsiveness */
+img, svg, video, canvas, audio, iframe, embed, object {
+  max-width: 100%;
+  height: auto;
 }
 
 @media print {

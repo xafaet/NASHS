@@ -25,7 +25,7 @@ export const ContactView: React.FC = () => {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch('/api/contact/messages', {
+      const res = await apiFetch('/api/contact/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),

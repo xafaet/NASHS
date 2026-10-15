@@ -16,7 +16,11 @@ export const NoticesView: React.FC = () => {
       .then(data => {
         const list = data || [];
         setNotices(list);
-        if (list.length > 0) setActiveNotice(list[0]);
+        if (list.length > 0) {
+          setActiveNotice(list[0]);
+        } else {
+          setActiveNotice(null);
+        }
       })
       .catch(err => console.warn('Notices load paused:', err));
   }, []);

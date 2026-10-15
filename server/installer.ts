@@ -26,9 +26,11 @@ export interface InstallPayload {
   // Super Admin Account
   admin: {
     name: string;
+    username: string;
     email: string;
-    phone: string;
+    phone?: string;
     password: string;
+    password_confirmation?: string;
   };
   // Website Information
   site: {
@@ -91,6 +93,7 @@ export class InstallerService {
       const hasConfiguredDb = Boolean(process.env.DATABASE_URL || (process.env.DB_HOST && process.env.DB_DATABASE));
 
       if (hasSuperAdmin || (hasConfiguredDb && portableStatus.isConnected)) {
+        const adminUser = users.find(u => u.role === 'super_admin');
         isInstalled = true;
         installedData = {
           is_installed: true,
@@ -98,7 +101,8 @@ export class InstallerService {
           driver: portableStatus.driver,
           site_name: siteSettings?.site_name_en || 'Nanupur Abu Sobhan High School Alumni Association',
           site_url: siteSettings?.site_url || 'https://nanupuralumni.org',
-          admin_email: users.find(u => u.role === 'super_admin')?.email || 'admin@nanupuralumni.org',
+          admin_username: adminUser?.username || undefined,
+          admin_email: adminUser?.email || undefined,
           version: '2.0.0-PROD',
         };
 
@@ -290,12 +294,54 @@ export class InstallerService {
       if (!dbName) throw new Error('MySQL database name is required.');
       if (!user) throw new Error('MySQL DB username is required.');
     }
-    if (!payload.admin || !payload.admin.email?.trim()) {
+    if (!payload.admin) {
+      throw new Error('Super Admin account details are required.');
+    }
+    if (!payload.admin.name || !payload.admin.name.trim()) {
+      throw new Error('Super Admin full name is required.');
+    }
+
+    const rawUsername = (payload.admin.username || '').trim();
+    if (!rawUsername) {
+      throw new Error('Super Admin username is required.');
+    }
+    const usernameRegex = /^[a-zA-Z0-9_-]{3,30}$/;
+    if (!usernameRegex.test(rawUsername)) {
+      throw new Error('Super Admin username must be between 3 and 30 characters and contain only letters, numbers, underscores, or hyphens (no spaces).');
+    }
+    const normalizedUsername = rawUsername.toLowerCase();
+
+    const rawEmail = (payload.admin.email || '').trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!rawEmail) {
       throw new Error('Super Admin email is required.');
     }
+    if (!emailRegex.test(rawEmail)) {
+      throw new Error('Please provide a valid administrative email address.');
+    }
+
     if (!payload.admin.password || payload.admin.password.length < 6) {
       throw new Error('Super Admin password must be at least 6 characters.');
     }
+    if (payload.admin.password_confirmation && payload.admin.password !== payload.admin.password_confirmation) {
+      throw new Error('Password confirmation does not match the password.');
+    }
+
+    // Check for duplicate username or email across existing database users
+    const users = db.get('users') || [];
+    const duplicateUser = users.find(u => 
+      (u.username && u.username.toLowerCase() === normalizedUsername) ||
+      (u.email && u.email.toLowerCase() === rawEmail)
+    );
+    if (duplicateUser) {
+      if (duplicateUser.username && duplicateUser.username.toLowerCase() === normalizedUsername) {
+        throw new Error(`Username "${rawUsername}" is already taken. Please choose another username.`);
+      }
+      if (duplicateUser.email && duplicateUser.email.toLowerCase() === rawEmail) {
+        throw new Error(`Email address "${rawEmail}" is already registered. Please use another email.`);
+      }
+    }
+
     if (!payload.site || !payload.site.site_name?.trim()) {
       throw new Error('Website name is required.');
     }
@@ -337,30 +383,23 @@ export class InstallerService {
 
     updateDatabaseConfig(dbConfigUpdate);
 
-    // 3. Create or update Super Admin Account
+    // 3. Create Super Admin Account using the exact submitted username
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(payload.admin.password, salt);
 
-    const users = db.get('users') || [];
-    const existingAdminIndex = users.findIndex(u => u.role === 'super_admin' || u.email === payload.admin.email);
-
     const adminUser: User & { password_hash: string } = {
-      id: existingAdminIndex !== -1 ? users[existingAdminIndex].id : `usr-superadmin-${Date.now()}`,
-      username: (payload.admin.email || '').split('@')[0].toLowerCase() || 'superadmin',
-      name: payload.admin.name || 'Super Administrator',
-      email: payload.admin.email,
-      phone: payload.admin.phone || '',
+      id: `usr-superadmin-${Date.now()}`,
+      username: normalizedUsername,
+      name: payload.admin.name.trim(),
+      email: rawEmail,
+      phone: (payload.admin.phone || '').trim(),
       role: 'super_admin',
       status: 'active',
       password_hash: passwordHash,
       created_at: new Date().toISOString(),
     };
 
-    if (existingAdminIndex !== -1) {
-      users[existingAdminIndex] = adminUser;
-    } else {
-      users.unshift(adminUser);
-    }
+    users.unshift(adminUser);
     db.set('users', users);
 
     // 4. Update Site Settings & Information
@@ -478,7 +517,8 @@ export class InstallerService {
       driver: payload.database.driver,
       site_name: payload.site.site_name,
       site_url: payload.site.site_url,
-      admin_email: payload.admin.email,
+      admin_username: normalizedUsername,
+      admin_email: rawEmail,
       version: '2.0.0-PROD',
     };
 
@@ -497,7 +537,8 @@ export class InstallerService {
       success: true,
       message: 'Nanupur Abu Sobhan High School Alumni Platform has been installed and configured successfully!',
       details: {
-        admin_email: payload.admin.email,
+        admin_username: normalizedUsername,
+        admin_email: rawEmail,
         driver: payload.database.driver,
       },
     };

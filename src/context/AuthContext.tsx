@@ -6,7 +6,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
-  login: (emailOrPhone: string, pass: string) => Promise<boolean>;
+  login: (credential: string, pass: string) => Promise<User | null>;
   logout: () => void;
   updateUser: (updatedUser: User) => void;
   isAdmin: boolean;
@@ -66,31 +66,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchUser();
   }, []);
 
-  const login = async (emailOrPhone: string, pass: string): Promise<boolean> => {
+  const login = async (credential: string, pass: string): Promise<User | null> => {
     try {
       const res = await apiFetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ emailOrPhone, password: pass })
+        body: JSON.stringify({
+          credential,
+          username: credential,
+          emailOrPhone: credential,
+          password: pass,
+        })
       });
       const data = await res.json();
-      if (res.ok && data.token) {
+      if (res.ok && data.token && data.user) {
         localStorage.setItem('nash_token', data.token);
         setToken(data.token);
         setUser(data.user);
-        return true;
+        return data.user;
       }
-      return false;
+      return null;
     } catch (err) {
       console.warn('Login error:', err);
-      return false;
+      return null;
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('nash_token');
-    setToken(null);
-    setUser(null);
+  const logout = async () => {
+    try {
+      if (token) {
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }).catch(() => {});
+      }
+    } finally {
+      localStorage.removeItem('nash_token');
+      setToken(null);
+      setUser(null);
+    }
   };
 
   const isAdmin = !!(user && (user.role === 'super_admin' || user.role === 'admin' || user.role === 'event_manager' || user.role === 'content_manager'));

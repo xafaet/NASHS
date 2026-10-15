@@ -123,7 +123,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
     try {
       // 1. Initiate payment session on server
-      const initRes = await fetch('/api/payments/initiate', {
+      const initRes = await apiFetch('/api/payments/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -145,7 +145,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         : `TRX-${(selectedGateway || 'ONLINE').toUpperCase()}-${Date.now().toString().slice(-6)}`;
 
       if (isManualGateway) {
-        const manualRes = await fetch('/api/payments/manual-submit', {
+        const manualRes = await apiFetch('/api/payments/manual-submit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -171,7 +171,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         return;
       }
 
-      const verifyRes = await fetch('/api/payments/verify', {
+      const verifyRes = await apiFetch('/api/payments/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

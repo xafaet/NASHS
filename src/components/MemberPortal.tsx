@@ -163,12 +163,10 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ initialTab = 'pass' 
     setProfileMsg(null);
 
     try {
-      const token = localStorage.getItem('nash_token');
-      const res = await fetch('/api/member/profile', {
+      const res = await apiFetch('/api/member/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(profileData),
       });
@@ -184,9 +182,7 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ initialTab = 'pass' 
 
       // Reload linked registrations so pass info and summary stay perfectly synchronized
       try {
-        const regRes = await apiFetch('/api/member/registrations', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const regRes = await apiFetch('/api/member/registrations');
         if (regRes.ok) {
           const regData = await regRes.json();
           setRegistrations(regData || []);
@@ -254,12 +250,10 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ initialTab = 'pass' 
     setPasswordLoading(true);
     setPasswordMsg(null);
     try {
-      const token = localStorage.getItem('nash_token');
-      const res = await fetch('/api/auth/change-password', {
+      const res = await apiFetch('/api/auth/change-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           current_password: currentPassword,

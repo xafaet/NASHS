@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { NewsPost } from '../types';
+import { apiFetch } from '../utils/api';
 import { INITIAL_NEWS_POSTS } from '../constants/initialCmsData';
 
 interface NewsViewProps {
@@ -52,7 +53,7 @@ export const NewsView: React.FC<NewsViewProps> = ({ initialSlug, onNavigate }) =
       if (cat && cat !== 'All') params.append('category', cat);
       if (search.trim()) params.append('search', search.trim());
 
-      const res = await fetch(`/api/news?${params.toString()}`);
+      const res = await apiFetch(`/api/news?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setPosts(data.posts || []);
@@ -73,7 +74,7 @@ export const NewsView: React.FC<NewsViewProps> = ({ initialSlug, onNavigate }) =
   const loadArticle = async (idOrSlug: string) => {
     setArticleLoading(true);
     try {
-      const res = await fetch(`/api/news/${encodeURIComponent(idOrSlug)}`);
+      const res = await apiFetch(`/api/news/${encodeURIComponent(idOrSlug)}`);
       if (res.ok) {
         const data = await res.json();
         setActiveArticle(data);

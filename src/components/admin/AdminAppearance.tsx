@@ -21,6 +21,7 @@ import {
 import { HeaderConfig, TopBarConfig, NavigationMenuItem, FooterConfig } from '../../types';
 import { apiFetch } from '../../utils/api';
 import { AdminHero } from './AdminHero';
+import { AdminAnimations } from './AdminAnimations';
 
 interface Props {
   showToast: (msg: string) => void;
@@ -28,7 +29,7 @@ interface Props {
 }
 
 export const AdminAppearance: React.FC<Props> = ({ showToast, getHeaders }) => {
-  const [activeSection, setActiveSection] = useState<'menus' | 'hero' | 'topbar' | 'header' | 'footer'>('menus');
+  const [activeSection, setActiveSection] = useState<'menus' | 'hero' | 'topbar' | 'header' | 'footer' | 'animations'>('menus');
 
   const [topbar, setTopbar] = useState<TopBarConfig | null>(null);
   const [header, setHeader] = useState<HeaderConfig | null>(null);
@@ -229,7 +230,8 @@ export const AdminAppearance: React.FC<Props> = ({ showToast, getHeaders }) => {
       <div className="flex border-b border-slate-200 bg-white px-6 pt-3 rounded-t-2xl gap-2 overflow-x-auto">
         {[
           { id: 'menus', label: 'Navigation Menus', icon: Menu },
-          { id: 'hero', label: 'Hero Section', icon: Sparkles },
+          { id: 'animations', label: 'Appearance & Animations', icon: Sparkles },
+          { id: 'hero', label: 'Hero Section', icon: Layers },
           { id: 'topbar', label: 'Top Announcement Bar', icon: PanelTop },
           { id: 'header', label: 'Header Settings', icon: Layers },
           { id: 'footer', label: 'Footer Columns', icon: PanelBottom },
@@ -926,6 +928,13 @@ export const AdminAppearance: React.FC<Props> = ({ showToast, getHeaders }) => {
         {activeSection === 'hero' && (
           <div className="pt-2">
             <AdminHero showToast={showToast} getHeaders={getHeaders} />
+          </div>
+        )}
+
+        {/* 6. APPEARANCE & ANIMATIONS SECTION */}
+        {activeSection === 'animations' && (
+          <div className="pt-2">
+            <AdminAnimations showToast={showToast} getHeaders={getHeaders} />
           </div>
         )}
       </div>

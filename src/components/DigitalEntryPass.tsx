@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Printer, Download, ShieldCheck, Calendar, MapPin, Award, CheckCircle2, FileText, Loader2 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { apiFetch } from '../utils/api';
 
 interface DigitalEntryPassProps {
   tokenCode: string;
@@ -53,7 +54,7 @@ export const DigitalEntryPass: React.FC<DigitalEntryPassProps> = ({
   const handleDownload = async () => {
     try {
       setDownloadingPdf(true);
-      const res = await fetch(`/api/tokens/${encodeURIComponent(tokenCode)}/pdf`);
+      const res = await apiFetch(`/api/tokens/${encodeURIComponent(tokenCode)}/pdf`);
       if (res.ok) {
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);

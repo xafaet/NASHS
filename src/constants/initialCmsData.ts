@@ -923,3 +923,30 @@ export const INITIAL_CMS_PAGES: CMSPage[] = [
   }
 ];
 
+export const INITIAL_ANIMATION_CONFIG: import('../types').AnimationConfig = {
+  is_enabled: true,
+  preset: 'smooth',
+  duration: 0.5,
+  default_delay: 0,
+  stagger_delay: 0.08,
+  scroll_triggered: true,
+  hover_effects: true,
+  play_mode: 'once',
+  intensity: 'standard',
+  respect_reduced_motion: true,
+
+  enable_homepage: true,
+  enable_header_nav: true,
+  enable_hero_animations: true,
+  enable_stats_cards: true,
+  enable_notices_news: true,
+  enable_events_schedule: true,
+  enable_forms_inputs: true,
+  enable_member_portal: true,
+  enable_admin_interface: true,
+  enable_page_transitions: true,
+  enable_card_reveals: true,
+  enable_button_hover: true,
+  enable_counter_animations: true,
+};
+

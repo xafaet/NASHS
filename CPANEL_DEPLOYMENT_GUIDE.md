@@ -29,14 +29,11 @@ On standard cPanel accounts:
    - **Application mode**: `Production`
    - **Application root**: `/home/{username}/nash_alumni`
    - **Application URL**: `yourdomain.com` (or `alumni.yourdomain.com`)
-   - **Application startup file**: `server.ts` (or `dist/server.js`)
-3. Upload the project files to `/home/{username}/nash_alumni`.
-4. Click **Run NPM Install** or execute via SSH terminal:
-   ```bash
-   npm install --production
-   npm run build
-   ```
-5. Click **Restart Application**.
+   - **Application startup file**: `app.js` *(Note: Do NOT set to server.ts. Use app.js or server.js)*
+3. Upload and extract `nash_alumni_cpanel_production.zip` into `/home/{username}/nash_alumni`.
+4. Copy `.env.example` to `.env` in the application root, and set your database and `JWT_SECRET`.
+5. Click **Run NPM Install** (or execute `npm install --production` in terminal).
+6. Click **Restart Application**.
 
 ### Option B: Apache Static Client + PHP / MySQL API
 If deploying via standard PHP/Apache:
@@ -143,7 +140,43 @@ To automate payment reconciliation, token expirations, and background queue work
 
 ---
 
-## 8. Verification & Diagnostics
+## 8. How to Generate / Set JWT_SECRET on cPanel
+
+A secure 256-bit `JWT_SECRET` signs session tokens for attendees and administrators.
+
+### Method 1: Using cPanel Terminal / SSH (Fastest)
+Run either of these commands in your cPanel Terminal:
+```bash
+openssl rand -hex 32
+```
+or
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+Copy the 64-character output and paste it into your `.env` file:
+```env
+JWT_SECRET=4f8b9e2a3c7d1e5f8a0b2c4d6e8f1a3b5c7d9e0f2a4b6c8d0e1f3a5b7c9d1e3f
+```
+
+### Method 2: Without Terminal (cPanel File Manager)
+You can use any secure 32+ character random string or generate one using an online secure generator like [jwtsecret.com](https://jwtsecret.com) or [randomkeygen.com](https://randomkeygen.com) (select "CodeIgniter / 256-bit Key"). Paste it as your `JWT_SECRET` in `.env`.
+
+---
+
+## 9. Troubleshooting Common cPanel Issues
+
+### "An error occurred during installation of modules. The operation was performed, but check availability of application has failed... content type doesn't equal to content type after operation 'text/plain; charset=UTF-8'"
+**Root Cause**: When you click **Run NPM Install** in cPanel's *Setup Node.js App*, cPanel executes `npm install` and immediately pings your application. If **Application startup file** was set to `server.ts` or a missing file, Node.js crashes on startup with an unhandled exception (`Unknown file extension .ts`) and outputs a plain text crash trace (`text/plain`), triggering this warning.
+
+**Fix**:
+1. In cPanel **Setup Node.js App**, set **Application startup file** to `app.js` (or `server.js`).
+2. Ensure you have copied `.env.example` to `.env` in the application directory.
+3. Click **Save** in the Node.js App interface, then click **Restart Application**.
+4. The error will disappear and the application will start immediately.
+
+---
+
+## 10. Verification & Diagnostics
 
 To verify the database connection and schema on your cPanel server:
 ```bash

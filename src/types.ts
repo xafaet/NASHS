@@ -764,6 +764,8 @@ export interface RegistrationConfig {
   currency: string;
   event_id: string;
   max_capacity: number;
+  max_image_size_mb?: number;
+  image_accepted_formats?: string[];
   terms_en: string;
   terms_bn: string;
   instructions_en: string;
@@ -772,6 +774,57 @@ export interface RegistrationConfig {
   success_message_bn: string;
   t_shirt_size_options?: string[];
   fields: RegistrationFieldConfig[];
+}
+
+export interface RegistrationConfirmationConfig {
+  heading_en: string;
+  heading_bn: string;
+  subheading_en: string;
+  subheading_bn: string;
+  confirmation_message_en: string;
+  confirmation_message_bn: string;
+  supporting_text_en: string;
+  supporting_text_bn: string;
+  next_steps_title_en: string;
+  next_steps_title_bn: string;
+  next_steps_en: string;
+  next_steps_bn: string;
+  payment_instructions_title_en: string;
+  payment_instructions_title_bn: string;
+  payment_instructions_en: string;
+  payment_instructions_bn: string;
+  token_label_en: string;
+  token_label_bn: string;
+  token_help_text_en: string;
+  token_help_text_bn: string;
+  info_notes_title_en: string;
+  info_notes_title_bn: string;
+  info_notes_en: string;
+  info_notes_bn: string;
+  support_title_en: string;
+  support_title_bn: string;
+  support_phone: string;
+  support_email: string;
+  support_hours_en: string;
+  support_hours_bn: string;
+  support_location_en: string;
+  support_location_bn: string;
+  show_token_box: boolean;
+  show_download_slip_button: boolean;
+  show_print_button: boolean;
+  show_manual_payment_accounts: boolean;
+  show_payment_instructions: boolean;
+  show_confirm_payment_form: boolean;
+  show_info_notes: boolean;
+  show_support_contact: boolean;
+  show_return_button: boolean;
+  return_button_label_en: string;
+  return_button_label_bn: string;
+  return_button_destination: string;
+  verified_heading_en: string;
+  verified_heading_bn: string;
+  verified_message_en: string;
+  verified_message_bn: string;
 }
 
 export interface TokenFormatConfig {
@@ -884,6 +937,35 @@ export interface AuditLog {
   created_at: string;
 }
 
+export interface AnimationConfig {
+  is_enabled: boolean;
+  preset: 'minimal' | 'subtle' | 'smooth' | 'dynamic' | 'energetic' | 'disabled';
+  duration: number; // 0.2 to 1.5 seconds
+  default_delay: number; // 0 to 1.0 seconds
+  stagger_delay: number; // 0.04 to 0.4 seconds
+  scroll_triggered: boolean;
+  hover_effects: boolean;
+  play_mode: 'once' | 'repeat';
+  intensity: 'subtle' | 'standard' | 'high';
+  respect_reduced_motion: boolean;
+
+  // Granular page & component controls
+  enable_homepage: boolean;
+  enable_header_nav: boolean;
+  enable_hero_animations: boolean;
+  enable_stats_cards: boolean;
+  enable_notices_news: boolean;
+  enable_events_schedule: boolean;
+  enable_forms_inputs: boolean;
+  enable_member_portal: boolean;
+  enable_admin_interface: boolean;
+  enable_page_transitions: boolean;
+  enable_card_reveals: boolean;
+  enable_button_hover: boolean;
+  enable_counter_animations: boolean;
+  updated_at?: string;
+}
+
 export interface DashboardStats {
   total_registrations: number;
   paid_registrations: number;
@@ -896,4 +978,15 @@ export interface DashboardStats {
   remaining_capacity: number;
   recent_registrations: Registration[];
   batch_distribution: Array<{ batch: string; count: number; paid: number }>;
+}
+
+export interface SettingItem {
+  id?: number | string;
+  key: string;
+  value: string;
+  group?: string;
+  type?: 'string' | 'numeric' | 'boolean' | 'json' | string;
+  description?: string;
+  created_at?: string;
+  updated_at?: string;
 }

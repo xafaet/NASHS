@@ -24,6 +24,8 @@ import {
 import { useLanguage } from '../context/LanguageContext';
 import { apiFetch } from '../utils/api';
 import { ProgramScheduleSectionConfig, HeroConfig } from '../types';
+import { useMotionSettings } from '../context/MotionContext';
+import { motion } from 'motion/react';
 import {
   INITIAL_HERO_CONFIG,
   INITIAL_PROGRAM_SCHEDULE,
@@ -38,6 +40,7 @@ interface HomeViewProps {
 
 export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
   const { language, t } = useLanguage();
+  const { config: motionConfig, shouldAnimate, getTransition } = useMotionSettings();
 
   // Dynamic fee & event info with authoritative initial CMS values
   const [eventData, setEventData] = useState<any>({
@@ -376,28 +379,28 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
 
       {/* STATS STRIP */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-200/80 p-6 sm:p-8 -mt-12 relative z-20 grid grid-cols-2 lg:grid-cols-4 gap-6 text-center divide-y lg:divide-y-0 lg:divide-x divide-slate-100">
-          <div className="space-y-1">
-            <span className="text-3xl sm:text-4xl font-extrabold text-[#0f4d2a] font-mono">1942</span>
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-200/80 p-5 sm:p-8 -mt-8 sm:-mt-12 relative z-20 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 text-center">
+          <div className="space-y-1 p-2 sm:p-0">
+            <span className="text-2xl sm:text-4xl font-extrabold text-[#0f4d2a] font-mono block">1942</span>
+            <span className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider block">
               {language === 'bn' ? 'প্রতিষ্ঠা বছর' : 'Foundation Year'}
             </span>
           </div>
-          <div className="space-y-1 pt-4 lg:pt-0">
-            <span className="text-3xl sm:text-4xl font-extrabold text-amber-600 font-mono">85</span>
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+          <div className="space-y-1 p-2 sm:p-0 border-l border-slate-100 lg:border-l">
+            <span className="text-2xl sm:text-4xl font-extrabold text-amber-600 font-mono block">85</span>
+            <span className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider block">
               {language === 'bn' ? 'বছরের গৌরব' : 'Years of Legacy'}
             </span>
           </div>
-          <div className="space-y-1 pt-4 lg:pt-0">
-            <span className="text-3xl sm:text-4xl font-extrabold text-[#0f4d2a] font-mono">84+</span>
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+          <div className="space-y-1 p-2 sm:p-0 border-t sm:border-t-0 lg:border-l border-slate-100 pt-3 sm:pt-0">
+            <span className="text-2xl sm:text-4xl font-extrabold text-[#0f4d2a] font-mono block">84+</span>
+            <span className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider block">
               {language === 'bn' ? 'ঐতিহাসিক ব্যাচ' : 'Registered Batches'}
             </span>
           </div>
-          <div className="space-y-1 pt-4 lg:pt-0">
-            <span className="text-3xl sm:text-4xl font-extrabold text-amber-600 font-mono">5,000+</span>
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+          <div className="space-y-1 p-2 sm:p-0 border-t sm:border-t-0 border-l border-slate-100 pt-3 sm:pt-0">
+            <span className="text-2xl sm:text-4xl font-extrabold text-amber-600 font-mono block">5,000+</span>
+            <span className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider block">
               {language === 'bn' ? 'প্রত্যাশিত উপস্থিতি' : 'Expected Attendees'}
             </span>
           </div>
@@ -427,8 +430,23 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
             {(programSchedule.items || [])
               .filter(item => item.is_active !== false)
               .sort((a, b) => (a.order || 0) - (b.order || 0))
-              .map(item => (
-                <div key={item.id} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3 hover:shadow-md transition flex flex-col justify-between">
+              .map((item, idx) => (
+                <div
+                  key={item.id}
+                  style={
+                    shouldAnimate && motionConfig.enable_card_reveals
+                      ? {
+                          transitionDuration: `${motionConfig.duration}s`,
+                          transitionDelay: `${idx * motionConfig.stagger_delay}s`,
+                        }
+                      : undefined
+                  }
+                  className={`bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3 transition-all flex flex-col justify-between ${
+                    shouldAnimate && motionConfig.enable_button_hover
+                      ? 'hover:shadow-md hover:-translate-y-1'
+                      : 'hover:shadow-md'
+                  }`}
+                >
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-mono font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200">
@@ -472,8 +490,23 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {notices.map(n => (
-                <div key={n.id} className="bg-white p-5 rounded-2xl border border-emerald-100 shadow-2xs space-y-2">
+              {notices.map((n, idx) => (
+                <div
+                  key={n.id}
+                  style={
+                    shouldAnimate && motionConfig.enable_card_reveals
+                      ? {
+                          transitionDuration: `${motionConfig.duration}s`,
+                          transitionDelay: `${idx * motionConfig.stagger_delay}s`,
+                        }
+                      : undefined
+                  }
+                  className={`bg-white p-5 rounded-2xl border border-emerald-100 shadow-2xs space-y-2 transition-all ${
+                    shouldAnimate && motionConfig.enable_button_hover
+                      ? 'hover:shadow-md hover:-translate-y-0.5'
+                      : ''
+                  }`}
+                >
                   <span className="text-[11px] font-mono text-emerald-700 font-bold block">
                     {n.publish_date}
                   </span>

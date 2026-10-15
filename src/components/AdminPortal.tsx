@@ -37,6 +37,9 @@ import {
   Server,
   Sparkles,
   Mail,
+  Database,
+  Menu,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -71,12 +74,16 @@ import { AdminDatabase } from './admin/AdminDatabase';
 import { AdminGateScanner } from './admin/AdminGateScanner';
 import { AdminNews } from './admin/AdminNews';
 import { AdminMailSettings } from './admin/AdminMailSettings';
+import { AdminRegistrationConfirmation } from './admin/AdminRegistrationConfirmation';
+import { AdminSettingsTable } from './admin/AdminSettingsTable';
 import { apiFetch } from '../utils/api';
 
 type AdminTab =
   | 'dashboard'
   | 'registrations'
   | 'registration_fields'
+  | 'registration_confirmation'
+  | 'settings_table'
   | 'schedule'
   | 'payments'
   | 'tokens'
@@ -105,6 +112,12 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
   const { user, logout } = useAuth();
   const { language, t } = useLanguage();
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  const handleSelectTab = (tab: AdminTab) => {
+    setActiveTab(tab);
+    setMobileNavOpen(false);
+  };
 
   // State Containers
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -428,51 +441,102 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans text-slate-900">
       {/* WordPress-style Top Admin Bar */}
-      <header className="bg-slate-900 text-slate-200 px-4 py-2.5 flex items-center justify-between text-xs border-b border-slate-800 z-20">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 font-bold text-white text-sm">
-            <School className="w-4 h-4 text-emerald-400" />
-            <span>NASH 85th Admin</span>
+      <header className="bg-slate-900 text-slate-200 px-3 sm:px-4 py-2.5 flex items-center justify-between text-xs border-b border-slate-800 z-30 sticky top-0">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+          {/* Mobile hamburger menu toggle */}
+          <button
+            type="button"
+            onClick={() => setMobileNavOpen(!mobileNavOpen)}
+            aria-label="Toggle navigation drawer"
+            aria-expanded={mobileNavOpen}
+            className="md:hidden p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+          >
+            {mobileNavOpen ? <X className="w-5 h-5 text-amber-300" /> : <Menu className="w-5 h-5 text-emerald-400" />}
+          </button>
+
+          <div className="flex items-center gap-2 font-bold text-white text-sm shrink-0">
+            <School className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span className="hidden xs:inline">NASH 85th</span>
+            <span>Admin</span>
           </div>
+
           {onExit && (
             <button
               onClick={onExit}
-              className="flex items-center gap-1 text-slate-400 hover:text-white transition cursor-pointer"
+              className="hidden sm:flex items-center gap-1 text-slate-400 hover:text-white transition cursor-pointer text-xs"
             >
-              <ExternalLink className="w-3.5 h-3.5" />
+              <ExternalLink className="w-3.5 h-3.5 shrink-0" />
               <span>{language === 'bn' ? 'ওয়েবসাইটে ফিরে যান' : 'View Public Site'}</span>
             </button>
           )}
         </div>
 
-        <div className="flex items-center gap-4">
-          <span className="text-emerald-400 font-medium">
-            {user?.name} ({user?.role})
+        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+          {onExit && (
+            <button
+              onClick={onExit}
+              className="sm:hidden p-1.5 text-slate-400 hover:text-white transition cursor-pointer"
+              title={language === 'bn' ? 'ওয়েবসাইটে ফিরে যান' : 'View Public Site'}
+            >
+              <ExternalLink className="w-4 h-4 text-emerald-400" />
+            </button>
+          )}
+          <span className="text-emerald-400 font-medium truncate max-w-[130px] sm:max-w-xs text-xs">
+            {user?.name} <span className="opacity-75 hidden sm:inline">({user?.role})</span>
           </span>
           <button
             onClick={logout}
-            className="flex items-center gap-1 text-slate-400 hover:text-red-400 transition cursor-pointer"
+            className="flex items-center gap-1 text-slate-400 hover:text-red-400 transition cursor-pointer px-1 py-1 rounded"
+            title="Logout"
           >
             <LogOut className="w-3.5 h-3.5" />
-            <span>Logout</span>
+            <span className="hidden xs:inline">Logout</span>
           </button>
         </div>
       </header>
 
       {/* Main Admin Layout */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* WordPress-style Left Sidebar */}
-        <aside className="w-64 bg-slate-800 text-slate-300 flex flex-col shrink-0 border-r border-slate-700">
-          <div className="p-4 border-b border-slate-700/80">
-            <span className="text-xs uppercase tracking-wider text-slate-400 font-bold block">
-              Management Portal
-            </span>
-            <span className="text-sm font-semibold text-white">85th Anniversary CMS</span>
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Mobile Backdrop */}
+        {mobileNavOpen && (
+          <div
+            className="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-xs transition-opacity duration-200"
+            onClick={() => setMobileNavOpen(false)}
+            aria-hidden="true"
+          />
+        )}
+
+        {/* Sidebar: Mobile drawer (<md) + Static sidebar (>=md) */}
+        <aside
+          className={`
+            fixed md:static inset-y-0 left-0 z-50 md:z-auto
+            w-72 md:w-64 max-w-[85vw] md:max-w-none
+            bg-slate-800 text-slate-300 flex flex-col shrink-0 border-r border-slate-700
+            transform transition-transform duration-200 ease-in-out
+            ${mobileNavOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0'}
+          `}
+        >
+          <div className="p-4 border-b border-slate-700/80 flex items-center justify-between">
+            <div>
+              <span className="text-xs uppercase tracking-wider text-slate-400 font-bold block">
+                Management Portal
+              </span>
+              <span className="text-sm font-semibold text-white">85th Anniversary CMS</span>
+            </div>
+            {/* Close button inside mobile drawer */}
+            <button
+              type="button"
+              onClick={() => setMobileNavOpen(false)}
+              aria-label="Close navigation menu"
+              className="md:hidden p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
           <nav className="p-3 space-y-1 overflow-y-auto flex-1 text-sm">
             <button
-              onClick={() => setActiveTab('dashboard')}
+              onClick={() => handleSelectTab('dashboard')}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition cursor-pointer ${
                 activeTab === 'dashboard' ? 'bg-[#0f4d2a] text-white shadow' : 'hover:bg-slate-700 text-slate-300'
               }`}
@@ -486,7 +550,7 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
             </div>
 
             <button
-              onClick={() => setActiveTab('pages')}
+              onClick={() => handleSelectTab('pages')}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition cursor-pointer ${
                 activeTab === 'pages' ? 'bg-[#0f4d2a] text-white shadow' : 'hover:bg-slate-700 text-slate-300'
               }`}
@@ -496,7 +560,7 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
             </button>
 
             <button
-              onClick={() => setActiveTab('schedule')}
+              onClick={() => handleSelectTab('schedule')}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition cursor-pointer ${
                 activeTab === 'schedule' ? 'bg-[#0f4d2a] text-white shadow' : 'hover:bg-slate-700 text-slate-300'
               }`}
@@ -506,7 +570,7 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
             </button>
 
             <button
-              onClick={() => setActiveTab('appearance')}
+              onClick={() => handleSelectTab('appearance')}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition cursor-pointer ${
                 activeTab === 'appearance' ? 'bg-[#0f4d2a] text-white shadow' : 'hover:bg-slate-700 text-slate-300'
               }`}
@@ -516,7 +580,7 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
             </button>
 
             <button
-              onClick={() => setActiveTab('hero')}
+              onClick={() => handleSelectTab('hero')}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition cursor-pointer ${
                 activeTab === 'hero' ? 'bg-[#0f4d2a] text-white shadow' : 'hover:bg-slate-700 text-slate-300'
               }`}
@@ -526,7 +590,7 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
             </button>
 
             <button
-              onClick={() => setActiveTab('global_settings')}
+              onClick={() => handleSelectTab('global_settings')}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition cursor-pointer ${
                 activeTab === 'global_settings' ? 'bg-[#0f4d2a] text-white shadow' : 'hover:bg-slate-700 text-slate-300'
               }`}
@@ -536,7 +600,7 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
             </button>
 
             <button
-              onClick={() => setActiveTab('faq')}
+              onClick={() => handleSelectTab('faq')}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition cursor-pointer ${
                 activeTab === 'faq' ? 'bg-[#0f4d2a] text-white shadow' : 'hover:bg-slate-700 text-slate-300'
               }`}
@@ -546,7 +610,7 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
             </button>
 
             <button
-              onClick={() => setActiveTab('school')}
+              onClick={() => handleSelectTab('school')}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition cursor-pointer ${
                 activeTab === 'school' ? 'bg-[#0f4d2a] text-white shadow' : 'hover:bg-slate-700 text-slate-300'
               }`}
@@ -556,7 +620,7 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
             </button>
 
             <button
-              onClick={() => setActiveTab('committee')}
+              onClick={() => handleSelectTab('committee')}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition cursor-pointer ${
                 activeTab === 'committee' ? 'bg-[#0f4d2a] text-white shadow' : 'hover:bg-slate-700 text-slate-300'
               }`}
@@ -566,7 +630,7 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
             </button>
 
             <button
-              onClick={() => setActiveTab('notices')}
+              onClick={() => handleSelectTab('notices')}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition cursor-pointer ${
                 activeTab === 'notices' ? 'bg-[#0f4d2a] text-white shadow' : 'hover:bg-slate-700 text-slate-300'
               }`}
@@ -576,7 +640,7 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
             </button>
 
             <button
-              onClick={() => setActiveTab('news')}
+              onClick={() => handleSelectTab('news')}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition cursor-pointer ${
                 activeTab === 'news' ? 'bg-[#0f4d2a] text-white shadow' : 'hover:bg-slate-700 text-slate-300'
               }`}
@@ -586,7 +650,7 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
             </button>
 
             <button
-              onClick={() => setActiveTab('media')}
+              onClick={() => handleSelectTab('media')}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition cursor-pointer ${
                 activeTab === 'media' ? 'bg-[#0f4d2a] text-white shadow' : 'hover:bg-slate-700 text-slate-300'
               }`}
@@ -600,7 +664,7 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
             </div>
 
             <button
-              onClick={() => setActiveTab('registrations')}
+              onClick={() => handleSelectTab('registrations')}
               className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg font-medium transition cursor-pointer ${
                 activeTab === 'registrations' ? 'bg-[#0f4d2a] text-white shadow' : 'hover:bg-slate-700 text-slate-300'
               }`}
@@ -615,7 +679,7 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
             </button>
 
             <button
-              onClick={() => setActiveTab('registration_fields')}
+              onClick={() => handleSelectTab('registration_fields')}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition cursor-pointer ${
                 activeTab === 'registration_fields' ? 'bg-[#0f4d2a] text-white shadow' : 'hover:bg-slate-700 text-slate-300'
               }`}
@@ -625,7 +689,27 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
             </button>
 
             <button
-              onClick={() => setActiveTab('checkin')}
+              onClick={() => handleSelectTab('registration_confirmation')}
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition cursor-pointer ${
+                activeTab === 'registration_confirmation' ? 'bg-[#0f4d2a] text-white shadow' : 'hover:bg-slate-700 text-slate-300'
+              }`}
+            >
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <span>Confirmation Page CMS</span>
+            </button>
+
+            <button
+              onClick={() => handleSelectTab('settings_table')}
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition cursor-pointer ${
+                activeTab === 'settings_table' ? 'bg-[#0f4d2a] text-white shadow' : 'hover:bg-slate-700 text-slate-300'
+              }`}
+            >
+              <Database className="w-4 h-4 text-amber-400" />
+              <span>Settings Table CMS</span>
+            </button>
+
+            <button
+              onClick={() => handleSelectTab('checkin')}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition cursor-pointer ${
                 activeTab === 'checkin' ? 'bg-[#0f4d2a] text-white shadow' : 'hover:bg-slate-700 text-slate-300'
               }`}
@@ -635,7 +719,7 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
             </button>
 
             <button
-              onClick={() => setActiveTab('offline_centers')}
+              onClick={() => handleSelectTab('offline_centers')}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition cursor-pointer ${
                 activeTab === 'offline_centers' ? 'bg-[#0f4d2a] text-white shadow' : 'hover:bg-slate-700 text-slate-300'
               }`}
@@ -645,7 +729,7 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
             </button>
 
             <button
-              onClick={() => setActiveTab('gateways')}
+              onClick={() => handleSelectTab('gateways')}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition cursor-pointer ${
                 activeTab === 'gateways' ? 'bg-[#0f4d2a] text-white shadow' : 'hover:bg-slate-700 text-slate-300'
               }`}
@@ -659,7 +743,7 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
             </div>
 
             <button
-              onClick={() => setActiveTab('users')}
+              onClick={() => handleSelectTab('users')}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition cursor-pointer ${
                 activeTab === 'users' ? 'bg-[#0f4d2a] text-white shadow' : 'hover:bg-slate-700 text-slate-300'
               }`}
@@ -669,7 +753,7 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
             </button>
 
             <button
-              onClick={() => setActiveTab('rbac')}
+              onClick={() => handleSelectTab('rbac')}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition cursor-pointer ${
                 activeTab === 'rbac' ? 'bg-[#0f4d2a] text-white shadow' : 'hover:bg-slate-700 text-slate-300'
               }`}
@@ -679,7 +763,7 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
             </button>
 
             <button
-              onClick={() => setActiveTab('database')}
+              onClick={() => handleSelectTab('database')}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition cursor-pointer ${
                 activeTab === 'database' ? 'bg-[#0f4d2a] text-white shadow' : 'hover:bg-slate-700 text-slate-300'
               }`}
@@ -689,7 +773,7 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
             </button>
 
             <button
-              onClick={() => setActiveTab('mail_settings')}
+              onClick={() => handleSelectTab('mail_settings')}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition cursor-pointer ${
                 activeTab === 'mail_settings' ? 'bg-[#0f4d2a] text-white shadow' : 'hover:bg-slate-700 text-slate-300'
               }`}
@@ -699,7 +783,7 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
             </button>
 
             <button
-              onClick={() => setActiveTab('settings')}
+              onClick={() => handleSelectTab('settings')}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition cursor-pointer ${
                 activeTab === 'settings' ? 'bg-[#0f4d2a] text-white shadow' : 'hover:bg-slate-700 text-slate-300'
               }`}
@@ -709,7 +793,7 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
             </button>
 
             <button
-              onClick={() => setActiveTab('audit')}
+              onClick={() => handleSelectTab('audit')}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition cursor-pointer ${
                 activeTab === 'audit' ? 'bg-[#0f4d2a] text-white shadow' : 'hover:bg-slate-700 text-slate-300'
               }`}
@@ -721,7 +805,7 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
         </aside>
 
         {/* Content Area */}
-        <main className="flex-1 overflow-y-auto p-6 sm:p-8">
+        <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-3.5 sm:p-6 lg:p-8">
           {/* Toast Notification */}
           {toastMessage && (
             <div className="mb-6 p-4 bg-emerald-800 text-white rounded-xl shadow-lg flex items-center justify-between animate-in fade-in duration-200">
@@ -913,6 +997,27 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
                 <p className="text-slate-500 text-sm mt-0.5">
                   Manage registration fee, event dates, currency, and payment gateway simulation mode.
                 </p>
+              </div>
+
+              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                <div className="flex items-center gap-3">
+                  <Database className="w-5 h-5 text-emerald-700 shrink-0" />
+                  <div>
+                    <h4 className="text-xs font-bold text-emerald-950">
+                      Database `settings` Table & Registration Image Size
+                    </h4>
+                    <p className="text-[11px] text-emerald-800">
+                      Configure `registration_image_max_size` (1.5 MB default) and all raw database settings rows.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('settings_table')}
+                  className="px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition shrink-0 cursor-pointer self-start sm:self-auto"
+                >
+                  Open Settings Table CMS →
+                </button>
               </div>
 
               <form onSubmit={handleSaveSettings} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6">
@@ -1213,6 +1318,14 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
 
           {activeTab === 'registration_fields' && (
             <AdminRegistrationForm onNotify={showToast} getHeaders={getHeaders} />
+          )}
+
+          {activeTab === 'registration_confirmation' && (
+            <AdminRegistrationConfirmation onNotify={showToast} getHeaders={getHeaders} />
+          )}
+
+          {activeTab === 'settings_table' && (
+            <AdminSettingsTable onNotify={showToast} getHeaders={getHeaders} />
           )}
 
           {activeTab === 'database' && (

@@ -1,17 +1,19 @@
 import express, { Request, Response } from 'express';
 import path from 'path';
+import fs from 'fs';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import { createServer as createViteServer } from 'vite';
 import { db, portableDb } from './server/db';
-import { initialProgramSchedule, initialRegistrationFields, initialTokenFormatConfig, initialHeroConfig } from './server/seedData';
+import { initialProgramSchedule, initialRegistrationFields, initialTokenFormatConfig, initialHeroConfig, initialRegistrationConfirmationConfig } from './server/seedData';
 import { AuthService, authenticate, requireRole, requirePermission, AuthRequest } from './server/auth';
 import { BatchService } from './server/services/batchService';
 import { PaymentService, PaymentManager } from './server/services/paymentService';
 import { PaymentController } from './server/controllers/paymentController';
 import { TokenService } from './server/services/tokenService';
 import { InstallerService } from './server/installer';
+import { DatabaseReadinessService } from './server/services/databaseReadinessService';
 import {
   Registration,
   User,
@@ -25,6 +27,7 @@ import {
   FAQItem,
   PaymentGatewayConfig,
   RegistrationConfig,
+  RegistrationConfirmationConfig,
   TokenFormatConfig,
   BatchConfig,
   CustomRole,
@@ -36,16 +39,23 @@ import PDFDocument from 'pdfkit';
 import QRCode from 'qrcode';
 import { generateEntryPassPDF } from './server/services/pdfService';
 import { MailService } from './server/services/mailService';
+import { FileStorageService } from './server/services/fileStorageService';
 
 dotenv.config();
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 async function startServer() {
   const app = express();
 
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
+  // Configure body limit to handle image uploads
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+  // Ensure persistent file upload directories exist and mount static route
+  FileStorageService.ensureUploadDirs();
+  const uploadsStaticPath = path.join(process.cwd(), 'public', 'uploads');
+  app.use('/uploads', express.static(uploadsStaticPath));
 
   // Request audit logging
   app.use((req, res, next) => {
@@ -66,10 +76,82 @@ async function startServer() {
   });
 
   // ==========================================
+  // SYSTEM & DATABASE READINESS ENDPOINTS
+  // ==========================================
+  app.get('/api/system/db-status', async (req, res) => {
+    try {
+      const report = await DatabaseReadinessService.checkReadiness(false);
+      res.json(report);
+    } catch (err: any) {
+      res.status(503).json({
+        state: 'DATABASE_UNAVAILABLE',
+        error: DatabaseReadinessService.sanitizeError(err.message),
+      });
+    }
+  });
+
+  app.get('/api/system/test-db', async (req, res) => {
+    try {
+      const report = await DatabaseReadinessService.checkReadiness(true);
+      res.json(report);
+    } catch (err: any) {
+      res.status(503).json({
+        state: 'DATABASE_UNAVAILABLE',
+        error: DatabaseReadinessService.sanitizeError(err.message),
+      });
+    }
+  });
+
+  app.post('/api/system/switch-driver', async (req, res) => {
+    try {
+      const { driver, credentials } = req.body;
+      if (!['local', 'mysql', 'supabase', 'postgres'].includes(driver)) {
+        return res.status(400).json({ success: false, message: 'Invalid database driver.' });
+      }
+      const installedPath = path.join(process.cwd(), 'data', 'installed.json');
+      if (fs.existsSync(installedPath)) {
+        try {
+          const content = JSON.parse(fs.readFileSync(installedPath, 'utf-8'));
+          content.driver = driver;
+          fs.writeFileSync(installedPath, JSON.stringify(content, null, 2), 'utf-8');
+        } catch {}
+      }
+      if (driver === 'local') {
+        process.env.DB_CONNECTION = 'local';
+      } else if (driver === 'mysql' && credentials) {
+        process.env.DB_CONNECTION = 'mysql';
+        process.env.DB_HOST = credentials.host || 'localhost';
+        process.env.DB_PORT = String(credentials.port || 3306);
+        process.env.DB_DATABASE = credentials.database || 'nash_alumni';
+        process.env.DB_USERNAME = credentials.username || 'root';
+        if (credentials.password !== undefined) process.env.DB_PASSWORD = credentials.password;
+      } else if ((driver === 'supabase' || driver === 'postgres') && credentials) {
+        process.env.DB_CONNECTION = 'supabase';
+        if (credentials.connectionString) process.env.DATABASE_URL = credentials.connectionString;
+      }
+      await portableDb.reconnect();
+      const report = await DatabaseReadinessService.checkReadiness(true);
+      res.json({ success: true, report });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  });
+
+  // ==========================================
   // INSTALLATION & DATABASE SETUP WIZARD
   // ==========================================
-  app.get('/api/setup/status', (req, res) => {
-    res.json(InstallerService.getStatus());
+  app.get('/api/setup/status', async (req, res) => {
+    const report = await DatabaseReadinessService.checkReadiness(false);
+    const installerStatus = InstallerService.getStatus();
+    res.json({
+      ...installerStatus,
+      state: report.state,
+      database_connected: report.database_connected,
+      schema_valid: report.schema_valid,
+      driver: report.driver,
+      host: report.host_masked,
+      db_error: report.sanitized_error,
+    });
   });
 
   app.post('/api/setup/test-connection', async (req, res) => {
@@ -105,27 +187,16 @@ async function startServer() {
         });
       }
       const result = await InstallerService.install(req.body);
+      // Force refresh of readiness cache after installation
+      await DatabaseReadinessService.checkReadiness(true);
       res.json(result);
     } catch (err: any) {
       res.status(400).json({ success: false, message: err.message || 'Installation failed' });
     }
   });
 
-  // Installation Gate Middleware:
-  // If application is not installed, block non-setup API calls so wizard cannot be bypassed
-  app.use((req, res, next) => {
-    if (req.path.startsWith('/api') && !req.path.startsWith('/api/setup') && req.path !== '/api/health') {
-      const status = InstallerService.getStatus();
-      if (!status.is_installed) {
-        return res.status(503).json({
-          error: 'APP_NOT_INSTALLED',
-          message: 'The application is not yet installed. Please complete the setup wizard.',
-          setup_url: '/setup',
-        });
-      }
-    }
-    next();
-  });
+  // Centralized Mandatory Database Readiness & Application State Gate Middleware
+  app.use(DatabaseReadinessService.createMiddleware());
 
   // ==========================================
   // AUTHENTICATION & IDENTITY
@@ -154,35 +225,20 @@ async function startServer() {
         return res.status(403).json({ success: false, message: `Account is ${user.status}. Please contact the alumni secretariat.` });
       }
 
-      // Verify Password
+      // Verify Password strictly via standard bcrypt
+      if (!user.password_hash) {
+        return res.status(401).json({ success: false, message: 'Password has not been initialized for this account.' });
+      }
+
       let isPasswordValid = false;
-      const commonDevPasswords = ['admin123', 'Admin@123', 'password', '123456', 'nash2027', 'admin@123'];
-      if (user.password_hash) {
-        if (user.password_hash.startsWith('$2a$') || user.password_hash.startsWith('$2b$')) {
-          isPasswordValid = bcrypt.compareSync(pass, user.password_hash);
-          if (!isPasswordValid && commonDevPasswords.includes(pass)) {
-            // Reconcile and allow standard dev password
-            isPasswordValid = true;
-            const upgradedHash = bcrypt.hashSync(pass, 10);
-            await db.updateUserPassword(user.id, upgradedHash);
-          }
-        } else if (user.password_hash === pass) {
-          isPasswordValid = true;
-          // Upgrade plain-text password to bcrypt hash
-          const upgradedHash = bcrypt.hashSync(pass, 10);
-          await db.updateUserPassword(user.id, upgradedHash);
-        } else if (commonDevPasswords.includes(pass)) {
-          isPasswordValid = true;
-          const upgradedHash = bcrypt.hashSync(pass, 10);
-          await db.updateUserPassword(user.id, upgradedHash);
-        }
+      if (user.password_hash.startsWith('$2a$') || user.password_hash.startsWith('$2b$')) {
+        isPasswordValid = bcrypt.compareSync(pass, user.password_hash);
       } else {
-        // First-time or demo user without a password_hash
-        // Accept default passwords: admin123, password, 123456, nash2027, or any entered password for initial setup
-        if (commonDevPasswords.includes(pass) || pass.length >= 6) {
-          isPasswordValid = true;
-          const initialHash = bcrypt.hashSync(pass, 10);
-          await db.updateUserPassword(user.id, initialHash);
+        // Migration fallback for legacy hash
+        isPasswordValid = (user.password_hash === pass);
+        if (isPasswordValid) {
+          const upgradedHash = bcrypt.hashSync(pass, 10);
+          await db.updateUserPassword(user.id, upgradedHash);
         }
       }
 
@@ -408,6 +464,13 @@ async function startServer() {
     res.json({ user: req.user });
   });
 
+  app.post('/api/auth/logout', authenticate, (req: AuthRequest, res) => {
+    if (req.user) {
+      db.logAudit(req.user.name, req.user.email, 'LOGOUT', 'Auth', `User logged out successfully (${req.user.role})`);
+    }
+    res.json({ success: true, message: 'Logged out successfully.' });
+  });
+
   // ==========================================
   // GLOBAL SETTINGS & APPEARANCE (CMS)
   // ==========================================
@@ -456,6 +519,111 @@ async function startServer() {
       `Updated registration settings: Fee ৳${req.body.registration_fee ?? legacy.registration_fee ?? 1000}, Open: ${req.body.registration_open ?? legacy.registration_open ?? true}`
     );
     res.json(updated);
+  });
+
+  // ==========================================
+  // DATABASE SETTINGS TABLE (MIGRATION & CMS)
+  // ==========================================
+  app.get('/api/settings/table', (req, res) => {
+    res.json({
+      success: true,
+      settings: db.getAllSettings(),
+    });
+  });
+
+  app.get('/api/settings/item/:key', (req, res) => {
+    const val = db.getSetting(req.params.key);
+    if (val === null) {
+      return res.status(404).json({ success: false, message: `Setting "${req.params.key}" not found in settings table.` });
+    }
+    const item = db.getAllSettings().find(s => s.key === req.params.key);
+    res.json({ success: true, key: req.params.key, value: val, item });
+  });
+
+  app.put('/api/admin/settings/item/:key', authenticate, requireRole(['super_admin', 'admin']), async (req: AuthRequest, res) => {
+    try {
+      const { key } = req.params;
+      const { value, group, description } = req.body;
+
+      if (value === undefined || value === null) {
+        return res.status(400).json({ success: false, message: 'Setting value is required.' });
+      }
+
+      const valString = String(value).trim();
+
+      // Specific validation for registration_image_max_size
+      if (key === 'registration_image_max_size') {
+        const num = parseFloat(valString);
+        if (isNaN(num) || num < 0.1 || num > 25) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid registration image max size. Please specify a numeric value between 0.1 MB and 25 MB.',
+          });
+        }
+      }
+
+      const updatedItem = await db.setSetting(key, valString, group, description);
+      db.logAudit(
+        req.user?.name || 'Admin',
+        req.user?.email || '',
+        'UPDATE_SETTING_TABLE',
+        'SettingsTable',
+        `Updated settings table key "${key}" to "${valString}" (${group || 'general'})`
+      );
+
+      res.json({
+        success: true,
+        message: `Setting "${key}" updated successfully in database settings table.`,
+        setting: updatedItem,
+        settings: db.getAllSettings(),
+      });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: 'Failed to update setting: ' + err.message });
+    }
+  });
+
+  app.put('/api/admin/settings/registration-image-size', authenticate, requireRole(['super_admin', 'admin']), async (req: AuthRequest, res) => {
+    try {
+      const rawVal = req.body.size_mb ?? req.body.value ?? req.body.max_image_size_mb;
+      const num = parseFloat(rawVal);
+      if (isNaN(num) || num < 0.1 || num > 25) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid registration image size limit. Value must be a valid number between 0.1 MB and 25 MB.',
+        });
+      }
+
+      const valString = String(num);
+      const updatedItem = await db.setSetting(
+        'registration_image_max_size',
+        valString,
+        'registration',
+        'Maximum allowed registration photograph file size in Megabytes (MB). Default: 1.5MB.',
+        'numeric'
+      );
+
+      // Keep registration_config synchronized
+      const regConfig = db.get('registration_config') || ({} as any);
+      regConfig.max_image_size_mb = num;
+      db.set('registration_config', regConfig);
+
+      db.logAudit(
+        req.user?.name || 'Admin',
+        req.user?.email || '',
+        'UPDATE_IMAGE_MAX_SIZE',
+        'SettingsTable',
+        `Updated registration_image_max_size to ${num} MB in settings table`
+      );
+
+      res.json({
+        success: true,
+        message: `Registration image size limit updated to ${num} MB successfully in database settings table.`,
+        setting: updatedItem,
+        registration_image_max_size: num,
+      });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: 'Failed to update image size setting: ' + err.message });
+    }
   });
 
   app.get('/api/global-settings', (req, res) => {
@@ -680,6 +848,127 @@ async function startServer() {
     const updated = { ...current, ...req.body };
     db.set('footer_config', updated);
     db.logAudit(req.user?.name || 'Admin', req.user?.email || '', 'UPDATE_FOOTER', 'Appearance', 'Updated footer configuration and columns');
+    res.json(updated);
+  });
+
+  // Appearance & Framer Motion Animations Configuration
+  app.get('/api/appearance/animations', (req, res) => {
+    const defaultAnimations = {
+      is_enabled: true,
+      preset: 'smooth',
+      duration: 0.5,
+      default_delay: 0,
+      stagger_delay: 0.08,
+      scroll_triggered: true,
+      hover_effects: true,
+      play_mode: 'once',
+      intensity: 'standard',
+      respect_reduced_motion: true,
+
+      enable_homepage: true,
+      enable_header_nav: true,
+      enable_hero_animations: true,
+      enable_stats_cards: true,
+      enable_notices_news: true,
+      enable_events_schedule: true,
+      enable_forms_inputs: true,
+      enable_member_portal: true,
+      enable_admin_interface: true,
+      enable_page_transitions: true,
+      enable_card_reveals: true,
+      enable_button_hover: true,
+      enable_counter_animations: true,
+      updated_at: new Date().toISOString(),
+    };
+    const animConfig = db.get('animations_config') || defaultAnimations;
+    res.json(animConfig);
+  });
+
+  app.put('/api/admin/appearance/animations', authenticate, requireRole(['super_admin', 'admin', 'content_manager']), (req: AuthRequest, res) => {
+    const current: any = db.get('animations_config') || {
+      is_enabled: true,
+      preset: 'smooth',
+      duration: 0.5,
+      default_delay: 0,
+      stagger_delay: 0.08,
+      scroll_triggered: true,
+      hover_effects: true,
+      play_mode: 'once',
+      intensity: 'standard',
+      respect_reduced_motion: true,
+
+      enable_homepage: true,
+      enable_header_nav: true,
+      enable_hero_animations: true,
+      enable_stats_cards: true,
+      enable_notices_news: true,
+      enable_events_schedule: true,
+      enable_forms_inputs: true,
+      enable_member_portal: true,
+      enable_admin_interface: true,
+      enable_page_transitions: true,
+      enable_card_reveals: true,
+      enable_button_hover: true,
+      enable_counter_animations: true,
+    };
+
+    // Strict allowlist validation
+    const allowedPresets = ['minimal', 'subtle', 'smooth', 'dynamic', 'energetic', 'disabled'];
+    const preset = allowedPresets.includes(req.body.preset) ? req.body.preset : current.preset;
+
+    const rawDuration = parseFloat(req.body.duration);
+    const duration = !isNaN(rawDuration) && rawDuration >= 0.1 && rawDuration <= 2.0 ? rawDuration : current.duration;
+
+    const rawDefaultDelay = parseFloat(req.body.default_delay);
+    const default_delay = !isNaN(rawDefaultDelay) && rawDefaultDelay >= 0 && rawDefaultDelay <= 1.5 ? rawDefaultDelay : (current.default_delay ?? 0);
+
+    const rawStagger = parseFloat(req.body.stagger_delay);
+    const stagger_delay = !isNaN(rawStagger) && rawStagger >= 0.02 && rawStagger <= 0.5 ? rawStagger : current.stagger_delay;
+
+    const allowedPlayModes = ['once', 'repeat'];
+    const play_mode = allowedPlayModes.includes(req.body.play_mode) ? req.body.play_mode : (current.play_mode ?? 'once');
+
+    const allowedIntensities = ['subtle', 'standard', 'high'];
+    const intensity = allowedIntensities.includes(req.body.intensity) ? req.body.intensity : (current.intensity ?? 'standard');
+
+    const updated = {
+      ...current,
+      is_enabled: typeof req.body.is_enabled === 'boolean' ? req.body.is_enabled : current.is_enabled,
+      preset,
+      duration,
+      default_delay,
+      stagger_delay,
+      scroll_triggered: typeof req.body.scroll_triggered === 'boolean' ? req.body.scroll_triggered : (current.scroll_triggered ?? true),
+      hover_effects: typeof req.body.hover_effects === 'boolean' ? req.body.hover_effects : (current.hover_effects ?? true),
+      play_mode,
+      intensity,
+      respect_reduced_motion: typeof req.body.respect_reduced_motion === 'boolean' ? req.body.respect_reduced_motion : current.respect_reduced_motion,
+
+      // Granular section toggles
+      enable_homepage: typeof req.body.enable_homepage === 'boolean' ? req.body.enable_homepage : (current.enable_homepage ?? true),
+      enable_header_nav: typeof req.body.enable_header_nav === 'boolean' ? req.body.enable_header_nav : (current.enable_header_nav ?? true),
+      enable_hero_animations: typeof req.body.enable_hero_animations === 'boolean' ? req.body.enable_hero_animations : current.enable_hero_animations,
+      enable_stats_cards: typeof req.body.enable_stats_cards === 'boolean' ? req.body.enable_stats_cards : (current.enable_stats_cards ?? true),
+      enable_notices_news: typeof req.body.enable_notices_news === 'boolean' ? req.body.enable_notices_news : (current.enable_notices_news ?? true),
+      enable_events_schedule: typeof req.body.enable_events_schedule === 'boolean' ? req.body.enable_events_schedule : (current.enable_events_schedule ?? true),
+      enable_forms_inputs: typeof req.body.enable_forms_inputs === 'boolean' ? req.body.enable_forms_inputs : (current.enable_forms_inputs ?? true),
+      enable_member_portal: typeof req.body.enable_member_portal === 'boolean' ? req.body.enable_member_portal : (current.enable_member_portal ?? true),
+      enable_admin_interface: typeof req.body.enable_admin_interface === 'boolean' ? req.body.enable_admin_interface : (current.enable_admin_interface ?? true),
+      enable_page_transitions: typeof req.body.enable_page_transitions === 'boolean' ? req.body.enable_page_transitions : current.enable_page_transitions,
+      enable_card_reveals: typeof req.body.enable_card_reveals === 'boolean' ? req.body.enable_card_reveals : current.enable_card_reveals,
+      enable_button_hover: typeof req.body.enable_button_hover === 'boolean' ? req.body.enable_button_hover : current.enable_button_hover,
+      enable_counter_animations: typeof req.body.enable_counter_animations === 'boolean' ? req.body.enable_counter_animations : current.enable_counter_animations,
+      updated_at: new Date().toISOString(),
+    };
+
+    db.set('animations_config', updated);
+    db.logAudit(
+      req.user?.name || 'Admin',
+      req.user?.email || '',
+      'UPDATE_ANIMATIONS',
+      'Appearance',
+      `Updated website motion system settings (Enabled: ${updated.is_enabled}, Preset: ${updated.preset}, Duration: ${updated.duration}s)`
+    );
     res.json(updated);
   });
 
@@ -1142,7 +1431,15 @@ async function startServer() {
   // REGISTRATION & BATCH CONFIGURATION
   // ==========================================
   app.get('/api/registration/config', (req, res) => {
-    res.json(db.get('registration_config'));
+    const config = (db.get('registration_config') || {}) as any;
+    const settingVal = db.getSetting ? db.getSetting('registration_image_max_size') : null;
+    if (settingVal) {
+      const parsed = parseFloat(settingVal);
+      if (!isNaN(parsed) && parsed > 0) {
+        config.max_image_size_mb = parsed;
+      }
+    }
+    res.json(config);
   });
 
   app.put('/api/admin/registration/config', authenticate, requireRole(['super_admin', 'admin']), (req: AuthRequest, res) => {
@@ -1162,6 +1459,176 @@ async function startServer() {
 
     db.logAudit(req.user?.name || 'Admin', req.user?.email || '', 'UPDATE_REG_CONFIG', 'RegistrationConfig', `Updated registration fee: ৳${updated.fee_amount}, Open: ${updated.is_enabled}`);
     res.json(updated);
+  });
+
+  app.put('/api/admin/registration/image-limit', authenticate, requireRole(['super_admin', 'admin']), async (req: AuthRequest, res) => {
+    try {
+      const { max_image_size_mb, image_accepted_formats } = req.body;
+      const mb = parseFloat(max_image_size_mb);
+      if (isNaN(mb) || mb < 0.1 || mb > 25) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid image size limit. Please specify a numeric value between 0.1 MB and 25 MB.',
+        });
+      }
+
+      const current = db.get('registration_config') || ({} as any);
+      const validFormats = Array.isArray(image_accepted_formats) && image_accepted_formats.length > 0
+        ? image_accepted_formats.filter((f: string) => ['image/jpeg', 'image/png', 'image/webp'].includes(f))
+        : (current.image_accepted_formats || ['image/jpeg', 'image/png', 'image/webp']);
+
+      const updated = {
+        ...current,
+        max_image_size_mb: mb,
+        image_accepted_formats: validFormats,
+      };
+
+      db.set('registration_config', updated);
+
+      if (db.setSetting) {
+        await db.setSetting(
+          'registration_image_max_size',
+          String(mb),
+          'registration',
+          'Maximum allowed registration photograph file size in Megabytes (MB). Default: 1.5MB.',
+          'numeric'
+        );
+      }
+
+      db.logAudit(
+        req.user?.name || 'Admin',
+        req.user?.email || '',
+        'UPDATE_IMAGE_LIMIT',
+        'RegistrationConfig',
+        `Updated registration image limit to ${mb} MB (${validFormats.join(', ')})`
+      );
+
+      res.json({
+        success: true,
+        message: `Registration image limit updated to ${mb} MB successfully.`,
+        max_image_size_mb: mb,
+        image_accepted_formats: validFormats,
+        config: updated,
+      });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: 'Failed to update image size limit: ' + err.message });
+    }
+  });
+
+  // ==========================================
+  // REGISTRATION CONFIRMATION PAGE (CMS)
+  // ==========================================
+  app.get('/api/registration/confirmation-config', (req, res) => {
+    try {
+      const config = db.get('registration_confirmation_config') || initialRegistrationConfirmationConfig;
+      res.json(config);
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: 'Failed to retrieve confirmation config: ' + err.message });
+    }
+  });
+
+  app.put('/api/admin/registration/confirmation-config', authenticate, requireRole(['super_admin', 'admin', 'content_manager']), (req: AuthRequest, res) => {
+    try {
+      const current = db.get('registration_confirmation_config') || initialRegistrationConfirmationConfig;
+      const payload = req.body || {};
+
+      // Validate and sanitize return button destination
+      let dest = typeof payload.return_button_destination === 'string' ? payload.return_button_destination.trim() : current.return_button_destination;
+      // Prohibit unsafe javascript:, data:, unverified external links
+      if (/^(javascript:|data:|vbscript:)/i.test(dest)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid return button destination. Safe internal routes starting with "/" are required.',
+        });
+      }
+      if (!dest.startsWith('/') && !dest.startsWith('#')) {
+        dest = '/' + dest;
+      }
+
+      const sanitizeStr = (val: any, fallback: string) => {
+        if (typeof val !== 'string') return fallback;
+        // Strip any script tags
+        return val.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '').trim();
+      };
+
+      const updated: RegistrationConfirmationConfig = {
+        ...current,
+        ...payload,
+        heading_en: sanitizeStr(payload.heading_en, current.heading_en),
+        heading_bn: sanitizeStr(payload.heading_bn, current.heading_bn),
+        subheading_en: sanitizeStr(payload.subheading_en, current.subheading_en),
+        subheading_bn: sanitizeStr(payload.subheading_bn, current.subheading_bn),
+        confirmation_message_en: sanitizeStr(payload.confirmation_message_en, current.confirmation_message_en),
+        confirmation_message_bn: sanitizeStr(payload.confirmation_message_bn, current.confirmation_message_bn),
+        supporting_text_en: sanitizeStr(payload.supporting_text_en, current.supporting_text_en),
+        supporting_text_bn: sanitizeStr(payload.supporting_text_bn, current.supporting_text_bn),
+
+        next_steps_title_en: sanitizeStr(payload.next_steps_title_en, current.next_steps_title_en),
+        next_steps_title_bn: sanitizeStr(payload.next_steps_title_bn, current.next_steps_title_bn),
+        next_steps_en: sanitizeStr(payload.next_steps_en, current.next_steps_en),
+        next_steps_bn: sanitizeStr(payload.next_steps_bn, current.next_steps_bn),
+
+        payment_instructions_title_en: sanitizeStr(payload.payment_instructions_title_en, current.payment_instructions_title_en),
+        payment_instructions_title_bn: sanitizeStr(payload.payment_instructions_title_bn, current.payment_instructions_title_bn),
+        payment_instructions_en: sanitizeStr(payload.payment_instructions_en, current.payment_instructions_en),
+        payment_instructions_bn: sanitizeStr(payload.payment_instructions_bn, current.payment_instructions_bn),
+
+        token_label_en: sanitizeStr(payload.token_label_en, current.token_label_en),
+        token_label_bn: sanitizeStr(payload.token_label_bn, current.token_label_bn),
+        token_help_text_en: sanitizeStr(payload.token_help_text_en, current.token_help_text_en),
+        token_help_text_bn: sanitizeStr(payload.token_help_text_bn, current.token_help_text_bn),
+
+        info_notes_title_en: sanitizeStr(payload.info_notes_title_en, current.info_notes_title_en),
+        info_notes_title_bn: sanitizeStr(payload.info_notes_title_bn, current.info_notes_title_bn),
+        info_notes_en: sanitizeStr(payload.info_notes_en, current.info_notes_en),
+        info_notes_bn: sanitizeStr(payload.info_notes_bn, current.info_notes_bn),
+
+        support_title_en: sanitizeStr(payload.support_title_en, current.support_title_en),
+        support_title_bn: sanitizeStr(payload.support_title_bn, current.support_title_bn),
+        support_phone: sanitizeStr(payload.support_phone, current.support_phone),
+        support_email: sanitizeStr(payload.support_email, current.support_email),
+        support_hours_en: sanitizeStr(payload.support_hours_en, current.support_hours_en),
+        support_hours_bn: sanitizeStr(payload.support_hours_bn, current.support_hours_bn),
+        support_location_en: sanitizeStr(payload.support_location_en, current.support_location_en),
+        support_location_bn: sanitizeStr(payload.support_location_bn, current.support_location_bn),
+
+        return_button_label_en: sanitizeStr(payload.return_button_label_en, current.return_button_label_en),
+        return_button_label_bn: sanitizeStr(payload.return_button_label_bn, current.return_button_label_bn),
+        return_button_destination: dest,
+
+        verified_heading_en: sanitizeStr(payload.verified_heading_en, current.verified_heading_en),
+        verified_heading_bn: sanitizeStr(payload.verified_heading_bn, current.verified_heading_bn),
+        verified_message_en: sanitizeStr(payload.verified_message_en, current.verified_message_en),
+        verified_message_bn: sanitizeStr(payload.verified_message_bn, current.verified_message_bn),
+
+        show_token_box: payload.show_token_box !== undefined ? Boolean(payload.show_token_box) : current.show_token_box,
+        show_download_slip_button: payload.show_download_slip_button !== undefined ? Boolean(payload.show_download_slip_button) : current.show_download_slip_button,
+        show_print_button: payload.show_print_button !== undefined ? Boolean(payload.show_print_button) : current.show_print_button,
+        show_manual_payment_accounts: payload.show_manual_payment_accounts !== undefined ? Boolean(payload.show_manual_payment_accounts) : current.show_manual_payment_accounts,
+        show_payment_instructions: payload.show_payment_instructions !== undefined ? Boolean(payload.show_payment_instructions) : current.show_payment_instructions,
+        show_confirm_payment_form: payload.show_confirm_payment_form !== undefined ? Boolean(payload.show_confirm_payment_form) : current.show_confirm_payment_form,
+        show_info_notes: payload.show_info_notes !== undefined ? Boolean(payload.show_info_notes) : current.show_info_notes,
+        show_support_contact: payload.show_support_contact !== undefined ? Boolean(payload.show_support_contact) : current.show_support_contact,
+        show_return_button: payload.show_return_button !== undefined ? Boolean(payload.show_return_button) : current.show_return_button,
+      };
+
+      db.set('registration_confirmation_config', updated);
+      db.logAudit(
+        req.user?.name || 'Admin',
+        req.user?.email || '',
+        'UPDATE_REG_CONFIRMATION_CONFIG',
+        'CMS',
+        'Updated registration confirmation page CMS settings'
+      );
+
+      res.json({
+        success: true,
+        message: 'Registration confirmation page CMS configuration saved successfully.',
+        config: updated,
+      });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: 'Failed to update confirmation config: ' + err.message });
+    }
   });
 
   // ==========================================
@@ -2128,6 +2595,9 @@ async function startServer() {
       // Generate unique, collision-safe, database-backed token code immediately server-side
       const tokenCode = TokenService.generateFormattedTokenCode(year, batchInfo.batch_name);
 
+      // Persist photo to disk storage if base64 data URI provided
+      const persistentPhotoUrl = await FileStorageService.processIncomingPhotoUrl(req.body.photo_url, 'photos');
+
       const newRegistration: Registration = {
         id: regId,
         event_id: targetEventId,
@@ -2138,7 +2608,7 @@ async function startServer() {
         t_shirt_size: validTShirtSize,
         phone: phone.trim(),
         email: email ? email.trim() : undefined,
-        photo_url: req.body.photo_url || undefined,
+        photo_url: persistentPhotoUrl,
         passing_year: year,
         batch_id: batchInfo.batch_id,
         batch_name: batchInfo.batch_name,
@@ -2173,7 +2643,7 @@ async function startServer() {
           status: 'active',
           address: address || undefined,
           occupation: occupation || undefined,
-          photo_url: req.body.photo_url || undefined,
+          photo_url: persistentPhotoUrl,
           created_at: new Date().toISOString(),
         };
         users.push(user);
@@ -2183,7 +2653,7 @@ async function startServer() {
         let updatedUser = false;
         if (!user.address && address) { user.address = address; updatedUser = true; }
         if (!user.occupation && occupation) { user.occupation = occupation; updatedUser = true; }
-        if (!user.photo_url && req.body.photo_url) { user.photo_url = req.body.photo_url; updatedUser = true; }
+        if (!user.photo_url && persistentPhotoUrl) { user.photo_url = persistentPhotoUrl; updatedUser = true; }
         if (updatedUser) db.set('users', users);
       }
 
@@ -2225,24 +2695,41 @@ async function startServer() {
         `Submitted registration for ${batchInfo.batch_name} (Token: ${tokenCode}, Fee: ৳${feeAmount}). Awaiting manual payment confirmation.`
       );
 
+      const confConfig = db.get('registration_confirmation_config') || initialRegistrationConfirmationConfig;
+
       res.status(201).json({
         success: true,
         registration: newRegistration,
         token_code: tokenCode,
         token: issuedToken,
+        confirmation_config: confConfig,
         manual_payment_info: {
           token_code: tokenCode,
           fee_amount: feeAmount,
           currency,
           gateways: manualGateways,
-          confirmation_instructions_en: '1. Send the registration fee to the displayed bKash/Nagad number.\n2. Use your generated Token Number as the Payment Reference.\n3. After completing the payment, click Confirm Payment below.\n4. Your registration will be confirmed after payment verification.',
-          confirmation_instructions_bn: '১. উপরের bKash/Nagad নম্বরে নির্ধারিত রেজিস্ট্রেশন ফি পাঠান।\n২. Payment Reference হিসেবে আপনার Token Number ব্যবহার করুন।\n৩. পেমেন্ট সম্পন্ন করার পর নিচের Confirm Payment বাটন ব্যবহার করুন।\n৪. আপনার পেমেন্ট যাচাই করার পর রেজিস্ট্রেশন চূড়ান্তভাবে নিশ্চিত করা হবে।',
+          confirmation_instructions_en: confConfig.payment_instructions_en || '1. Send the registration fee to the displayed bKash/Nagad number.\n2. Use your generated Token Number as the Payment Reference.\n3. After completing the payment, click Confirm Payment below.\n4. Your registration will be confirmed after payment verification.',
+          confirmation_instructions_bn: confConfig.payment_instructions_bn || '১. উপরের bKash/Nagad নম্বরে নির্ধারিত রেজিস্ট্রেশন ফি পাঠান।\n২. Payment Reference হিসেবে আপনার Token Number ব্যবহার করুন।\n৩. পেমেন্ট সম্পন্ন করার পর নিচের Confirm Payment বাটন ব্যবহার করুন।\n৪. আপনার পেমেন্ট যাচাই করার পর রেজিস্ট্রেশন চূড়ান্তভাবে নিশ্চিত করা হবে।',
         },
-        message: 'Your registration form has been successfully submitted. Please complete the manual bKash or Nagad payment using your Token Number as payment reference.',
-        message_bn: 'আপনার রেজিস্ট্রেশন ফর্ম সফলভাবে জমা হয়েছে। আপনার পেমেন্ট রেফারেন্স হিসেবে Token Number ব্যবহার করে বিকাশ বা নগদ-এ ফি প্রদান করুন।',
+        message: confConfig.confirmation_message_en || 'Your registration form has been successfully submitted. Please complete the manual bKash or Nagad payment using your Token Number as payment reference.',
+        message_bn: confConfig.confirmation_message_bn || 'আপনার রেজিস্ট্রেশন ফর্ম সফলভাবে জমা হয়েছে। আপনার পেমেন্ট রেফারেন্স হিসেবে Token Number ব্যবহার করে বিকাশ বা নগদ-এ ফি প্রদান করুন।',
       });
     } catch (err: any) {
       console.error('Registration creation error:', err);
+      const isFileErr = err.message && (
+        err.message.includes('exceeds maximum allowed limit') ||
+        err.message.includes('Invalid image') ||
+        err.message.includes('Image format') ||
+        err.message.includes('not permitted')
+      );
+      if (isFileErr) {
+        return res.status(400).json({
+          success: false,
+          field: 'photo_url',
+          error: 'INVALID_IMAGE_UPLOAD',
+          message: err.message,
+        });
+      }
       res.status(500).json({ message: err.message || 'Internal server error' });
     }
   });
@@ -2652,7 +3139,7 @@ async function startServer() {
     res.json(safeUser);
   });
 
-  app.put('/api/member/profile', authenticate, (req: AuthRequest, res) => {
+  app.put('/api/member/profile', authenticate, async (req: AuthRequest, res) => {
     const users = db.get('users') || [];
     const index = users.findIndex(u => u.id === req.user?.id);
     if (index === -1) {
@@ -2700,6 +3187,10 @@ async function startServer() {
       }
     }
 
+    const persistentPhotoUrl = photo_url !== undefined
+      ? await FileStorageService.processIncomingPhotoUrl(photo_url, 'photos')
+      : existing.photo_url;
+
     const updated = {
       ...existing,
       username: validatedUsername,
@@ -2718,7 +3209,7 @@ async function startServer() {
       business_website: business_website !== undefined ? business_website.trim() : existing.business_website,
       address: address !== undefined ? address.trim() : existing.address,
       bio: bio !== undefined ? bio.trim() : existing.bio,
-      photo_url: photo_url !== undefined ? photo_url : existing.photo_url,
+      photo_url: persistentPhotoUrl,
       privacy: privacy !== undefined ? privacy : existing.privacy,
     };
 
@@ -2914,6 +3405,8 @@ async function startServer() {
       ? req.body.t_shirt_size.toString().trim().toUpperCase()
       : 'L';
 
+    const persistentAdminPhoto = await FileStorageService.processIncomingPhotoUrl(photo_url, 'photos');
+
     const newReg: Registration = {
       id: regId,
       event_id: 'event-85th-anniversary',
@@ -2930,7 +3423,7 @@ async function startServer() {
       batch_name_bn: batchInfo.batch_name_bn,
       address: address || undefined,
       occupation: occupation || undefined,
-      photo_url: photo_url || undefined,
+      photo_url: persistentAdminPhoto,
       fee_amount: fee_amount ? Number(fee_amount) : (regConfig?.fee_amount || 1000),
       currency: regConfig?.currency || 'BDT',
       payment_status: payment_status as any,
@@ -3030,6 +3523,11 @@ async function startServer() {
         tokens[tokIdx].checked_in_at = updates.checked_in_at;
         db.set('tokens', tokens);
       }
+    }
+
+    // If photo_url is provided, persist it to disk storage
+    if (updates.photo_url !== undefined) {
+      updates.photo_url = await FileStorageService.processIncomingPhotoUrl(updates.photo_url, 'photos');
     }
 
     const updated = {
@@ -3336,25 +3834,66 @@ async function startServer() {
     res.json({ success: true });
   });
 
+  // File & Photo Upload Endpoint
+  app.post('/api/upload/photo', async (req, res) => {
+    try {
+      const { image, data, folder = 'photos' } = req.body;
+      const payload = image || data;
+      if (!payload) {
+        return res.status(400).json({ success: false, message: 'No image data provided.' });
+      }
+      const saved = await FileStorageService.saveBase64Image(payload, folder);
+      if (!saved) {
+        return res.status(400).json({ success: false, message: 'Invalid image format or data.' });
+      }
+      res.json({
+        success: true,
+        url: saved.url,
+        filename: saved.filename,
+        mime_type: saved.mimeType,
+        size_bytes: saved.sizeBytes,
+      });
+    } catch (err: any) {
+      res.status(400).json({ success: false, message: err.message || 'File upload failed.' });
+    }
+  });
+
   // Media Library
   app.get('/api/admin/media', authenticate, requireRole(['super_admin', 'admin', 'content_manager']), (req, res) => {
     res.json(db.get('media') || []);
   });
 
-  app.post('/api/admin/media', authenticate, requireRole(['super_admin', 'admin', 'content_manager']), (req: AuthRequest, res) => {
-    const media = db.get('media') || [];
-    const newItem = {
-      id: `med-${Date.now()}`,
-      name: req.body.name || 'uploaded-file.jpg',
-      url: req.body.url || 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1600&q=80',
-      type: req.body.type || 'image',
-      size: req.body.size || '1.5 MB',
-      created_at: new Date().toISOString(),
-    };
-    media.unshift(newItem);
-    db.set('media', media);
-    db.logAudit(req.user?.name || 'Admin', req.user?.email || '', 'UPLOAD_MEDIA', 'Media', `Uploaded media item: ${newItem.name}`);
-    res.status(201).json(newItem);
+  app.post('/api/admin/media', authenticate, requireRole(['super_admin', 'admin', 'content_manager']), async (req: AuthRequest, res) => {
+    try {
+      const media = db.get('media') || [];
+      let finalUrl = req.body.url;
+      let finalSize = req.body.size || '1.0 MB';
+      let mimeType = req.body.type || 'image';
+
+      if (req.body.data || (req.body.url && req.body.url.startsWith('data:image/'))) {
+        const saved = await FileStorageService.saveBase64Image(req.body.data || req.body.url, 'media');
+        if (saved) {
+          finalUrl = saved.url;
+          finalSize = `${(saved.sizeBytes / 1024).toFixed(1)} KB`;
+          mimeType = saved.mimeType;
+        }
+      }
+
+      const newItem = {
+        id: `med-${Date.now()}`,
+        name: req.body.name || 'uploaded-file.jpg',
+        url: finalUrl || '/uploads/photos/default.jpg',
+        type: mimeType,
+        size: finalSize,
+        created_at: new Date().toISOString(),
+      };
+      media.unshift(newItem);
+      db.set('media', media);
+      db.logAudit(req.user?.name || 'Admin', req.user?.email || '', 'UPLOAD_MEDIA', 'Media', `Uploaded media item: ${newItem.name}`);
+      res.status(201).json(newItem);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message || 'Failed to save media item' });
+    }
   });
 
   // Audit Logs
@@ -3717,7 +4256,10 @@ async function startServer() {
   const publicPath = path.join(process.cwd(), 'public');
   app.use(express.static(publicPath));
 
-  if (process.env.NODE_ENV !== 'production') {
+  const hasDist = fs.existsSync(path.join(process.cwd(), 'dist', 'index.html'));
+  const isProduction = process.env.NODE_ENV === 'production' || (!process.env.NODE_ENV && hasDist);
+
+  if (!isProduction) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
@@ -3732,9 +4274,17 @@ async function startServer() {
   }
 
   if (process.env.VERCEL !== '1') {
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`Server running on http://0.0.0.0:${PORT}`);
-    });
+    const listenPort = process.env.PORT || PORT;
+    // Support Passenger unix socket or named pipe
+    if (typeof listenPort === 'string' && (listenPort.startsWith('/') || listenPort.startsWith('\\\\.\\pipe\\') || listenPort.includes('passenger'))) {
+      app.listen(listenPort, () => {
+        console.log(`Server running on Passenger socket: ${listenPort}`);
+      });
+    } else {
+      app.listen(listenPort, () => {
+        console.log(`Server running on port ${listenPort}`);
+      });
+    }
   }
 
   return app;

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { MotionProvider } from './context/MotionContext';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { HomeView } from './components/HomeView';
@@ -16,41 +17,106 @@ import { NewsView } from './components/NewsView';
 import { CMSPageView } from './components/CMSPageView';
 import { LoginModal } from './components/LoginModal';
 import { SetupWizard } from './components/SetupWizard';
+import { DatabaseUnavailableView } from './components/DatabaseUnavailableView';
 import { apiFetch, safeJson } from './utils/api';
+import {
+  getCachedReadiness,
+  setCachedReadiness,
+  clearReadinessCache,
+  AppReadinessState,
+} from './utils/readinessCache';
 
 function MainLayout() {
   const { language } = useLanguage();
   const { user, isAdmin } = useAuth();
 
+  // Read client-side readiness cache to prevent redundant loading screens
+  const cachedReadiness = getCachedReadiness();
+
   // Navigation routing state
   const [currentView, setCurrentView] = useState<string>('home');
   const [loginModalOpen, setLoginModalOpen] = useState(false);
-  const [isInstalled, setIsInstalled] = useState<boolean | null>(true);
+  const [isInstalled, setIsInstalled] = useState<boolean | null>(
+    cachedReadiness ? cachedReadiness.isInstalled : true
+  );
   const [setupReason, setSetupReason] = useState<string | undefined>();
+  const [appState, setAppState] = useState<AppReadinessState>(
+    cachedReadiness ? cachedReadiness.state : 'OPERATIONAL'
+  );
+  const [dbReport, setDbReport] = useState<any>(cachedReadiness?.report || null);
 
-  // Check installation status on initial mount
-  useEffect(() => {
-    async function checkInstallation() {
-      try {
-        const res = await apiFetch('/api/setup/status');
-        if (res.ok) {
-          const data = await safeJson<{ is_installed: boolean }>(res, { is_installed: true });
-          if (data) {
-            setIsInstalled(data.is_installed);
-            if (!data.is_installed) {
-              setSetupReason('Welcome! Please complete the first-time setup wizard to configure your database and alumni platform.');
-            }
-          } else {
-            setIsInstalled(true);
-          }
-        } else {
-          setIsInstalled(true);
-        }
-      } catch (e) {
-        setIsInstalled(true);
+  const checkState = async (force = false) => {
+    // If not forced and cache is fresh, skip redundant server calls
+    if (!force) {
+      const freshCache = getCachedReadiness();
+      if (freshCache && freshCache.state === 'OPERATIONAL') {
+        return;
       }
     }
-    checkInstallation();
+
+    try {
+      const res = await apiFetch('/api/system/db-status');
+      if (res.ok) {
+        const data = await res.json();
+        setDbReport(data);
+        if (data.state === 'FRESH_INSTALLATION') {
+          clearReadinessCache();
+          setIsInstalled(false);
+          setAppState('FRESH_INSTALLATION');
+          setSetupReason('Welcome! Please complete the first-time setup wizard to configure your database and alumni platform.');
+        } else if (data.state === 'DATABASE_UNAVAILABLE') {
+          clearReadinessCache();
+          setIsInstalled(true);
+          setAppState('DATABASE_UNAVAILABLE');
+        } else if (data.state === 'SCHEMA_INCOMPLETE') {
+          clearReadinessCache();
+          setIsInstalled(true);
+          setAppState('SCHEMA_INCOMPLETE');
+        } else {
+          setCachedReadiness('OPERATIONAL', true, data);
+          setIsInstalled(true);
+          setAppState('OPERATIONAL');
+        }
+      } else {
+        const data = await res.json().catch(() => null);
+        clearReadinessCache();
+        setIsInstalled(true);
+        if (data?.code === 'SCHEMA_INCOMPLETE' || data?.state === 'SCHEMA_INCOMPLETE') {
+          setAppState('SCHEMA_INCOMPLETE');
+        } else {
+          setAppState('DATABASE_UNAVAILABLE');
+        }
+        setDbReport(data);
+      }
+    } catch {
+      clearReadinessCache();
+      setIsInstalled(true);
+      setAppState('DATABASE_UNAVAILABLE');
+    }
+  };
+
+  // Perform lightweight background check and register live database outage listeners
+  useEffect(() => {
+    // Non-blocking initial check
+    checkState(false);
+
+    // Listen to live database outage events triggered by failed API requests
+    const handleDbStateChange = (e: any) => {
+      const newState = e.detail?.state;
+      const report = e.detail?.report;
+      if (newState === 'DATABASE_UNAVAILABLE' || newState === 'SCHEMA_INCOMPLETE') {
+        setAppState(newState);
+        if (report) setDbReport(report);
+      } else if (newState === 'OPERATIONAL') {
+        setAppState('OPERATIONAL');
+        setCachedReadiness('OPERATIONAL', true, report);
+      }
+    };
+
+    window.addEventListener('nash_db_state_changed', handleDbStateChange);
+    return () => {
+      window.removeEventListener('nash_db_state_changed', handleDbStateChange);
+    };
   }, []);
 
   // Sync with URL query param or hash on initial load
@@ -100,15 +166,28 @@ function MainLayout() {
     }
   };
 
-  // If application is not yet installed on server/database: Show professional Setup Wizard
-  if (isInstalled === false) {
+  // State C & State D: Mandatory database is unavailable or schema is incomplete
+  if (appState === 'DATABASE_UNAVAILABLE' || appState === 'SCHEMA_INCOMPLETE') {
+    return (
+      <DatabaseUnavailableView
+        state={appState}
+        report={dbReport}
+        onRecovered={() => {
+          checkState();
+        }}
+      />
+    );
+  }
+
+  // State A: Fresh installation - Display only legitimate setup wizard
+  if (appState === 'FRESH_INSTALLATION' || isInstalled === false) {
     return (
       <SetupWizard
         reason={setupReason}
         onComplete={() => {
           setIsInstalled(true);
+          setAppState('OPERATIONAL');
           setCurrentView('home');
-          // Clear view=setup param if present
           const url = new URL(window.location.href);
           url.searchParams.delete('view');
           window.history.replaceState({}, '', url.toString());
@@ -137,6 +216,19 @@ function MainLayout() {
         {currentView === 'register' && (
           <RegistrationFlow
             onGoToPortal={() => navigateTo('member')}
+            onNavigate={(dest) => {
+              const cleaned = dest.replace(/^\//, '').toLowerCase();
+              if (!cleaned || cleaned === 'home') navigateTo('home');
+              else if (cleaned.includes('verify')) navigateTo('verify');
+              else if (cleaned.includes('member') || cleaned.includes('portal')) navigateTo('member');
+              else if (cleaned.includes('profile')) navigateTo('profile');
+              else if (cleaned.includes('school')) navigateTo('school');
+              else if (cleaned.includes('association') || cleaned.includes('committee')) navigateTo('association');
+              else if (cleaned.includes('notice')) navigateTo('notices');
+              else if (cleaned.includes('news')) navigateTo('news');
+              else if (cleaned.includes('contact')) navigateTo('contact');
+              else navigateTo('home');
+            }}
             onGoToVerify={(code) => {
               if (code) {
                 window.history.pushState({}, '', `?token=${encodeURIComponent(code)}`);
@@ -189,7 +281,9 @@ export default function App() {
   return (
     <LanguageProvider>
       <AuthProvider>
-        <MainLayout />
+        <MotionProvider>
+          <MainLayout />
+        </MotionProvider>
       </AuthProvider>
     </LanguageProvider>
   );

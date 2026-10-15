@@ -4,6 +4,8 @@
  * Prevents HTML fallback response parsing crashes ("Unexpected token '<' is not valid JSON").
  */
 
+import { clearReadinessCache } from './readinessCache';
+
 // Global safety shield: prevents any unhandled Response.json() call from throwing
 // "SyntaxError: Unexpected token '<', "<!doctype "... is not valid JSON"
 if (typeof Response !== 'undefined' && !(Response.prototype as any).__safePatched) {
@@ -84,6 +86,35 @@ export async function apiFetch(url: string, options: FetchOptions = {}): Promise
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const response = await fetch(url, fetchOptions);
+
+      // Detect server-side database failure response (HTTP 503) from live API endpoints
+      if (
+        response.status === 503 &&
+        typeof window !== 'undefined' &&
+        url.startsWith('/api/') &&
+        !url.includes('/api/system/') &&
+        !url.includes('/api/setup/')
+      ) {
+        try {
+          const clone = response.clone();
+          clone.json().then(data => {
+            if (
+              data?.state === 'DATABASE_UNAVAILABLE' ||
+              data?.code === 'DATABASE_UNAVAILABLE' ||
+              data?.state === 'SCHEMA_INCOMPLETE' ||
+              data?.code === 'SCHEMA_INCOMPLETE'
+            ) {
+              clearReadinessCache();
+              window.dispatchEvent(
+                new CustomEvent('nash_db_state_changed', {
+                  detail: { state: data.state || 'DATABASE_UNAVAILABLE', report: data },
+                })
+              );
+            }
+          }).catch(() => {});
+        } catch {}
+      }
+
       return response;
     } catch (err: any) {
       lastError = err;

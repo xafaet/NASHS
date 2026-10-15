@@ -60,19 +60,19 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
     setLoading(true);
     setError(null);
 
-    const success = await login(identifier, password);
+    const loggedUser = await login(identifier, password);
     setLoading(false);
 
-    if (success) {
+    if (loggedUser) {
       handleClose();
-      // Determine destination based on identifier or admin keyword
-      const isSuperOrAdmin =
-        identifier.toLowerCase().includes('admin') ||
-        identifier.toLowerCase().includes('super') ||
-        user?.role === 'super_admin' ||
-        user?.role === 'admin';
+      // Determine destination strictly based on authoritative database role
+      const isPrivileged =
+        loggedUser.role === 'super_admin' ||
+        loggedUser.role === 'admin' ||
+        loggedUser.role === 'event_manager' ||
+        loggedUser.role === 'content_manager';
 
-      if (isSuperOrAdmin) {
+      if (isPrivileged) {
         onSuccess('admin');
       } else {
         onSuccess('member');
