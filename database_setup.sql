@@ -367,11 +367,44 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 );
 
 -- ------------------------------------------------------------
--- 17. DEFAULT SITE SETTINGS (Appearance & Animations)
+-- 17. DEFAULT SITE SETTINGS (Appearance, Confirmation & Config)
 -- ------------------------------------------------------------
 INSERT INTO site_settings (`key`, `value`) VALUES
-('animations_config', '{"is_enabled":true,"preset":"smooth","duration":0.5,"default_delay":0,"stagger_delay":0.08,"scroll_triggered":true,"hover_effects":true,"play_mode":"once","intensity":"standard","respect_reduced_motion":true,"enable_homepage":true,"enable_header_nav":true,"enable_hero_animations":true,"enable_stats_cards":true,"enable_notices_news":true,"enable_events_schedule":true,"enable_forms_inputs":true,"enable_member_portal":true,"enable_admin_interface":true,"enable_page_transitions":true,"enable_card_reveals":true,"enable_button_hover":true,"enable_counter_animations":true}')
+('animations_config', '{"is_enabled":true,"preset":"smooth","duration":0.5,"default_delay":0,"stagger_delay":0.08,"scroll_triggered":true,"hover_effects":true,"play_mode":"once","intensity":"standard","respect_reduced_motion":true,"enable_homepage":true,"enable_header_nav":true,"enable_hero_animations":true,"enable_stats_cards":true,"enable_notices_news":true,"enable_events_schedule":true,"enable_forms_inputs":true,"enable_member_portal":true,"enable_admin_interface":true,"enable_page_transitions":true,"enable_card_reveals":true,"enable_button_hover":true,"enable_counter_animations":true}'),
+('registration_confirmation_config', '{"heading_en":"Welcome to the 85th Reunion!","heading_bn":"৮৫তম পুনর্মিলনীতে আপনাকে স্বাগতম!","subheading_en":"85th Anniversary Celebration 2027","subheading_bn":"৮৫তম প্রতিষ্ঠাবার্ষিকী ও পুনর্মিলনী উৎসব ২০২৭","show_return_button":true,"return_button_label_en":"Return to Website","return_button_label_bn":"ওয়েবসাইটে ফিরে যান","return_button_destination":"/home","show_download_slip_button":true,"show_print_button":true,"show_confirm_payment_form":true,"show_manual_payment_accounts":true,"show_info_notes":true,"show_support_contact":true}')
 ON DUPLICATE KEY UPDATE `value` = VALUES(`value`);
+
+-- ------------------------------------------------------------
+-- 18. INITIAL EVENT RECORD
+-- ------------------------------------------------------------
+INSERT INTO events (`id`, `slug`, `title_en`, `title_bn`, `event_date`, `venue_en`, `venue_bn`, `registration_fee`, `currency`, `registration_open`)
+VALUES ('event-85th-2027', '85th-anniversary-reunion-2027', '85th Anniversary Celebration & Grand Reunion 2027', '৮৫ বছর পূর্তি উৎসব ও মহা পুনর্মিলনী ২০২৭', '2027-01-16', 'School Premises, Nanupur, Fatikchhari, Chattogram', 'বিদ্যালয় প্রাঙ্গণ, নানুপুর, ফটিকছড়ি, চট্টগ্রাম', 1000.00, 'BDT', 1)
+ON DUPLICATE KEY UPDATE `title_en` = VALUES(`title_en`);
+
+-- ------------------------------------------------------------
+-- 19. INITIAL SUPER ADMIN ACCOUNT (Credential: super_admin / admin123)
+-- ------------------------------------------------------------
+INSERT INTO users (`id`, `username`, `name`, `name_bn`, `email`, `phone`, `role`, `password_hash`, `status`)
+VALUES ('usr-superadmin-init', 'super_admin', 'Secretariat Admin', 'আহ্বায়ক সচিবালয়', 'admin@nanupuralumni.org', '01819000000', 'super_admin', '$2b$10$zGxicsALJ0pELiOJYNxVcO6ApP2ScXsXixf6cGt2p9eTjkP3DnMIG', 'active')
+ON DUPLICATE KEY UPDATE `role` = 'super_admin';
+
+-- ------------------------------------------------------------
+-- 20. CORE BATCH SEED DATA (Passing Years)
+-- ------------------------------------------------------------
+INSERT INTO batches (`id`, `name_en`, `name_bn`, `passing_year`, `batch_number`, `is_active`) VALUES
+('batch-1971', 'Batch 1971 (Freedom Fighter Batch)', 'ব্যাচ ১৯৭১ (বীর মুক্তিযোদ্ধা ব্যাচ)', 1971, '30th SSC', 1),
+('batch-1985', 'Batch 1985', 'ব্যাচ ১৯৮৫', 1985, '44th SSC', 1),
+('batch-1995', 'Batch 1995', 'ব্যাচ ১৯৯৫', 1995, '54th SSC', 1),
+('batch-2000', 'Batch 2000 (Millennium Batch)', 'ব্যাচ ২০০০ (সহস্রাব্দ ব্যাচ)', 2000, '59th SSC', 1),
+('batch-2005', 'Batch 2005', 'ব্যাচ ২০০৫', 2005, '64th SSC', 1),
+('batch-2010', 'Batch 2010', 'ব্যাচ ২০১০', 2010, '69th SSC', 1),
+('batch-2015', 'Batch 2015', 'ব্যাচ ২০১৫', 2015, '74th SSC', 1),
+('batch-2020', 'Batch 2020', 'ব্যাচ ২০২০', 2020, '79th SSC', 1),
+('batch-2024', 'Batch 2024', 'ব্যাচ ২০২৪', 2024, '83rd SSC', 1),
+('batch-2025', 'Batch 2025', 'ব্যাচ ২০২৫', 2025, '84th SSC', 1),
+('batch-2026', 'Batch 2026', 'ব্যাচ ২০২৬', 2026, '85th SSC', 1)
+ON DUPLICATE KEY UPDATE `is_active` = 1;
+
 
 
 

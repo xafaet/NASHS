@@ -141,7 +141,7 @@ class DatabaseEngine {
       for (const [key, val] of Object.entries(dbData)) {
         if (val !== undefined && val !== null) {
           if (Array.isArray(val) && val.length > 0) {
-            (this.data as any)[key] = val;
+            (this.data as any)[key] = key === 'users' ? this.sanitizeAndDeduplicateUsers(val) : val;
             hydratedAny = true;
           } else if (!Array.isArray(val) && typeof val === 'object' && Object.keys(val).length > 0) {
             (this.data as any)[key] = val;
@@ -409,7 +409,7 @@ class DatabaseEngine {
             }
           }
 
-          this.data.users = remoteUsers;
+          this.data.users = this.sanitizeAndDeduplicateUsers(remoteUsers);
           this.saveData();
           if (addedNew) {
             await this.persistKeyToSupabase('users', this.data.users);
@@ -636,70 +636,145 @@ class DatabaseEngine {
 
   public async syncSingleUser(u: any): Promise<void> {
     if (!this.pool || !this.isSupabaseConnected || !u || !u.id) return;
-    await this.pool.query(
-      `INSERT INTO users (
-        id, username, name, name_bn, email, phone, password_hash, role, status,
-        passing_year, batch, dob, gender, blood_group, photo_url,
-        occupation, organization, designation, work_location,
-        business_name, business_type, business_address, business_website,
-        address, bio, privacy, created_at, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, NOW(), NOW())
-      ON CONFLICT (id) DO UPDATE SET
-        username = EXCLUDED.username,
-        name = EXCLUDED.name,
-        name_bn = EXCLUDED.name_bn,
-        email = EXCLUDED.email,
-        phone = EXCLUDED.phone,
-        password_hash = COALESCE(NULLIF(EXCLUDED.password_hash, ''), users.password_hash),
-        role = EXCLUDED.role,
-        status = EXCLUDED.status,
-        passing_year = EXCLUDED.passing_year,
-        batch = EXCLUDED.batch,
-        dob = EXCLUDED.dob,
-        gender = EXCLUDED.gender,
-        blood_group = EXCLUDED.blood_group,
-        photo_url = EXCLUDED.photo_url,
-        occupation = EXCLUDED.occupation,
-        organization = EXCLUDED.organization,
-        designation = EXCLUDED.designation,
-        work_location = EXCLUDED.work_location,
-        business_name = EXCLUDED.business_name,
-        business_type = EXCLUDED.business_type,
-        business_address = EXCLUDED.business_address,
-        business_website = EXCLUDED.business_website,
-        address = EXCLUDED.address,
-        bio = EXCLUDED.bio,
-        privacy = EXCLUDED.privacy,
-        updated_at = NOW()`,
-      [
-        u.id,
-        u.username || '',
-        u.name,
-        u.name_bn || '',
-        u.email,
-        u.phone || '',
-        u.password_hash || '',
-        u.role || 'alumni_member',
-        u.status || 'active',
-        u.passing_year || null,
-        u.batch || '',
-        u.dob || '',
-        u.gender || '',
-        u.blood_group || '',
-        u.photo_url || '',
-        u.occupation || '',
-        u.organization || '',
-        u.designation || '',
-        u.work_location || '',
-        u.business_name || '',
-        u.business_type || '',
-        u.business_address || '',
-        u.business_website || '',
-        u.address || '',
-        u.bio || '',
-        u.privacy ? JSON.stringify(u.privacy) : null,
-      ]
-    );
+    const cleanEmail = (u.email || '').trim().toLowerCase();
+    const cleanUsername = (u.username || '').trim().toLowerCase();
+
+    try {
+      // Find existing user by ID or by unique email or username
+      const checkRes = await this.pool.query(
+        `SELECT id, role, password_hash, email, username FROM users 
+         WHERE id = $1 
+            OR ($2 != '' AND LOWER(email) = $2)
+            OR ($3 != '' AND LOWER(username) = $3)
+         LIMIT 1`,
+        [u.id, cleanEmail, cleanUsername]
+      );
+
+      if (checkRes.rows && checkRes.rows.length > 0) {
+        const matched = checkRes.rows[0];
+        const matchedId = matched.id;
+        const effectiveRole = matched.role === 'super_admin' ? 'super_admin' : (u.role || matched.role || 'alumni_member');
+
+        await this.pool.query(
+          `UPDATE users SET
+            username = COALESCE(NULLIF($2, ''), username),
+            name = COALESCE(NULLIF($3, ''), name),
+            name_bn = COALESCE(NULLIF($4, ''), name_bn),
+            email = COALESCE(NULLIF($5, ''), email),
+            phone = COALESCE(NULLIF($6, ''), phone),
+            password_hash = COALESCE(NULLIF($7, ''), password_hash),
+            role = $8::user_role,
+            status = COALESCE(NULLIF($9, ''), status),
+            passing_year = COALESCE($10, passing_year),
+            batch = COALESCE(NULLIF($11, ''), batch),
+            dob = COALESCE(NULLIF($12, ''), dob),
+            gender = COALESCE(NULLIF($13, ''), gender),
+            blood_group = COALESCE(NULLIF($14, ''), blood_group),
+            photo_url = COALESCE(NULLIF($15, ''), photo_url),
+            occupation = COALESCE(NULLIF($16, ''), occupation),
+            organization = COALESCE(NULLIF($17, ''), organization),
+            designation = COALESCE(NULLIF($18, ''), designation),
+            work_location = COALESCE(NULLIF($19, ''), work_location),
+            business_name = COALESCE(NULLIF($20, ''), business_name),
+            business_type = COALESCE(NULLIF($21, ''), business_type),
+            business_address = COALESCE(NULLIF($22, ''), business_address),
+            business_website = COALESCE(NULLIF($23, ''), business_website),
+            address = COALESCE(NULLIF($24, ''), address),
+            bio = COALESCE(NULLIF($25, ''), bio),
+            privacy = COALESCE($26, privacy),
+            updated_at = NOW()
+          WHERE id = $1`,
+          [
+            matchedId, u.username || matched.username || '', u.name, u.name_bn || '', u.email || matched.email || '', u.phone || '',
+            u.password_hash || '', effectiveRole, u.status || 'active',
+            u.passing_year || null, u.batch || '', u.dob || '', u.gender || '',
+            u.blood_group || '', u.photo_url || '', u.occupation || '', u.organization || '',
+            u.designation || '', u.work_location || '', u.business_name || '', u.business_type || '',
+            u.business_address || '', u.business_website || '', u.address || '', u.bio || '',
+            u.privacy ? (typeof u.privacy === 'string' ? u.privacy : JSON.stringify(u.privacy)) : null,
+          ]
+        );
+      } else {
+        await this.pool.query(
+          `INSERT INTO users (
+            id, username, name, name_bn, email, phone, password_hash, role, status,
+            passing_year, batch, dob, gender, blood_group, photo_url,
+            occupation, organization, designation, work_location,
+            business_name, business_type, business_address, business_website,
+            address, bio, privacy, created_at, updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, NOW(), NOW())
+          ON CONFLICT (id) DO UPDATE SET
+            username = EXCLUDED.username,
+            name = EXCLUDED.name,
+            name_bn = EXCLUDED.name_bn,
+            email = EXCLUDED.email,
+            phone = EXCLUDED.phone,
+            password_hash = COALESCE(NULLIF(EXCLUDED.password_hash, ''), users.password_hash),
+            role = CASE WHEN users.role = 'super_admin' THEN 'super_admin' ELSE EXCLUDED.role END,
+            status = EXCLUDED.status,
+            passing_year = EXCLUDED.passing_year,
+            batch = EXCLUDED.batch,
+            dob = EXCLUDED.dob,
+            gender = EXCLUDED.gender,
+            blood_group = EXCLUDED.blood_group,
+            photo_url = EXCLUDED.photo_url,
+            occupation = EXCLUDED.occupation,
+            organization = EXCLUDED.organization,
+            designation = EXCLUDED.designation,
+            work_location = EXCLUDED.work_location,
+            business_name = EXCLUDED.business_name,
+            business_type = EXCLUDED.business_type,
+            business_address = EXCLUDED.business_address,
+            business_website = EXCLUDED.business_website,
+            address = EXCLUDED.address,
+            bio = EXCLUDED.bio,
+            privacy = EXCLUDED.privacy,
+            updated_at = NOW()`,
+          [
+            u.id,
+            u.username || '',
+            u.name,
+            u.name_bn || '',
+            u.email,
+            u.phone || '',
+            u.password_hash || '',
+            u.role || 'alumni_member',
+            u.status || 'active',
+            u.passing_year || null,
+            u.batch || '',
+            u.dob || '',
+            u.gender || '',
+            u.blood_group || '',
+            u.photo_url || '',
+            u.occupation || '',
+            u.organization || '',
+            u.designation || '',
+            u.work_location || '',
+            u.business_name || '',
+            u.business_type || '',
+            u.business_address || '',
+            u.business_website || '',
+            u.address || '',
+            u.bio || '',
+            u.privacy ? (typeof u.privacy === 'string' ? u.privacy : JSON.stringify(u.privacy)) : null,
+          ]
+        );
+      }
+    } catch (pgErr: any) {
+      if (pgErr.code === '23505') {
+        console.warn(`[syncSingleUser] Handled unique constraint collision for ${u.email}:`, pgErr.message);
+        try {
+          if (cleanEmail) {
+            await this.pool.query(
+              `UPDATE users SET name = COALESCE(NULLIF($2, ''), name), phone = COALESCE(NULLIF($3, ''), phone), updated_at = NOW() WHERE LOWER(email) = $1`,
+              [cleanEmail, u.name, u.phone || '']
+            );
+          }
+        } catch {}
+      } else {
+        throw pgErr;
+      }
+    }
   }
 
   public async syncSingleRegistration(r: any): Promise<void> {
@@ -1456,28 +1531,76 @@ class DatabaseEngine {
     }
   }
 
+  public sanitizeAndDeduplicateUsers(users: any[]): any[] {
+    if (!Array.isArray(users)) return [];
+
+    const dummyUsernames = ['exec', 'content', 'event', 'finance', 'contentmanager', 'eventmanager', 'financemanager', 'farhan', 'rahim', 'test'];
+    const dummyEmails = ['exec@nanupuralumni.org', 'content@nanupuralumni.org', 'event@nanupuralumni.org', 'finance@nanupuralumni.org', 'farhan@example.com', 'rahim@example.com', 'test@gmail.com', 'admin@dizency.com'];
+
+    // 1. Filter out dummy accounts
+    const filtered = users.filter(u =>
+      !dummyUsernames.includes((u.username || '').toLowerCase()) &&
+      !dummyEmails.includes((u.email || '').toLowerCase()) &&
+      !(u.email || '').endsWith('@example.com')
+    );
+
+    // 2. Deduplicate by email and id
+    const result: any[] = [];
+    const emailIndexMap = new Map<string, number>();
+    const idSet = new Set<string>();
+
+    for (const u of filtered) {
+      if (!u || !u.id) continue;
+      const cleanEmail = (u.email || '').trim().toLowerCase();
+
+      // If email exists and was already seen in this collection
+      if (cleanEmail && emailIndexMap.has(cleanEmail)) {
+        const existingIdx = emailIndexMap.get(cleanEmail)!;
+        const existingUser = result[existingIdx];
+
+        // Super admin takes precedence; merge attributes
+        if (u.role === 'super_admin' || (u.role === 'admin' && existingUser.role !== 'super_admin')) {
+          result[existingIdx] = {
+            ...existingUser,
+            ...u,
+            role: u.role === 'super_admin' ? 'super_admin' : (existingUser.role === 'super_admin' ? 'super_admin' : u.role),
+            password_hash: u.password_hash || existingUser.password_hash,
+          };
+        } else {
+          // Keep existing, merge missing non-empty fields from u
+          for (const [key, val] of Object.entries(u)) {
+            if (val !== undefined && val !== null && val !== '' && ((existingUser as any)[key] === undefined || (existingUser as any)[key] === null || (existingUser as any)[key] === '')) {
+              (existingUser as any)[key] = val;
+            }
+          }
+        }
+        continue;
+      }
+
+      if (idSet.has(u.id)) {
+        continue;
+      }
+
+      idSet.add(u.id);
+      if (cleanEmail) {
+        emailIndexMap.set(cleanEmail, result.length);
+      }
+      result.push({ ...u });
+    }
+
+    return result;
+  }
+
   public get<K extends keyof DatabaseSchema>(key: K): DatabaseSchema[K] {
     if (key === 'users') {
-      const dummyUsernames = ['exec', 'content', 'event', 'finance', 'contentmanager', 'eventmanager', 'financemanager', 'farhan', 'rahim', 'test'];
-      const dummyEmails = ['exec@nanupuralumni.org', 'content@nanupuralumni.org', 'event@nanupuralumni.org', 'finance@nanupuralumni.org', 'farhan@example.com', 'rahim@example.com', 'test@gmail.com', 'admin@dizency.com'];
-      return (this.data.users || []).filter(u =>
-        !dummyUsernames.includes((u.username || '').toLowerCase()) &&
-        !dummyEmails.includes((u.email || '').toLowerCase()) &&
-        !(u.email || '').endsWith('@example.com')
-      ) as DatabaseSchema[K];
+      return this.sanitizeAndDeduplicateUsers(this.data.users || []) as DatabaseSchema[K];
     }
     return this.data[key];
   }
 
   public async setAsync<K extends keyof DatabaseSchema>(key: K, value: DatabaseSchema[K]): Promise<void> {
     if (key === 'users' && Array.isArray(value)) {
-      const dummyUsernames = ['exec', 'content', 'event', 'finance', 'contentmanager', 'eventmanager', 'financemanager', 'farhan', 'rahim', 'test'];
-      const dummyEmails = ['exec@nanupuralumni.org', 'content@nanupuralumni.org', 'event@nanupuralumni.org', 'finance@nanupuralumni.org', 'farhan@example.com', 'rahim@example.com', 'test@gmail.com', 'admin@dizency.com'];
-      value = (value as any[]).filter(u =>
-        !dummyUsernames.includes((u.username || '').toLowerCase()) &&
-        !dummyEmails.includes((u.email || '').toLowerCase()) &&
-        !(u.email || '').endsWith('@example.com')
-      ) as DatabaseSchema[K];
+      value = this.sanitizeAndDeduplicateUsers(value) as DatabaseSchema[K];
     }
     this.data[key] = value;
     this.saveData();
@@ -1494,13 +1617,7 @@ class DatabaseEngine {
 
   public set<K extends keyof DatabaseSchema>(key: K, value: DatabaseSchema[K]) {
     if (key === 'users' && Array.isArray(value)) {
-      const dummyUsernames = ['exec', 'content', 'event', 'finance', 'contentmanager', 'eventmanager', 'financemanager', 'farhan', 'rahim', 'test'];
-      const dummyEmails = ['exec@nanupuralumni.org', 'content@nanupuralumni.org', 'event@nanupuralumni.org', 'finance@nanupuralumni.org', 'farhan@example.com', 'rahim@example.com', 'test@gmail.com', 'admin@dizency.com'];
-      value = (value as any[]).filter(u =>
-        !dummyUsernames.includes((u.username || '').toLowerCase()) &&
-        !dummyEmails.includes((u.email || '').toLowerCase()) &&
-        !(u.email || '').endsWith('@example.com')
-      ) as DatabaseSchema[K];
+      value = this.sanitizeAndDeduplicateUsers(value) as DatabaseSchema[K];
     }
     this.data[key] = value;
     this.saveData();

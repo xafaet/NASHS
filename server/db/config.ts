@@ -125,26 +125,10 @@ export function getDatabaseConfig(): DatabaseConfiguration {
   }
 
   const rawDriver = (process.env.DB_CONNECTION || '').toLowerCase().trim();
-
-  // 1. MySQL / MariaDB (cPanel hosting)
-  if (rawDriver === 'mysql' || process.env.DB_HOST) {
-    return {
-      driver: 'mysql',
-      mysql: {
-        host: process.env.DB_HOST || 'localhost',
-        port: parseInt(process.env.DB_PORT || '3306', 10),
-        database: process.env.DB_DATABASE || 'nash_alumni',
-        user: process.env.DB_USERNAME || 'root',
-        password: process.env.DB_PASSWORD || '',
-        socketPath: process.env.DB_SOCKET || undefined,
-        charset: 'utf8mb4',
-      },
-    };
-  }
-
-  // 2. Supabase / PostgreSQL
   const dbUrl = process.env.DATABASE_URL || process.env.SUPABASE_DB_URL;
-  if (rawDriver === 'supabase' || rawDriver === 'postgres' || dbUrl) {
+
+  // 1. Authoritative Cloud PostgreSQL / Supabase Driver
+  if (rawDriver === 'supabase' || rawDriver === 'postgres' || (dbUrl && rawDriver !== 'mysql' && rawDriver !== 'local')) {
     return {
       driver: 'supabase',
       postgres: {
@@ -156,7 +140,28 @@ export function getDatabaseConfig(): DatabaseConfiguration {
     };
   }
 
-  // 3. Fallback / Embedded JSON engine
+  // 2. Authoritative cPanel MySQL / MariaDB Driver
+  if (rawDriver === 'mysql' || (process.env.DB_HOST && process.env.DB_USERNAME)) {
+    // SECURITY FIX: Never default to MySQL 'root' with empty password!
+    // In production, require explicit cPanel/MySQL credentials.
+    const user = (process.env.DB_USERNAME || '').trim();
+    const password = process.env.DB_PASSWORD !== undefined ? process.env.DB_PASSWORD : '';
+
+    return {
+      driver: 'mysql',
+      mysql: {
+        host: (process.env.DB_HOST || '127.0.0.1').trim(),
+        port: parseInt(process.env.DB_PORT || '3306', 10),
+        database: (process.env.DB_DATABASE || 'nash_alumni').trim(),
+        user: user, // Must be explicitly configured; never fallback to unauthenticated 'root'
+        password: password,
+        socketPath: process.env.DB_SOCKET || undefined,
+        charset: 'utf8mb4',
+      },
+    };
+  }
+
+  // 3. Explicit Local Driver (Development only)
   return {
     driver: 'local',
   };

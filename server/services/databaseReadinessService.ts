@@ -129,7 +129,7 @@ export class DatabaseReadinessService {
 
     // Determine target database driver
     const dbConfig = getDatabaseConfig();
-    const effectiveDriver = (installedData?.driver || dbConfig.driver || 'mysql').toLowerCase();
+    const effectiveDriver = (dbConfig.driver || installedData?.driver || (process.env.DATABASE_URL ? 'supabase' : 'local')).toLowerCase();
     const siteName = installedData?.site_name || 'Nanupur Abu Sobhan High School Alumni Association';
 
     let dbConnected = false;
@@ -167,31 +167,37 @@ export class DatabaseReadinessService {
     // 2. MySQL / MariaDB Driver (cPanel hosting)
     else if (effectiveDriver === 'mysql') {
       const mysqlCfg = dbConfig.mysql || {
-        host: process.env.DB_HOST || 'localhost',
+        host: process.env.DB_HOST || '127.0.0.1',
         port: Number(process.env.DB_PORT) || 3306,
         database: process.env.DB_DATABASE || 'nash_alumni',
-        user: process.env.DB_USERNAME || 'root',
-        password: process.env.DB_PASSWORD || '',
+        user: (process.env.DB_USERNAME || '').trim(),
+        password: process.env.DB_PASSWORD !== undefined ? process.env.DB_PASSWORD : '',
       };
 
       maskedHost = `${this.maskHost(mysqlCfg.host)}:${mysqlCfg.port || 3306}`;
       dbName = mysqlCfg.database;
 
-      let conn: mysql.Connection | null = null;
-      try {
-        conn = await mysql.createConnection({
-          host: mysqlCfg.host,
-          port: mysqlCfg.port,
-          database: mysqlCfg.database,
-          user: mysqlCfg.user,
-          password: mysqlCfg.password,
-          connectTimeout: 4000,
-        });
+      // SECURITY AUDIT: Never attempt connection with empty user or unauthenticated root!
+      if (!mysqlCfg.user || (mysqlCfg.user === 'root' && !mysqlCfg.password)) {
+        dbConnected = false;
+        schemaValid = false;
+        rawError = 'Production MySQL credentials incomplete: DB_USERNAME and DB_PASSWORD must be configured in environment. Connecting with unauthenticated root credentials is prohibited.';
+      } else {
+        let conn: mysql.Connection | null = null;
+        try {
+          conn = await mysql.createConnection({
+            host: mysqlCfg.host,
+            port: mysqlCfg.port,
+            database: mysqlCfg.database,
+            user: mysqlCfg.user,
+            password: mysqlCfg.password,
+            connectTimeout: 4000,
+          });
 
-        // Test basic connectivity
-        await conn.query('SELECT 1');
-        latencyMs = Date.now() - startTime;
-        dbConnected = true;
+          // Test basic connectivity
+          await conn.query('SELECT 1');
+          latencyMs = Date.now() - startTime;
+          dbConnected = true;
 
         // Verify required schema tables (users, site_settings, registrations)
         try {
@@ -214,6 +220,7 @@ export class DatabaseReadinessService {
         }
       }
     }
+    }
 
     // 3. PostgreSQL / Supabase Driver
     else if (effectiveDriver === 'supabase' || effectiveDriver === 'postgres') {
@@ -231,12 +238,26 @@ export class DatabaseReadinessService {
 
       let pool: PgPool | null = null;
       try {
-        pool = new PgPool({
-          connectionString: connStr,
-          ssl: { rejectUnauthorized: false },
-          connectionTimeoutMillis: 4000,
-          max: 2,
-        });
+        const parsed = parsePostgresUrl(connStr);
+        if (parsed) {
+          pool = new PgPool({
+            user: parsed.user,
+            password: parsed.password,
+            host: parsed.host,
+            port: parsed.port,
+            database: parsed.database,
+            ssl: parsed.ssl,
+            connectionTimeoutMillis: 10000,
+            max: 2,
+          });
+        } else {
+          pool = new PgPool({
+            connectionString: connStr,
+            ssl: { rejectUnauthorized: false },
+            connectionTimeoutMillis: 10000,
+            max: 2,
+          });
+        }
 
         const client = await pool.connect();
         await client.query('SELECT 1');
@@ -580,6 +601,8 @@ export class DatabaseReadinessService {
         pathname === '/api/health' ||
         pathname === '/api/system/db-status' ||
         pathname === '/api/system/test-db' ||
+        pathname === '/api/system/db-diagnostic' ||
+        pathname === '/api/system/db-diagnostic/log' ||
         pathname === '/api/system/switch-driver'
       ) {
         return next();

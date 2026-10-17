@@ -1,6 +1,6 @@
 # ==============================================================================
 # Root Apache Configuration for cPanel Hosting
-# Nanupur Abu Sobhan High School Alumni Platform
+# Nanupur Abu Sobhan High School Alumni Platform & 85th Reunion
 # ==============================================================================
 
 <IfModule mod_rewrite.c>
@@ -11,8 +11,10 @@
     RewriteRule ^data/.*$ - [F,L,NC]
     RewriteRule ^database/.*$ - [F,L,NC]
     RewriteRule ^server/.*$ - [F,L,NC]
+    RewriteRule ^storage/.*$ - [F,L,NC]
     RewriteRule ^node_modules/.*$ - [F,L,NC]
     RewriteRule ^package(-lock)?\.json$ - [F,L,NC]
+    RewriteRule ^composer\.(json|lock)$ - [F,L,NC]
     RewriteRule ^tsconfig\.json$ - [F,L,NC]
 
     # Enforce HTTPS
@@ -20,10 +22,10 @@
     RewriteCond %{HTTP:X-Forwarded-Proto} !https
     RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
-    # If backend is running via Node.js Passenger or Proxy
-    # Route /api to Node server port if configured via ProxyPass:
-    # ProxyPass /api http://127.0.0.1:3000/api
-    # ProxyPassReverse /api http://127.0.0.1:3000/api
+    # Route requests that do not match existing files or directories through index.php
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [QSA,L]
 </IfModule>
 
 # Block access to hidden dotfiles
@@ -32,5 +34,6 @@
     Deny from all
 </FilesMatch>
 
-# Character Encoding
+# Character Encoding & Security
 AddDefaultCharset UTF-8
+ServerSignature Off

@@ -29,6 +29,8 @@ import {
   Radio,
   CheckCircle,
   XCircle,
+  Archive,
+  FolderArchive,
 } from 'lucide-react';
 import { apiFetch } from '../../utils/api';
 
@@ -44,6 +46,8 @@ export const AdminDatabase: React.FC<AdminDatabaseProps> = ({ onNotify, getHeade
   const [testingConnection, setTestingConnection] = useState(false);
   const [reconnecting, setReconnecting] = useState(false);
   const [diagnosticResult, setDiagnosticResult] = useState<any>(null);
+  const [deepDiagnostic, setDeepDiagnostic] = useState<any>(null);
+  const [runningDeepAudit, setRunningDeepAudit] = useState(false);
   const [exporting, setExporting] = useState<'sql' | 'json' | 'csv' | null>(null);
 
   const getAuthHeaders = () => {
@@ -98,6 +102,26 @@ export const AdminDatabase: React.FC<AdminDatabaseProps> = ({ onNotify, getHeade
       onNotify?.('Diagnostic test failed: ' + err.message);
     } finally {
       setTestingConnection(false);
+    }
+  };
+
+  const runDeepAudit = async () => {
+    setRunningDeepAudit(true);
+    try {
+      const res = await apiFetch('/api/system/db-diagnostic');
+      const data = await res.json();
+      setDeepDiagnostic(data);
+      if (data.status === 'OPERATIONAL') {
+        onNotify?.(`Audit complete! Credentials verified: ${data.active_configuration?.username || 'user'}@${data.active_configuration?.host || 'host'}. Logged to storage/logs.`);
+      } else if (data.status === 'ROOT_FALLBACK_DETECTED') {
+        onNotify?.(`CRITICAL WARNING: Database has resolved to root@localhost! Check diagnostic details.`);
+      } else {
+        onNotify?.(`Database diagnostic finished with status: ${data.status}. Log written.`);
+      }
+    } catch (err: any) {
+      onNotify?.('Failed running deep database diagnostic: ' + err.message);
+    } finally {
+      setRunningDeepAudit(false);
     }
   };
 
@@ -232,6 +256,16 @@ DB_DRIVER=supabase
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={runDeepAudit}
+              disabled={runningDeepAudit}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-700 hover:bg-indigo-800 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer disabled:opacity-50"
+            >
+              <Terminal className={`w-3.5 h-3.5 ${runningDeepAudit ? 'animate-spin' : ''}`} />
+              <span>{runningDeepAudit ? 'Auditing Origins...' : 'Audit Credential Origins'}</span>
+            </button>
+
             <button
               type="button"
               onClick={runLiveDiagnostic}
@@ -378,6 +412,146 @@ DB_DRIVER=supabase
           </div>
         )}
 
+        {/* Deep Credential Origin & Fallback Diagnostic Report */}
+        {deepDiagnostic && (
+          <div className="bg-slate-900 text-slate-200 rounded-2xl p-5 sm:p-6 border border-slate-800 space-y-4 shadow-md animate-in fade-in">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <Terminal className="w-5 h-5 text-indigo-400" />
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                    <span>Database Connection Settings & Credential Origins</span>
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${
+                        deepDiagnostic.status === 'OPERATIONAL'
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                          : deepDiagnostic.status === 'ROOT_FALLBACK_DETECTED'
+                          ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                          : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                      }`}
+                    >
+                      {deepDiagnostic.status}
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5 font-mono">
+                    Log written to: <span className="text-indigo-300">{deepDiagnostic.log_file_path || 'storage/logs/database-connection-diagnostic.log'}</span>
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setDeepDiagnostic(null)}
+                className="text-slate-400 hover:text-white text-xs font-bold self-start sm:self-auto cursor-pointer"
+              >
+                ✕ Close
+              </button>
+            </div>
+
+            {/* Active Configuration Summary (Password explicitly omitted) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+              <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700/60">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Driver & Host</span>
+                <span className="font-mono font-bold text-white text-sm">
+                  {deepDiagnostic.active_configuration?.driver}://{deepDiagnostic.active_configuration?.host}:{deepDiagnostic.active_configuration?.port}
+                </span>
+              </div>
+              <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700/60">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Database</span>
+                <span className="font-mono font-bold text-indigo-300 text-sm">
+                  {deepDiagnostic.active_configuration?.database || 'none'}
+                </span>
+              </div>
+              <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700/60">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Active User</span>
+                <span
+                  className={`font-mono font-bold text-sm ${
+                    deepDiagnostic.active_configuration?.username === 'root'
+                      ? 'text-rose-400'
+                      : 'text-emerald-300'
+                  }`}
+                >
+                  {deepDiagnostic.active_configuration?.username || 'empty'}
+                </span>
+              </div>
+              <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700/60">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Password Status</span>
+                <span className="font-mono font-bold text-amber-300 text-sm flex items-center gap-1">
+                  {deepDiagnostic.active_configuration?.password_meta?.is_set ? 'CONFIGURED' : 'EMPTY / NOT SET'}
+                  <span className="text-[10px] text-slate-400 font-sans font-normal">
+                    ({deepDiagnostic.active_configuration?.password_meta?.length || 0} chars, hidden)
+                  </span>
+                </span>
+              </div>
+            </div>
+
+            {/* Root Fallback Risk Assessment */}
+            {deepDiagnostic.root_fallback_risk && (
+              <div
+                className={`p-3.5 rounded-xl border text-xs space-y-1.5 ${
+                  deepDiagnostic.root_fallback_risk.risk_level === 'CRITICAL'
+                    ? 'bg-rose-950/40 border-rose-800/80 text-rose-200'
+                    : deepDiagnostic.root_fallback_risk.risk_level === 'MODERATE'
+                    ? 'bg-amber-950/40 border-amber-800/80 text-amber-200'
+                    : 'bg-emerald-950/40 border-emerald-800/80 text-emerald-200'
+                }`}
+              >
+                <div className="font-bold flex items-center justify-between">
+                  <span>Root Fallback Risk: {deepDiagnostic.root_fallback_risk.risk_level}</span>
+                  <span className="text-[11px] font-normal">
+                    {deepDiagnostic.root_fallback_risk.is_currently_root
+                      ? '⚠️ Danger: Application is resolving to root@localhost'
+                      : '✓ Safe: Application is using designated production user'}
+                  </span>
+                </div>
+                {deepDiagnostic.root_fallback_risk.critical_warnings?.map((w: string, idx: number) => (
+                  <p key={idx} className="font-mono text-[11px] text-amber-300">! {w}</p>
+                ))}
+                {deepDiagnostic.root_fallback_risk.recommendations?.map((r: string, idx: number) => (
+                  <p key={idx} className="font-mono text-[11px] text-emerald-300">* Recommendation: {r}</p>
+                ))}
+              </div>
+            )}
+
+            {/* Credential Origins Breakdown Table */}
+            <div className="overflow-x-auto rounded-xl border border-slate-800">
+              <table className="w-full text-left text-xs font-mono">
+                <thead className="bg-slate-800/90 text-slate-400 uppercase text-[10px]">
+                  <tr>
+                    <th className="px-3.5 py-2">Variable</th>
+                    <th className="px-3.5 py-2">Active Value</th>
+                    <th className="px-3.5 py-2">Primary Origin Source</th>
+                    <th className="px-3.5 py-2">In .env file</th>
+                    <th className="px-3.5 py-2">In process.env</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                  {deepDiagnostic.credential_origins &&
+                    Object.entries(deepDiagnostic.credential_origins).map(([key, item]: any) => (
+                      <tr key={key} className="hover:bg-slate-800/40">
+                        <td className="px-3.5 py-2 font-bold text-white">{key}</td>
+                        <td className="px-3.5 py-2 text-indigo-300">
+                          {key === 'DB_PASSWORD' ? '[REDACTED FOR SECURITY]' : String(item.active_value ?? 'null')}
+                        </td>
+                        <td className="px-3.5 py-2">
+                          <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 text-[11px]">
+                            {item.primary_source}
+                          </span>
+                        </td>
+                        <td className="px-3.5 py-2 text-slate-400">
+                          {key === 'DB_PASSWORD' ? (item.layers?.dotenv_file ? 'Set (masked)' : 'Missing') : String(item.layers?.dotenv_file ?? '—')}
+                        </td>
+                        <td className="px-3.5 py-2 text-slate-400">
+                          {key === 'DB_PASSWORD' ? (item.layers?.process_env ? 'Set (masked)' : 'Missing') : String(item.layers?.process_env ?? '—')}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* Table Records Summary */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -438,16 +612,45 @@ DB_DRIVER=supabase
               <div className="flex items-center gap-2">
                 <Download className="w-5 h-5 text-amber-400" />
                 <h3 className="text-base font-bold text-white">
-                  Database Export & Disaster Recovery Backups
+                  cPanel Deployment & Database Backups
                 </h3>
               </div>
               <p className="text-xs text-slate-400 mt-1">
-                Generate real, production-ready backups of your entire application database in multiple standard formats.
+                Download the production cPanel-ready ZIP archive or generate real database backups in multiple standard formats.
               </p>
             </div>
+
+            <a
+              href="/api/admin/database/download-cpanel-package"
+              download="nash_alumni_cpanel_production.zip"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-[#0f4d2a] hover:from-emerald-500 hover:to-[#135d34] text-white rounded-xl text-xs font-bold transition shadow-md border border-emerald-500/40 cursor-pointer self-start sm:self-auto"
+            >
+              <Archive className="w-4 h-4 text-amber-300" />
+              <span>Download Ready cPanel ZIP</span>
+            </a>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* cPanel Ready Package (.zip) */}
+            <div className="p-4 bg-gradient-to-br from-emerald-950/80 via-slate-800 to-slate-900 border border-emerald-500/50 rounded-xl flex flex-col justify-between space-y-3 shadow-sm">
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2 text-emerald-400">
+                  <Archive className="w-4 h-4" />
+                  <h4 className="font-bold text-sm text-white">cPanel Deployment (.zip)</h4>
+                </div>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Turnkey cPanel deployment package containing production SPA, Laravel controllers, index.php router, .htaccess, and SQL schemas.
+                </p>
+              </div>
+              <a
+                href="/api/admin/database/download-cpanel-package"
+                download="nash_alumni_cpanel_production.zip"
+                className="w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-sm text-center"
+              >
+                <Download className="w-3.5 h-3.5 text-amber-300" />
+                <span>Get cPanel ZIP</span>
+              </a>
+            </div>
             {/* cPanel MySQL Export */}
             <div className="p-4 bg-slate-800/80 border border-slate-700 rounded-xl flex flex-col justify-between space-y-3">
               <div className="space-y-1.5">

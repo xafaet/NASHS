@@ -39,18 +39,23 @@ $pdo = null;
 if ($driver === 'mysql' || (!empty($env['DB_HOST']) && empty($env['DATABASE_URL']))) {
     $host = getenv('DB_HOST') ?: ($env['DB_HOST'] ?? '127.0.0.1');
     $port = getenv('DB_PORT') ?: ($env['DB_PORT'] ?? '3306');
-    $db   = getenv('DB_DATABASE') ?: ($env['DB_DATABASE'] ?? 'nash_alumni');
-    $user = getenv('DB_USERNAME') ?: ($env['DB_USERNAME'] ?? 'root');
+    $db   = getenv('DB_DATABASE') ?: ($env['DB_DATABASE'] ?? '');
+    $user = getenv('DB_USERNAME') ?: ($env['DB_USERNAME'] ?? '');
     $pass = getenv('DB_PASSWORD') ?: ($env['DB_PASSWORD'] ?? '');
 
-    echo "[1/4] Connecting to cPanel MySQL/MariaDB ($host:$port/$db)... ";
-    $dsn = "mysql:host=$host;port=$port;dbname=$db;charset=utf8mb4";
-    try {
-        $pdo = new PDO($dsn, $user, $pass, [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_TIMEOUT => 5,
-            PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
-        ]);
+    if (empty($user) || ($user === 'root' && empty($pass))) {
+        echo "[1/4] cPanel MySQL Configuration Error:\n";
+        echo "      DB_USERNAME and DB_PASSWORD must be set in your .env file.\n";
+        echo "      Unauthenticated connection as 'root'@'localhost' (using password: NO) is disallowed.\n\n";
+    } else {
+        echo "[1/4] Connecting to cPanel MySQL/MariaDB ($host:$port/$db)... ";
+        $dsn = "mysql:host=$host;port=$port;dbname=$db;charset=utf8mb4";
+        try {
+            $pdo = new PDO($dsn, $user, $pass, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_TIMEOUT => 5,
+                PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
+            ]);
         $ver = $pdo->query("SELECT VERSION()")->fetchColumn();
         echo "CONNECTED!\n";
         echo "      Server Version: MySQL/MariaDB " . $ver . "\n\n";
@@ -58,6 +63,7 @@ if ($driver === 'mysql' || (!empty($env['DB_HOST']) && empty($env['DATABASE_URL'
         echo "FAILED!\n";
         echo "      Error: " . $e->getMessage() . "\n";
         echo "      (Note: Ensure MySQL credentials in .env match your cPanel database)\n\n";
+    }
     }
 }
 

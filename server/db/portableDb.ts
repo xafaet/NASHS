@@ -31,6 +31,14 @@ export class PortableDatabaseManager {
 
     // 1. MySQL / MariaDB (e.g. cPanel)
     if (this.config.driver === 'mysql' && this.config.mysql) {
+      if (!this.config.mysql.user || (this.config.mysql.user === 'root' && !this.config.mysql.password)) {
+        this.lastError = 'Incomplete MySQL configuration: DB_USERNAME and DB_PASSWORD must be explicitly provided in your environment. Connecting with unauthenticated root credentials is prohibited.';
+        console.warn(`[Database] ${this.lastError}`);
+        this.activeDriverType = 'mysql';
+        this.connected = false;
+        return;
+      }
+
       try {
         const start = Date.now();
         this.mysqlPool = mysql.createPool({
@@ -452,7 +460,8 @@ export class PortableDatabaseManager {
           username = VALUES(username), name = VALUES(name), name_bn = VALUES(name_bn),
           email = VALUES(email), phone = VALUES(phone),
           password_hash = COALESCE(NULLIF(VALUES(password_hash), ''), password_hash),
-          role = VALUES(role), status = VALUES(status), passing_year = VALUES(passing_year),
+          role = CASE WHEN role = 'super_admin' THEN 'super_admin' ELSE VALUES(role) END,
+          status = VALUES(status), passing_year = VALUES(passing_year),
           batch = VALUES(batch), dob = VALUES(dob), gender = VALUES(gender),
           blood_group = VALUES(blood_group), photo_url = VALUES(photo_url),
           occupation = VALUES(occupation), organization = VALUES(organization),
@@ -468,41 +477,123 @@ export class PortableDatabaseManager {
           u.blood_group || '', u.photo_url || '', u.occupation || '', u.organization || '',
           u.designation || '', u.work_location || '', u.business_name || '', u.business_type || '',
           u.business_address || '', u.business_website || '', u.address || '', u.bio || '',
-          u.privacy ? JSON.stringify(u.privacy) : null,
+          u.privacy ? (typeof u.privacy === 'string' ? u.privacy : JSON.stringify(u.privacy)) : null,
         ]
       );
     } else if ((this.activeDriverType === 'supabase' || this.activeDriverType === 'postgres') && this.pgPool) {
-      await this.pgPool.query(
-        `INSERT INTO users (
-          id, username, name, name_bn, email, phone, password_hash, role, status,
-          passing_year, batch, dob, gender, blood_group, photo_url,
-          occupation, organization, designation, work_location,
-          business_name, business_type, business_address, business_website,
-          address, bio, privacy, created_at, updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, NOW(), NOW())
-        ON CONFLICT (id) DO UPDATE SET
-          username = EXCLUDED.username, name = EXCLUDED.name, name_bn = EXCLUDED.name_bn,
-          email = EXCLUDED.email, phone = EXCLUDED.phone,
-          password_hash = COALESCE(NULLIF(EXCLUDED.password_hash, ''), users.password_hash),
-          role = EXCLUDED.role, status = EXCLUDED.status, passing_year = EXCLUDED.passing_year,
-          batch = EXCLUDED.batch, dob = EXCLUDED.dob, gender = EXCLUDED.gender,
-          blood_group = EXCLUDED.blood_group, photo_url = EXCLUDED.photo_url,
-          occupation = EXCLUDED.occupation, organization = EXCLUDED.organization,
-          designation = EXCLUDED.designation, work_location = EXCLUDED.work_location,
-          business_name = EXCLUDED.business_name, business_type = EXCLUDED.business_type,
-          business_address = EXCLUDED.business_address, business_website = EXCLUDED.business_website,
-          address = EXCLUDED.address, bio = EXCLUDED.bio, privacy = EXCLUDED.privacy,
-          updated_at = NOW()`,
-        [
-          u.id, u.username || '', u.name, u.name_bn || '', u.email || '', u.phone || '',
-          u.password_hash || '', u.role || 'alumni_member', u.status || 'active',
-          u.passing_year || null, u.batch || '', u.dob || '', u.gender || '',
-          u.blood_group || '', u.photo_url || '', u.occupation || '', u.organization || '',
-          u.designation || '', u.work_location || '', u.business_name || '', u.business_type || '',
-          u.business_address || '', u.business_website || '', u.address || '', u.bio || '',
-          u.privacy ? JSON.stringify(u.privacy) : null,
-        ]
-      );
+      const cleanEmail = (u.email || '').trim().toLowerCase();
+      const cleanUsername = (u.username || '').trim().toLowerCase();
+
+      try {
+        // Find existing user by ID or by unique email or username
+        const checkRes = await this.pgPool.query(
+          `SELECT id, role, password_hash, email, username FROM users 
+           WHERE id = $1 
+              OR ($2 != '' AND LOWER(email) = $2)
+              OR ($3 != '' AND LOWER(username) = $3)
+           LIMIT 1`,
+          [u.id, cleanEmail, cleanUsername]
+        );
+
+        if (checkRes.rows && checkRes.rows.length > 0) {
+          const matched = checkRes.rows[0];
+          const matchedId = matched.id;
+          const effectiveRole = matched.role === 'super_admin' ? 'super_admin' : (u.role || matched.role || 'alumni_member');
+
+          await this.pgPool.query(
+            `UPDATE users SET
+              username = COALESCE(NULLIF($2, ''), username),
+              name = COALESCE(NULLIF($3, ''), name),
+              name_bn = COALESCE(NULLIF($4, ''), name_bn),
+              email = COALESCE(NULLIF($5, ''), email),
+              phone = COALESCE(NULLIF($6, ''), phone),
+              password_hash = COALESCE(NULLIF($7, ''), password_hash),
+              role = $8::user_role,
+              status = COALESCE(NULLIF($9, ''), status),
+              passing_year = COALESCE($10, passing_year),
+              batch = COALESCE(NULLIF($11, ''), batch),
+              dob = COALESCE(NULLIF($12, ''), dob),
+              gender = COALESCE(NULLIF($13, ''), gender),
+              blood_group = COALESCE(NULLIF($14, ''), blood_group),
+              photo_url = COALESCE(NULLIF($15, ''), photo_url),
+              occupation = COALESCE(NULLIF($16, ''), occupation),
+              organization = COALESCE(NULLIF($17, ''), organization),
+              designation = COALESCE(NULLIF($18, ''), designation),
+              work_location = COALESCE(NULLIF($19, ''), work_location),
+              business_name = COALESCE(NULLIF($20, ''), business_name),
+              business_type = COALESCE(NULLIF($21, ''), business_type),
+              business_address = COALESCE(NULLIF($22, ''), business_address),
+              business_website = COALESCE(NULLIF($23, ''), business_website),
+              address = COALESCE(NULLIF($24, ''), address),
+              bio = COALESCE(NULLIF($25, ''), bio),
+              privacy = COALESCE($26, privacy),
+              updated_at = NOW()
+            WHERE id = $1`,
+            [
+              matchedId, u.username || matched.username || '', u.name, u.name_bn || '', u.email || matched.email || '', u.phone || '',
+              u.password_hash || '', effectiveRole, u.status || 'active',
+              u.passing_year || null, u.batch || '', u.dob || '', u.gender || '',
+              u.blood_group || '', u.photo_url || '', u.occupation || '', u.organization || '',
+              u.designation || '', u.work_location || '', u.business_name || '', u.business_type || '',
+              u.business_address || '', u.business_website || '', u.address || '', u.bio || '',
+              u.privacy ? (typeof u.privacy === 'string' ? u.privacy : JSON.stringify(u.privacy)) : null,
+            ]
+          );
+        } else {
+          // No conflicting record exists -> insert cleanly
+          await this.pgPool.query(
+            `INSERT INTO users (
+              id, username, name, name_bn, email, phone, password_hash, role, status,
+              passing_year, batch, dob, gender, blood_group, photo_url,
+              occupation, organization, designation, work_location,
+              business_name, business_type, business_address, business_website,
+              address, bio, privacy, created_at, updated_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, NOW(), NOW())
+            ON CONFLICT (id) DO UPDATE SET
+              username = EXCLUDED.username, name = EXCLUDED.name, name_bn = EXCLUDED.name_bn,
+              email = EXCLUDED.email, phone = EXCLUDED.phone,
+              password_hash = COALESCE(NULLIF(EXCLUDED.password_hash, ''), users.password_hash),
+              role = CASE WHEN users.role = 'super_admin' THEN 'super_admin' ELSE EXCLUDED.role END,
+              status = EXCLUDED.status, passing_year = EXCLUDED.passing_year,
+              batch = EXCLUDED.batch, dob = EXCLUDED.dob, gender = EXCLUDED.gender,
+              blood_group = EXCLUDED.blood_group, photo_url = EXCLUDED.photo_url,
+              occupation = EXCLUDED.occupation, organization = EXCLUDED.organization,
+              designation = EXCLUDED.designation, work_location = EXCLUDED.work_location,
+              business_name = EXCLUDED.business_name, business_type = EXCLUDED.business_type,
+              business_address = EXCLUDED.business_address, business_website = EXCLUDED.business_website,
+              address = EXCLUDED.address, bio = EXCLUDED.bio, privacy = EXCLUDED.privacy,
+              updated_at = NOW()`,
+            [
+              u.id, u.username || '', u.name, u.name_bn || '', u.email || '', u.phone || '',
+              u.password_hash || '', u.role || 'alumni_member', u.status || 'active',
+              u.passing_year || null, u.batch || '', u.dob || '', u.gender || '',
+              u.blood_group || '', u.photo_url || '', u.occupation || '', u.organization || '',
+              u.designation || '', u.work_location || '', u.business_name || '', u.business_type || '',
+              u.business_address || '', u.business_website || '', u.address || '', u.bio || '',
+              u.privacy ? (typeof u.privacy === 'string' ? u.privacy : JSON.stringify(u.privacy)) : null,
+            ]
+          );
+        }
+      } catch (pgErr: any) {
+        if (pgErr.code === '23505') {
+          console.warn(`[portableDb.saveUser] Handled unique constraint 23505 for ${u.email || u.username}:`, pgErr.message);
+          // Graceful fallback: update existing row by email
+          try {
+            if (cleanEmail) {
+              await this.pgPool.query(
+                `UPDATE users SET 
+                   name = COALESCE(NULLIF($2, ''), name),
+                   phone = COALESCE(NULLIF($3, ''), phone),
+                   updated_at = NOW() 
+                 WHERE LOWER(email) = $1`,
+                [cleanEmail, u.name, u.phone || '']
+              );
+            }
+          } catch {}
+        } else {
+          throw pgErr;
+        }
+      }
     }
   }
 
@@ -1129,16 +1220,20 @@ export class PortableDatabaseManager {
 
     // Save/Upsert all items
     for (const item of items) {
-      if (key === 'registrations') await this.saveRegistration(item);
-      else if (key === 'users') await this.saveUser(item);
-      else if (key === 'payments') await this.savePayment(item);
-      else if (key === 'tokens') await this.saveToken(item);
-      else if (key === 'pages') await this.savePage(item);
-      else if (key === 'news') await this.saveNews(item);
-      else if (key === 'notices') await this.saveNotice(item);
-      else if (key === 'committee_members') await this.saveCommitteeMember(item);
-      else if (key === 'batches') await this.saveBatch(item);
-      else if (key === 'offline_centers') await this.saveOfflineCenter(item);
+      try {
+        if (key === 'registrations') await this.saveRegistration(item);
+        else if (key === 'users') await this.saveUser(item);
+        else if (key === 'payments') await this.savePayment(item);
+        else if (key === 'tokens') await this.saveToken(item);
+        else if (key === 'pages') await this.savePage(item);
+        else if (key === 'news') await this.saveNews(item);
+        else if (key === 'notices') await this.saveNotice(item);
+        else if (key === 'committee_members') await this.saveCommitteeMember(item);
+        else if (key === 'batches') await this.saveBatch(item);
+        else if (key === 'offline_centers') await this.saveOfflineCenter(item);
+      } catch (itemErr: any) {
+        console.warn(`[portableDb] Item sync notice for ${key} (${item?.id || item?.email || 'unknown'}):`, itemErr.message);
+      }
     }
 
     // Handle Deletions: remove rows from DB that are not in items list

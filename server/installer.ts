@@ -173,6 +173,9 @@ export class InstallerService {
         if (!user) {
           return { success: false, message: 'MySQL DB Username is required (e.g. "cpaneluser_admin").' };
         }
+        if (user === 'root' && !password) {
+          return { success: false, message: 'Security Policy: Connecting as MySQL root with an empty password is not allowed in production.' };
+        }
 
         const conn = await mysql.createConnection({
           host,
@@ -359,10 +362,10 @@ export class InstallerService {
 
     if (payload.database.driver === 'mysql') {
       dbConfigUpdate.mysql = {
-        host: payload.database.host || 'localhost',
+        host: payload.database.host || '127.0.0.1',
         port: Number(payload.database.port) || 3306,
-        database: payload.database.database || 'alumni_platform',
-        user: payload.database.username || 'root',
+        database: payload.database.database,
+        user: payload.database.username,
         password: payload.database.password || '',
         charset: 'utf8mb4',
       };
@@ -399,7 +402,20 @@ export class InstallerService {
       created_at: new Date().toISOString(),
     };
 
-    users.unshift(adminUser);
+    const existingAdminIdx = users.findIndex(u =>
+      (u.email && u.email.toLowerCase() === rawEmail.toLowerCase()) ||
+      (u.username && u.username.toLowerCase() === normalizedUsername.toLowerCase()) ||
+      u.role === 'super_admin'
+    );
+    if (existingAdminIdx >= 0) {
+      users[existingAdminIdx] = {
+        ...users[existingAdminIdx],
+        ...adminUser,
+        id: users[existingAdminIdx].id || adminUser.id,
+      };
+    } else {
+      users.unshift(adminUser);
+    }
     db.set('users', users);
 
     // 4. Update Site Settings & Information

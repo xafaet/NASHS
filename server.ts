@@ -14,6 +14,7 @@ import { PaymentController } from './server/controllers/paymentController';
 import { TokenService } from './server/services/tokenService';
 import { InstallerService } from './server/installer';
 import { DatabaseReadinessService } from './server/services/databaseReadinessService';
+import { DatabaseDiagnosticService } from './server/services/databaseDiagnosticService';
 import {
   Registration,
   User,
@@ -102,6 +103,47 @@ async function startServer() {
     }
   });
 
+  // Diagnostic endpoint: Logs current database connection settings (excluding password)
+  // and reports the origin of credentials to secure internal log file storage/logs/database-connection-diagnostic.log
+  app.get('/api/system/db-diagnostic', async (req, res) => {
+    try {
+      const report = await DatabaseDiagnosticService.runDiagnostics();
+      const statusCode = (!report.connection_test.connected || report.root_fallback_risk.is_currently_root) ? 503 : 200;
+      res.status(statusCode).json(report);
+    } catch (err: any) {
+      res.status(500).json({
+        status: 'ERROR',
+        message: err.message,
+      });
+    }
+  });
+
+  app.post('/api/system/db-diagnostic/log', async (req, res) => {
+    try {
+      const context = req.body || {};
+      const report = await DatabaseDiagnosticService.runDiagnostics(context);
+      res.json({
+        success: true,
+        message: 'Database connection diagnostics recorded to secure internal log.',
+        log_path: report.log_file_path,
+        status: report.status,
+        summary: {
+          driver: report.active_configuration.driver,
+          host: report.active_configuration.host,
+          database: report.active_configuration.database,
+          username: report.active_configuration.username,
+          is_root: report.root_fallback_risk.is_currently_root,
+          connected: report.connection_test.connected,
+        },
+      });
+    } catch (err: any) {
+      res.status(500).json({
+        success: false,
+        message: err.message,
+      });
+    }
+  });
+
   app.post('/api/system/switch-driver', async (req, res) => {
     try {
       const { driver, credentials } = req.body;
@@ -119,11 +161,14 @@ async function startServer() {
       if (driver === 'local') {
         process.env.DB_CONNECTION = 'local';
       } else if (driver === 'mysql' && credentials) {
+        if (!credentials.username || (credentials.username === 'root' && !credentials.password)) {
+          return res.status(400).json({ success: false, message: 'Valid MySQL username and password are required. Unauthenticated root connections are prohibited.' });
+        }
         process.env.DB_CONNECTION = 'mysql';
-        process.env.DB_HOST = credentials.host || 'localhost';
+        process.env.DB_HOST = credentials.host || '127.0.0.1';
         process.env.DB_PORT = String(credentials.port || 3306);
         process.env.DB_DATABASE = credentials.database || 'nash_alumni';
-        process.env.DB_USERNAME = credentials.username || 'root';
+        process.env.DB_USERNAME = credentials.username;
         if (credentials.password !== undefined) process.env.DB_PASSWORD = credentials.password;
       } else if ((driver === 'supabase' || driver === 'postgres') && credentials) {
         process.env.DB_CONNECTION = 'supabase';
@@ -2627,14 +2672,27 @@ async function startServer() {
 
       // 1. Auto-create or find user profile first (satisfies event_registrations foreign key: user_id -> users)
       const users = db.get('users');
-      let user = users.find(u => (email && u.email === email) || u.phone === phone);
+      const cleanEmail = (email || '').trim().toLowerCase();
+      const normPhone = normalizedPhone;
+
+      let user = users.find(u => {
+        const uEmail = (u.email || '').trim().toLowerCase();
+        const uCleanPhone = (u.phone || '').replace(/[\s\-\(\)]/g, '');
+        const uNormPhone = uCleanPhone.startsWith('+88')
+          ? uCleanPhone.slice(3)
+          : uCleanPhone.startsWith('880')
+          ? uCleanPhone.slice(2)
+          : uCleanPhone;
+        return (cleanEmail && uEmail === cleanEmail) || (normPhone && uNormPhone === normPhone);
+      });
+
       if (!user) {
         user = {
           id: `user-${Date.now()}`,
-          username: `alumni_${phone.slice(-6)}`,
+          username: `alumni_${normPhone.slice(-6) || Math.floor(100000 + Math.random() * 900000)}`,
           name: newRegistration.full_name,
-          email: email || `${phone}@nanupuralumni.local`,
-          phone,
+          email: cleanEmail || `${normPhone}@nanupuralumni.local`,
+          phone: phone.trim(),
           role: 'alumni_member',
           passing_year: year,
           batch: batchInfo.batch_name,
@@ -2654,6 +2712,7 @@ async function startServer() {
         if (!user.address && address) { user.address = address; updatedUser = true; }
         if (!user.occupation && occupation) { user.occupation = occupation; updatedUser = true; }
         if (!user.photo_url && persistentPhotoUrl) { user.photo_url = persistentPhotoUrl; updatedUser = true; }
+        if (!user.phone && phone) { user.phone = phone.trim(); updatedUser = true; }
         if (updatedUser) db.set('users', users);
       }
 
@@ -3719,14 +3778,32 @@ async function startServer() {
       }
 
       // Ensure user account exists
-      let user = users.find(u => (email && u.email === email) || u.phone === phone);
+      const cleanEmail = (email || '').trim().toLowerCase();
+      const cleanPhone = (phone || '').replace(/[\s\-\(\)]/g, '');
+      const normPhone = cleanPhone.startsWith('+88')
+        ? cleanPhone.slice(3)
+        : cleanPhone.startsWith('880')
+        ? cleanPhone.slice(2)
+        : cleanPhone;
+
+      let user = users.find(u => {
+        const uEmail = (u.email || '').trim().toLowerCase();
+        const uCleanPhone = (u.phone || '').replace(/[\s\-\(\)]/g, '');
+        const uNormPhone = uCleanPhone.startsWith('+88')
+          ? uCleanPhone.slice(3)
+          : uCleanPhone.startsWith('880')
+          ? uCleanPhone.slice(2)
+          : uCleanPhone;
+        return (cleanEmail && uEmail === cleanEmail) || (normPhone && uNormPhone === normPhone);
+      });
+
       if (!user) {
         user = {
           id: `user-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-          username: `alumni_${phone.slice(-6)}`,
+          username: `alumni_${normPhone.slice(-6) || Math.floor(100000 + Math.random() * 900000)}`,
           name: fullName,
-          email: email || `${phone}@nanupuralumni.local`,
-          phone,
+          email: cleanEmail || `${normPhone}@nanupuralumni.local`,
+          phone: phone.trim(),
           role: 'alumni_member',
           passing_year: passingYear,
           batch: batchInfo.batch_name,
@@ -4223,6 +4300,20 @@ async function startServer() {
     res.setHeader('Content-Type', 'application/sql; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="nash_alumni_cloudsql_postgres_dump_${dateStr}.sql"`);
     return res.send(sqlData);
+  });
+
+  // Download complete turnkey cPanel deployment package
+  app.get('/api/admin/database/download-cpanel-package', (req, res) => {
+    const zipPath = path.join(process.cwd(), 'nash_alumni_cpanel_production.zip');
+    if (!fs.existsSync(zipPath)) {
+      return res.status(404).json({ success: false, message: 'cPanel deployment package not found on server.' });
+    }
+    const stat = fs.statSync(zipPath);
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Length', stat.size);
+    res.setHeader('Content-Disposition', 'attachment; filename="nash_alumni_cpanel_production.zip"');
+    const fileStream = fs.createReadStream(zipPath);
+    fileStream.pipe(res);
   });
 
   // ==========================================

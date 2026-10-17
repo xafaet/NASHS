@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Nanupur Abu Sobhan High School Alumni Platform
-Production cPanel Deployment ZIP Packager
+Nanupur Abu Sobhan High School Alumni Platform & 85th Reunion
+Production cPanel Deployment Package Builder
+Creates a turnkey ZIP archive for direct deployment to cPanel File Manager or Git.
 """
 import os
 import zipfile
@@ -15,13 +16,15 @@ INCLUDE_FILES = [
     "env-template.txt",
     ".htaccess",
     "htaccess-backup.txt",
+    "index.php",
+    "index.html",
     "app.js",
     "server.js",
     "database_setup.sql",
     "README_cPanel_Installation.txt",
+    "CPANEL_DEPLOYMENT_GUIDE.md",
     "composer.json",
     "package.json",
-    "CPANEL_DEPLOYMENT_GUIDE.md",
     "server.ts",
 ]
 
@@ -31,6 +34,8 @@ INCLUDE_DIRS = [
     "app",
     "routes",
     "database",
+    "storage",
+    "public",
     "scripts",
 ]
 
@@ -50,12 +55,12 @@ def should_exclude(filepath):
     normalized = filepath.replace("\\", "/")
     basename = os.path.basename(normalized)
     
-    # Explicitly allow safe example templates
-    if basename == ".env.example":
+    # Explicitly allow safe example templates and gitignores
+    if basename in [".env.example", ".gitignore", ".htaccess", ".gitkeep"]:
         return False
         
     # Block actual env files with secrets
-    if basename == ".env" or basename.startswith(".env.") or basename.endswith(".env"):
+    if basename == ".env" or (basename.startswith(".env.") and not basename.endswith(".example")):
         return True
         
     for pattern in ["node_modules", ".git", ".cache", "__pycache__", ".DS_Store", "db.json", "installed.json"]:
@@ -65,10 +70,16 @@ def should_exclude(filepath):
     return False
 
 def build_package():
-    print(f"Creating production cPanel deployment package: {OUTPUT_ZIP}...")
+    print(f"==================================================================")
+    print(f" Packaging cPanel Production Distribution: {OUTPUT_ZIP}...")
+    print(f"==================================================================")
     
     total_files = 0
     total_uncompressed_bytes = 0
+
+    # Ensure storage logs directory structure exists before packaging
+    os.makedirs("storage/logs", exist_ok=True)
+    os.makedirs("data/uploads", exist_ok=True)
 
     with zipfile.ZipFile(OUTPUT_ZIP, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as zipf:
         # Add root files
@@ -97,16 +108,18 @@ def build_package():
         # Add empty data and uploads placeholder structure
         zipf.writestr("data/.gitkeep", "")
         zipf.writestr("data/uploads/.gitkeep", "")
-        total_files += 2
+        zipf.writestr("storage/logs/.gitkeep", "")
+        total_files += 3
 
     zip_size = os.path.getsize(OUTPUT_ZIP)
     print("\n==================================================================")
-    print(" 📦 CPANEL DEPLOYMENT PACKAGE SUCCESSFULLY BUILT")
+    print(" 📦 CPANEL DEPLOYMENT ARCHIVE SUCCESSFULLY GENERATED")
     print("==================================================================")
     print(f"  Archive:            {OUTPUT_ZIP}")
     print(f"  Total Files:        {total_files}")
     print(f"  Compressed Size:    {zip_size / (1024 * 1024):.2f} MB ({zip_size:,} bytes)")
     print(f"  Uncompressed Size:  {total_uncompressed_bytes / (1024 * 1024):.2f} MB")
+    print(f"  Target cPanel Path: public_html/ or /home/username/app")
     print("==================================================================")
 
 if __name__ == "__main__":
