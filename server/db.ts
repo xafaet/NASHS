@@ -123,6 +123,41 @@ export interface DatabaseSchema {
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
 
+export const DUMMY_REG_NAMES = [
+  'Mushtaq Ahmed', 'Sayem Sheikh', 'Mahbub Alam', 'Dr. Fazlul Karim', 
+  'Professor Anisur Rahman', 'Engr. Zahidul Islam Chowdhury', 
+  'Audit Verification Alumni', 'Test Alumnus Persistence', 'Test Mail',
+  'Attendee Size M', 'Attendee Size XL', 'Automated Email Test Alumnus',
+  'Valid Alumni', 'Valid Alumni Updated'
+];
+
+export const DUMMY_REG_IDS = [
+  'REG-85-186949', 'REG-85-704859', 'REG-85-340696', 'REG-85-055068', 
+  'REG-85-299344', 'REG-85-955829', 'REG-85-862178763', 'REG-85-838121377', 
+  'REG-85-520992996', 'REG-85-852169', 'REG-85-512497', 'REG-85-896430', 
+  'REG-85-511690', 'REG-85-818455', 'REG-85-430875', 'REG-85-615355', 
+  'REG-85-815034', 'REG-85-476561', 'REG-85-900532', 'REG-85-755494'
+];
+
+export function isDummyRegistration(r: any): boolean {
+  if (!r) return true;
+  if (DUMMY_REG_IDS.includes(r.id)) return true;
+  if (DUMMY_REG_NAMES.includes(r.full_name)) return true;
+  if (typeof r.full_name === 'string') {
+    const fn = r.full_name.toLowerCase();
+    if (fn.includes('audit verification') || fn.includes('test alumnus') || fn.includes('test mail') || fn.includes('test attendee')) {
+      return true;
+    }
+  }
+  if (typeof r.email === 'string') {
+    const em = r.email.toLowerCase();
+    if (em.endsWith('@example.org') || em.includes('alumni_1791') || em === 'dsdsd@dsd.com' || em === 'testalumnus9988@nanupuralumni.local') {
+      return true;
+    }
+  }
+  return false;
+}
+
 class DatabaseEngine {
   private data: DatabaseSchema;
   private pool: Pool | null = null;
@@ -141,7 +176,41 @@ class DatabaseEngine {
       for (const [key, val] of Object.entries(dbData)) {
         if (val !== undefined && val !== null) {
           if (Array.isArray(val) && val.length > 0) {
-            (this.data as any)[key] = key === 'users' ? this.sanitizeAndDeduplicateUsers(val) : val;
+            if (key === 'users') {
+              (this.data as any)[key] = this.sanitizeAndDeduplicateUsers(val);
+            } else if (key === 'registrations') {
+              const remoteRegs = val as any[];
+              const merged = [...remoteRegs];
+              for (const lr of (this.data.registrations || [])) {
+                if (isDummyRegistration(lr)) continue;
+                if (!remoteRegs.some(rr => rr.id === lr.id || (lr.phone && rr.phone === lr.phone))) {
+                  merged.push(lr);
+                }
+              }
+              this.data.registrations = merged;
+            } else if (key === 'tokens') {
+              const remoteTokens = val as any[];
+              const merged = [...remoteTokens];
+              for (const lt of (this.data.tokens || [])) {
+                if (!lt || !lt.id) continue;
+                if (!remoteTokens.some(rt => rt.id === lt.id || (lt.token_code && rt.token_code === lt.token_code))) {
+                  merged.push(lt);
+                }
+              }
+              this.data.tokens = merged;
+            } else if (key === 'payments') {
+              const remotePayments = val as any[];
+              const merged = [...remotePayments];
+              for (const lp of (this.data.payments || [])) {
+                if (!lp || !lp.id) continue;
+                if (!remotePayments.some(rp => rp.id === lp.id || (lp.transaction_id && rp.transaction_id === lp.transaction_id))) {
+                  merged.push(lp);
+                }
+              }
+              this.data.payments = merged;
+            } else {
+              (this.data as any)[key] = val;
+            }
             hydratedAny = true;
           } else if (!Array.isArray(val) && typeof val === 'object' && Object.keys(val).length > 0) {
             (this.data as any)[key] = val;
@@ -424,14 +493,32 @@ class DatabaseEngine {
 
       // 5. Hydrate Registrations (Purging any test/dummy registrations)
       try {
-        const dummyNames = ['Mushtaq Ahmed', 'Sayem Sheikh', 'Mahbub Alam', 'Dr. Fazlul Karim', 'Professor Anisur Rahman', 'Engr. Zahidul Islam Chowdhury'];
-        const dummyIds = ['REG-85-186949', 'REG-85-704859', 'REG-85-340696', 'REG-85-055068', 'REG-85-299344', 'REG-85-955829', 'REG-85-862178763', 'REG-85-838121377', 'REG-85-520992996'];
-
         if (this.pool && this.isSupabaseConnected) {
           try {
-            await this.pool.query(`DELETE FROM public.payment_transactions WHERE registration_id = ANY($1)`, [dummyIds]);
-            await this.pool.query(`DELETE FROM public.entry_tokens WHERE registration_id = ANY($1)`, [dummyIds]);
-            await this.pool.query(`DELETE FROM public.event_registrations WHERE id = ANY($1) OR full_name = ANY($2)`, [dummyIds, dummyNames]);
+            await this.pool.query(
+              `DELETE FROM public.payment_transactions 
+               WHERE registration_id = ANY($1) 
+                  OR registration_id = '' 
+                  OR registration_id IS NULL`,
+              [DUMMY_REG_IDS]
+            );
+            await this.pool.query(
+              `DELETE FROM public.entry_tokens 
+               WHERE registration_id = ANY($1) 
+                  OR member_name = ANY($2) 
+                  OR member_name ILIKE '%Audit Verification%' 
+                  OR member_name ILIKE '%Test Alumnus%'`,
+              [DUMMY_REG_IDS, DUMMY_REG_NAMES]
+            );
+            await this.pool.query(
+              `DELETE FROM public.event_registrations 
+               WHERE id = ANY($1) 
+                  OR full_name = ANY($2) 
+                  OR full_name ILIKE '%Audit Verification%' 
+                  OR full_name ILIKE '%Test Alumnus%' 
+                  OR full_name ILIKE '%Test Mail%'`,
+              [DUMMY_REG_IDS, DUMMY_REG_NAMES]
+            );
           } catch (delErr: any) {
             console.warn('Purge dummy registrations note:', delErr.message);
           }
@@ -441,7 +528,7 @@ class DatabaseEngine {
         let remoteRegs: Registration[] = [];
         if (regRes.rows && regRes.rows.length > 0) {
           remoteRegs = regRes.rows
-            .filter(r => !dummyIds.includes(r.id) && !dummyNames.includes(r.full_name))
+            .filter(r => !isDummyRegistration(r))
             .map(r => ({
               id: r.id,
               event_id: r.event_id || 'event-85th-anniversary',
@@ -471,20 +558,39 @@ class DatabaseEngine {
             }));
         }
 
+        // Merge any existing local non-dummy registered entries so they are preserved across reconnects
+        let addedNewRegs = false;
+        for (const lr of (this.data.registrations || [])) {
+          if (isDummyRegistration(lr)) continue;
+          const found = remoteRegs.some(rr => rr.id === lr.id || (lr.phone && rr.phone === lr.phone));
+          if (!found) {
+            remoteRegs.push(lr);
+            addedNewRegs = true;
+          }
+        }
+
         this.data.registrations = remoteRegs;
         this.saveData();
+        if (addedNewRegs) {
+          await this.persistKeyToSupabase('registrations', this.data.registrations);
+        }
       } catch (regErr: any) {
         console.warn('Registrations sync note:', regErr.message);
       }
 
       // 6. Hydrate Tokens
       try {
-        const dummyIds = ['REG-85-186949', 'REG-85-704859', 'REG-85-340696', 'REG-85-055068', 'REG-85-299344', 'REG-85-955829', 'REG-85-862178763', 'REG-85-838121377', 'REG-85-520992996'];
         const tokRes = await this.pool.query('SELECT * FROM entry_tokens');
         let remoteTokens: EntryToken[] = [];
+        const validRegIds = new Set(this.data.registrations.map(r => r.id));
         if (tokRes.rows && tokRes.rows.length > 0) {
           remoteTokens = tokRes.rows
-            .filter(t => !dummyIds.includes(t.registration_id))
+            .filter(t => 
+              validRegIds.has(t.registration_id) &&
+              !DUMMY_REG_IDS.includes(t.registration_id) && 
+              !DUMMY_REG_NAMES.includes(t.member_name) &&
+              !(t.member_name || '').includes('Audit Verification')
+            )
             .map(t => ({
               id: t.id,
               token_code: t.token_code,
@@ -500,8 +606,22 @@ class DatabaseEngine {
               created_at: t.created_at ? new Date(t.created_at).toISOString() : new Date().toISOString(),
             }));
         }
+
+        let addedNewTokens = false;
+        for (const lt of (this.data.tokens || [])) {
+          if (!lt || !lt.id) continue;
+          const found = remoteTokens.some(rt => rt.id === lt.id || (lt.token_code && rt.token_code === lt.token_code));
+          if (!found && validRegIds.has(lt.registration_id)) {
+            remoteTokens.push(lt);
+            addedNewTokens = true;
+          }
+        }
+
         this.data.tokens = remoteTokens;
         this.saveData();
+        if (addedNewTokens) {
+          await this.persistKeyToSupabase('tokens', this.data.tokens);
+        }
       } catch (tokErr: any) {
         console.warn('Tokens sync note:', tokErr.message);
       }
@@ -553,12 +673,12 @@ class DatabaseEngine {
 
       // 9. Hydrate Payment Transactions
       try {
-        const dummyIds = ['REG-85-186949', 'REG-85-704859', 'REG-85-340696', 'REG-85-055068', 'REG-85-299344', 'REG-85-955829', 'REG-85-862178763', 'REG-85-838121377', 'REG-85-520992996'];
         const payRes = await this.pool.query('SELECT * FROM payment_transactions ORDER BY created_at DESC');
         let remotePayments: PaymentTransaction[] = [];
+        const validRegIds = new Set(this.data.registrations.map(r => r.id));
         if (payRes.rows && payRes.rows.length > 0) {
           remotePayments = payRes.rows
-            .filter(p => !dummyIds.includes(p.registration_id))
+            .filter(p => p.registration_id && validRegIds.has(p.registration_id) && !DUMMY_REG_IDS.includes(p.registration_id))
             .map(p => ({
               id: p.id,
               registration_id: p.registration_id || '',
@@ -580,8 +700,21 @@ class DatabaseEngine {
             }));
         }
 
+        let addedNewPayments = false;
+        for (const lp of (this.data.payments || [])) {
+          if (!lp || !lp.id) continue;
+          const found = remotePayments.some(rp => rp.id === lp.id || (lp.transaction_id && rp.transaction_id === lp.transaction_id));
+          if (!found && validRegIds.has(lp.registration_id)) {
+            remotePayments.push(lp);
+            addedNewPayments = true;
+          }
+        }
+
         this.data.payments = remotePayments;
         this.saveData();
+        if (addedNewPayments) {
+          await this.persistKeyToSupabase('payments', this.data.payments);
+        }
       } catch (payErr: any) {
         console.warn('Payment transactions sync note:', payErr.message);
       }
@@ -1374,18 +1507,19 @@ class DatabaseEngine {
           })(),
           registrations: (() => {
             const raw = parsed.registrations || [];
-            const dummyNames = ['Mushtaq Ahmed', 'Sayem Sheikh', 'Mahbub Alam', 'Dr. Fazlul Karim', 'Professor Anisur Rahman', 'Engr. Zahidul Islam Chowdhury'];
-            return raw.filter((r: any) => !r.id.startsWith('REG-85-186949') && !r.id.startsWith('REG-85-704859') && !r.id.startsWith('REG-85-340696') && !dummyNames.includes(r.full_name));
+            return raw.filter((r: any) => !isDummyRegistration(r));
           })(),
           payments: (() => {
             const raw = parsed.payments || [];
-            const dummyIds = ['REG-85-186949', 'REG-85-704859', 'REG-85-340696', 'REG-85-055068', 'REG-85-299344', 'REG-85-955829', 'REG-85-862178763', 'REG-85-838121377', 'REG-85-520992996'];
-            return raw.filter((p: any) => !dummyIds.includes(p.registration_id));
+            return raw.filter((p: any) => p.registration_id && !DUMMY_REG_IDS.includes(p.registration_id));
           })(),
           tokens: (() => {
             const raw = parsed.tokens || [];
-            const dummyIds = ['REG-85-186949', 'REG-85-704859', 'REG-85-340696', 'REG-85-055068', 'REG-85-299344', 'REG-85-955829', 'REG-85-862178763', 'REG-85-838121377', 'REG-85-520992996'];
-            return raw.filter((t: any) => !dummyIds.includes(t.registration_id));
+            return raw.filter((t: any) => 
+              !DUMMY_REG_IDS.includes(t.registration_id) && 
+              !DUMMY_REG_NAMES.includes(t.member_name) &&
+              !(t.member_name || '').includes('Audit Verification')
+            );
           })(),
           audit_logs: parsed.audit_logs || [],
           program_schedule: parsed.program_schedule || initialProgramSchedule,
@@ -1539,9 +1673,17 @@ class DatabaseEngine {
 
     // 1. Filter out dummy accounts
     const filtered = users.filter(u =>
-      !dummyUsernames.includes((u.username || '').toLowerCase()) &&
-      !dummyEmails.includes((u.email || '').toLowerCase()) &&
-      !(u.email || '').endsWith('@example.com')
+      u.role === 'super_admin' || (
+        !dummyUsernames.includes((u.username || '').toLowerCase()) &&
+        !dummyEmails.includes((u.email || '').toLowerCase()) &&
+        !(u.email || '').endsWith('@example.com') &&
+        !(u.email || '').endsWith('@example.org') &&
+        !(u.email || '').includes('alumni_1791') &&
+        !(u.name || '').includes('Audit Verification') &&
+        !(u.name || '').includes('Test Alumnus') &&
+        u.name !== 'Test Mail' &&
+        u.username !== 'dup1'
+      )
     );
 
     // 2. Deduplicate by email and id
