@@ -2458,6 +2458,64 @@ class DatabaseEngine {
     }
     lines.push('\n');
 
+    // 8. TABLE: media_items (Registration Photos & Admin Uploads)
+    lines.push(`-- ------------------------------------------------------------`);
+    lines.push(`-- 8. TABLE: media_items (Registration Photos & Admin Assets)`);
+    lines.push(`-- ------------------------------------------------------------`);
+    if (isMySQL) {
+      lines.push(`CREATE TABLE IF NOT EXISTS \`media_items\` (`);
+      lines.push(`  \`id\` VARCHAR(100) PRIMARY KEY,`);
+      lines.push(`  \`name\` VARCHAR(255) NOT NULL,`);
+      lines.push(`  \`filename\` VARCHAR(255),`);
+      lines.push(`  \`url\` VARCHAR(500) NOT NULL,`);
+      lines.push(`  \`type\` VARCHAR(100) DEFAULT 'image/jpeg',`);
+      lines.push(`  \`size\` VARCHAR(50) DEFAULT '1.0 MB',`);
+      lines.push(`  \`size_bytes\` BIGINT DEFAULT 0,`);
+      lines.push(`  \`registration_id\` VARCHAR(100),`);
+      lines.push(`  \`user_id\` VARCHAR(100),`);
+      lines.push(`  \`source\` VARCHAR(50) DEFAULT 'upload',`);
+      lines.push(`  \`attendee_name\` VARCHAR(191),`);
+      lines.push(`  \`passing_year\` INT,`);
+      lines.push(`  \`token_code\` VARCHAR(100),`);
+      lines.push(`  \`created_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,`);
+      lines.push(`  \`updated_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,`);
+      lines.push(`  INDEX \`idx_media_reg_id\` (\`registration_id\`),`);
+      lines.push(`  INDEX \`idx_media_source\` (\`source\`)`);
+      lines.push(`) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;\n`);
+    } else {
+      lines.push(`CREATE TABLE IF NOT EXISTS media_items (`);
+      lines.push(`  id VARCHAR(100) PRIMARY KEY,`);
+      lines.push(`  name VARCHAR(255) NOT NULL,`);
+      lines.push(`  filename VARCHAR(255),`);
+      lines.push(`  url VARCHAR(500) NOT NULL,`);
+      lines.push(`  type VARCHAR(100) DEFAULT 'image/jpeg',`);
+      lines.push(`  size VARCHAR(50) DEFAULT '1.0 MB',`);
+      lines.push(`  size_bytes BIGINT DEFAULT 0,`);
+      lines.push(`  registration_id VARCHAR(100),`);
+      lines.push(`  user_id VARCHAR(100),`);
+      lines.push(`  source VARCHAR(50) DEFAULT 'upload',`);
+      lines.push(`  attendee_name VARCHAR(191),`);
+      lines.push(`  passing_year INT,`);
+      lines.push(`  token_code VARCHAR(100),`);
+      lines.push(`  created_at TIMESTAMPTZ DEFAULT NOW(),`);
+      lines.push(`  updated_at TIMESTAMPTZ DEFAULT NOW()`);
+      lines.push(`);\n`);
+    }
+
+    const mediaItems = this.data.media || [];
+    for (const m of mediaItems) {
+      if (isMySQL) {
+        lines.push(
+          `INSERT INTO \`media_items\` (\`id\`, \`name\`, \`filename\`, \`url\`, \`type\`, \`size\`, \`size_bytes\`, \`registration_id\`, \`user_id\`, \`source\`, \`attendee_name\`, \`passing_year\`, \`token_code\`, \`created_at\`) VALUES (${sqlEscape(m.id)}, ${sqlEscape(m.name)}, ${sqlEscape(m.filename)}, ${sqlEscape(m.url)}, ${sqlEscape(m.type)}, ${sqlEscape(m.size)}, ${m.size_bytes || 0}, ${sqlEscape(m.registration_id)}, ${sqlEscape(m.user_id)}, ${sqlEscape(m.source || 'upload')}, ${sqlEscape(m.attendee_name)}, ${m.passing_year ? parseInt(m.passing_year, 10) : 'NULL'}, ${sqlEscape(m.token_code)}, ${sqlEscape(m.created_at || timestamp)}) ON DUPLICATE KEY UPDATE \`name\` = VALUES(\`name\`), \`url\` = VALUES(\`url\`);`
+        );
+      } else {
+        lines.push(
+          `INSERT INTO media_items (id, name, filename, url, type, size, size_bytes, registration_id, user_id, source, attendee_name, passing_year, token_code, created_at) VALUES (${sqlEscape(m.id)}, ${sqlEscape(m.name)}, ${sqlEscape(m.filename)}, ${sqlEscape(m.url)}, ${sqlEscape(m.type)}, ${sqlEscape(m.size)}, ${m.size_bytes || 0}, ${sqlEscape(m.registration_id)}, ${sqlEscape(m.user_id)}, ${sqlEscape(m.source || 'upload')}, ${sqlEscape(m.attendee_name)}, ${m.passing_year ? parseInt(m.passing_year, 10) : 'NULL'}, ${sqlEscape(m.token_code)}, ${sqlEscape(m.created_at || timestamp)}) ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, url = EXCLUDED.url;`
+        );
+      }
+    }
+    lines.push('\n');
+
     if (isMySQL) {
       lines.push(`SET FOREIGN_KEY_CHECKS=1;`);
     }

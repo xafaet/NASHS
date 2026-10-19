@@ -51,18 +51,18 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Step 2: Database Config
-  const [driver, setDriver] = useState<'supabase' | 'mysql' | 'local'>('mysql');
+  const [driver, setDriver] = useState<'supabase' | 'mysql'>('mysql');
 
-  // Supabase / Cloud Postgres details
-  const [pgHost, setPgHost] = useState('aws-0-ap-southeast-1.pooler.supabase.com');
-  const [pgPort, setPgPort] = useState('6543');
-  const [pgDatabase, setPgDatabase] = useState('postgres');
-  const [pgUser, setPgUser] = useState('postgres.yourproject');
+  // Supabase / Cloud Postgres details (Clean blank defaults)
+  const [pgHost, setPgHost] = useState('');
+  const [pgPort, setPgPort] = useState('5432');
+  const [pgDatabase, setPgDatabase] = useState('');
+  const [pgUser, setPgUser] = useState('');
   const [pgPassword, setPgPassword] = useState('');
   const [pgSsl, setPgSsl] = useState(true);
   const [pgConnString, setPgConnString] = useState('');
 
-  // cPanel MySQL details
+  // cPanel MySQL details (Clean blank defaults)
   const [mysqlHost, setMysqlHost] = useState('localhost');
   const [mysqlPort, setMysqlPort] = useState('3306');
   const [mysqlDatabase, setMysqlDatabase] = useState('');
@@ -371,8 +371,8 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
       return;
     }
 
-    // If driver is not local, check if connection was tested successfully
-    if (driver !== 'local' && (!dbTested || !dbTestResult?.success)) {
+    // Verify that database connection was tested successfully
+    if (!dbTested || !dbTestResult?.success) {
       setShowUnverifiedWarning(true);
       return;
     }
@@ -712,12 +712,12 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
               <div>
                 <h2 className="text-xl sm:text-2xl font-black text-white">Configure Database Connection</h2>
                 <p className="text-xs sm:text-sm text-slate-400 mt-1">
-                  Choose between cPanel/Self-Hosted MySQL (recommended for standard shared hosting), Supabase PostgreSQL, or the Resilient Embedded Store.
+                  Select your production database engine. The platform connects directly to your verified database as the authoritative source of truth.
                 </p>
               </div>
 
               {/* Database Driver Selector */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <button
                   type="button"
                   onClick={() => {
@@ -726,15 +726,15 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
                     setDbTested(false);
                     setErrors({});
                   }}
-                  className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
+                  className={`p-4 rounded-2xl border text-left transition cursor-pointer ${
                     driver === 'mysql'
                       ? 'border-amber-400 bg-amber-950/30 text-white ring-2 ring-amber-400/20'
                       : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700'
                   }`}
                 >
                   <Server className="w-6 h-6 text-amber-400 mb-2" />
-                  <span className="text-sm font-bold block text-white">Option A: cPanel</span>
-                  <span className="text-[11px] text-slate-400">MySQL / MariaDB</span>
+                  <span className="text-sm font-bold block text-white">cPanel MySQL / MariaDB</span>
+                  <span className="text-[11px] text-slate-400">Standard cPanel Shared / VPS Hosting (Recommended)</span>
                 </button>
 
                 <button
@@ -745,34 +745,15 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
                     setDbTested(false);
                     setErrors({});
                   }}
-                  className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
+                  className={`p-4 rounded-2xl border text-left transition cursor-pointer ${
                     driver === 'supabase'
                       ? 'border-emerald-500 bg-emerald-950/40 text-white ring-2 ring-emerald-500/20'
                       : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700'
                   }`}
                 >
                   <Cloud className="w-6 h-6 text-emerald-400 mb-2" />
-                  <span className="text-sm font-bold block text-white">Option B: Cloud</span>
-                  <span className="text-[11px] text-slate-400">Supabase (PostgreSQL)</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDriver('local');
-                    setDbTestResult(null);
-                    setDbTested(true);
-                    setErrors({});
-                  }}
-                  className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
-                    driver === 'local'
-                      ? 'border-blue-500 bg-blue-950/40 text-white ring-2 ring-blue-500/20'
-                      : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700'
-                  }`}
-                >
-                  <Database className="w-6 h-6 text-blue-400 mb-2" />
-                  <span className="text-sm font-bold block text-white">Option C: Embedded</span>
-                  <span className="text-[11px] text-slate-400">Zero-Config Store</span>
+                  <span className="text-sm font-bold block text-white">PostgreSQL / Supabase</span>
+                  <span className="text-[11px] text-slate-400">Managed Cloud Database with SSL connection</span>
                 </button>
               </div>
 
@@ -1008,101 +989,81 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ onComplete, reason }) 
                 </div>
               )}
 
-              {/* Form for Option C: Embedded */}
-              {driver === 'local' && (
-                <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-2 text-xs text-slate-300">
-                  <p className="font-bold text-white text-sm">Resilient Embedded Database Engine</p>
-                  <p className="text-slate-400">
-                    Runs out-of-the-box inside the container with immediate zero-setup persistence in <code>data/db.json</code>.
-                    Allows seamless export to cPanel MySQL or Supabase anytime from the Super Admin Database Management panel.
-                  </p>
-                </div>
-              )}
-
               {/* TEST CONNECTION BUTTON & RESULT */}
-              {driver !== 'local' && (
-                <div className="space-y-3">
-                  <button
-                    type="button"
-                    onClick={handleTestConnection}
-                    disabled={testingDb}
-                    className="w-full py-3 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 border border-slate-700 transition cursor-pointer"
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={handleTestConnection}
+                  disabled={testingDb}
+                  className="w-full py-3 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 border border-slate-700 transition cursor-pointer"
+                >
+                  {testingDb ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+                      <span>Testing {driver === 'mysql' ? 'cPanel MySQL' : 'PostgreSQL'} Connection...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Database className="w-4 h-4 text-emerald-400" />
+                      <span>Test Database Connection Before Proceeding</span>
+                    </>
+                  )}
+                </button>
+
+                {dbTestResult && (
+                  <div
+                    className={`p-3.5 rounded-xl border text-xs flex items-start gap-2.5 animate-in fade-in ${
+                      dbTestResult.success
+                        ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300'
+                        : 'bg-red-950/40 border-red-500/50 text-red-300'
+                    }`}
                   >
-                    {testingDb ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
-                        <span>Testing {driver === 'mysql' ? 'cPanel MySQL' : 'Supabase'} Connection...</span>
-                      </>
+                    {dbTestResult.success ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                     ) : (
-                      <>
-                        <Database className="w-4 h-4 text-emerald-400" />
-                        <span>Test Database Connection Before Proceeding</span>
-                      </>
+                      <XCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
                     )}
-                  </button>
-
-                  {dbTestResult && (
-                    <div
-                      className={`p-3.5 rounded-xl border text-xs flex items-start gap-2.5 animate-in fade-in ${
-                        dbTestResult.success
-                          ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300'
-                          : 'bg-red-950/40 border-red-500/50 text-red-300'
-                      }`}
-                    >
-                      {dbTestResult.success ? (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                      ) : (
-                        <XCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-                      )}
-                      <div className="space-y-1">
-                        <p className="font-bold">{dbTestResult.message}</p>
-                        {dbTestResult.details && (
-                          <div className="bg-slate-950/60 p-2 rounded-lg font-mono text-[11px] space-y-0.5">
-                            {dbTestResult.details.server_version && (
-                              <p>Server Version: {dbTestResult.details.server_version}</p>
-                            )}
-                            {dbTestResult.details.database && (
-                              <p>Connected Database: {dbTestResult.details.database}</p>
-                            )}
-                            {dbTestResult.details.host && (
-                              <p>Endpoint: {dbTestResult.details.host}</p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Warning if user tries to proceed without testing */}
-                  {showUnverifiedWarning && (
-                    <div className="p-3.5 rounded-xl border border-amber-500/50 bg-amber-950/40 text-amber-300 text-xs flex items-start gap-2.5">
-                      <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                      <div className="flex-1 space-y-2">
-                        <p className="font-bold">Database connection not verified</p>
-                        <p className="text-[11px] text-amber-200/80 leading-relaxed">
-                          Please click <strong>&quot;Test Database Connection Before Proceeding&quot;</strong> to confirm that your MySQL credentials work before continuing to Super Admin creation.
-                        </p>
-                        <div className="flex items-center gap-2 pt-1">
-                          <button
-                            type="button"
-                            onClick={handleTestConnection}
-                            className="px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-lg text-xs"
-                          >
-                            Test Connection Now
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setCurrentStep(3)}
-                            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs"
-                          >
-                            Proceed Anyway (Offline/Isolated)
-                          </button>
+                    <div className="space-y-1">
+                      <p className="font-bold">{dbTestResult.message}</p>
+                      {dbTestResult.details && (
+                        <div className="bg-slate-950/60 p-2 rounded-lg font-mono text-[11px] space-y-0.5">
+                          {dbTestResult.details.server_version && (
+                            <p>Server Version: {dbTestResult.details.server_version}</p>
+                          )}
+                          {dbTestResult.details.database && (
+                            <p>Connected Database: {dbTestResult.details.database}</p>
+                          )}
+                          {dbTestResult.details.host && (
+                            <p>Endpoint: {dbTestResult.details.host}</p>
+                          )}
                         </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Warning if user tries to proceed without testing */}
+                {showUnverifiedWarning && (
+                  <div className="p-3.5 rounded-xl border border-amber-500/50 bg-amber-950/40 text-amber-300 text-xs flex items-start gap-2.5">
+                    <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                    <div className="flex-1 space-y-2">
+                      <p className="font-bold">Database connection not verified</p>
+                      <p className="text-[11px] text-amber-200/80 leading-relaxed">
+                        Please click <strong>&quot;Test Database Connection Before Proceeding&quot;</strong> to confirm that your database credentials work before continuing to Super Admin creation.
+                      </p>
+                      <div className="pt-1">
+                        <button
+                          type="button"
+                          onClick={handleTestConnection}
+                          className="px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-lg text-xs cursor-pointer"
+                        >
+                          Test Connection Now
+                        </button>
                       </div>
                     </div>
-                  )}
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
 
               <div className="pt-4 flex items-center justify-between">
                 <button

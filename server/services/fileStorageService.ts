@@ -18,7 +18,7 @@ export class FileStorageService {
    * Ensure necessary upload directories exist
    */
   public static ensureUploadDirs() {
-    const subdirs = ['photos', 'documents', 'committee', 'logos'];
+    const subdirs = ['photos', 'documents', 'committee', 'logos', 'media'];
     for (const dir of subdirs) {
       const fullPath = path.join(this.uploadBaseDir, dir);
       if (!fs.existsSync(fullPath)) {
@@ -177,33 +177,88 @@ export class FileStorageService {
     subfolder = 'photos',
     customMaxSizeBytes?: number
   ): Promise<string | undefined> {
+    const meta = await this.processIncomingPhotoWithMetadata(photoUrl, subfolder, customMaxSizeBytes);
+    return meta ? meta.url : (typeof photoUrl === 'string' && (photoUrl.startsWith('http') || photoUrl.startsWith('/uploads/')) ? photoUrl : undefined);
+  }
+
+  /**
+   * Processes incoming photo and returns full SavedFileInfo (metadata + URL + filename)
+   */
+  public static async processIncomingPhotoWithMetadata(
+    photoUrl: string | undefined | null,
+    subfolder = 'photos',
+    customMaxSizeBytes?: number
+  ): Promise<SavedFileInfo | null> {
     if (!photoUrl || typeof photoUrl !== 'string') {
-      return undefined;
+      return null;
     }
 
     const trimmed = photoUrl.trim();
     if (!trimmed) {
-      return undefined;
-    }
-
-    // If already stored on disk or a valid relative/absolute path
-    if (trimmed.startsWith('/uploads/') || trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-      return trimmed;
+      return null;
     }
 
     // If base64 data URI, persist to disk
     if (trimmed.startsWith('data:image/')) {
       try {
-        const saved = await this.saveBase64Image(trimmed, subfolder, customMaxSizeBytes);
-        if (saved) {
-          return saved.url;
-        }
+        return await this.saveBase64Image(trimmed, subfolder, customMaxSizeBytes);
       } catch (err: any) {
         console.warn('[FileStorageService] Failed to persist incoming image:', err.message);
         throw err;
       }
     }
 
-    return trimmed;
+    // If already stored on disk or a valid relative/absolute path
+    if (trimmed.startsWith('/uploads/')) {
+      const filename = path.basename(trimmed);
+      const relativePart = trimmed.replace(/^\/uploads\//, '');
+      const storagePath = path.join(this.uploadBaseDir, relativePart);
+      let sizeBytes = 0;
+      try {
+        if (fs.existsSync(storagePath)) {
+          sizeBytes = fs.statSync(storagePath).size;
+        }
+      } catch {}
+
+      return {
+        url: trimmed,
+        storagePath,
+        filename,
+        mimeType: trimmed.endsWith('.png') ? 'image/png' : trimmed.endsWith('.webp') ? 'image/webp' : 'image/jpeg',
+        sizeBytes,
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * Safely deletes an uploaded file from disk.
+   * Prevents path traversal and ignores non-existent files gracefully.
+   */
+  public static async deleteFile(relativeUrl: string): Promise<boolean> {
+    if (!relativeUrl || typeof relativeUrl !== 'string' || !relativeUrl.startsWith('/uploads/')) {
+      return false;
+    }
+
+    try {
+      const cleanRelative = relativeUrl.replace(/^\/uploads\//, '').split('?')[0];
+      const targetPath = path.resolve(this.uploadBaseDir, cleanRelative);
+
+      // Security check: Must reside within uploadBaseDir
+      if (!targetPath.startsWith(this.uploadBaseDir)) {
+        console.warn('[FileStorageService] Blocked illegal path traversal attempt:', relativeUrl);
+        return false;
+      }
+
+      if (fs.existsSync(targetPath)) {
+        await fs.promises.unlink(targetPath);
+        return true;
+      }
+    } catch (err: any) {
+      console.warn('[FileStorageService] File deletion notice:', err.message);
+    }
+
+    return false;
   }
 }

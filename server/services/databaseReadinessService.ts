@@ -87,8 +87,26 @@ export class DatabaseReadinessService {
           return { isInstalled: true, installedData: data };
         }
       } catch {
-        // Parse error, treat as uninstalled only if file is corrupt
+        // Parse error, check fallback
       }
+    }
+
+    // Check if configured via environment variables (.env on cPanel)
+    const cfg = getDatabaseConfig();
+    const hasConfiguredDatabase = Boolean(
+      (cfg.driver === 'mysql' && cfg.mysql?.database && cfg.mysql?.user) ||
+      ((cfg.driver === 'supabase' || cfg.driver === 'postgres') && (cfg.postgres?.connectionString || process.env.DATABASE_URL))
+    );
+    if (hasConfiguredDatabase) {
+      return {
+        isInstalled: true,
+        installedData: {
+          is_installed: true,
+          driver: cfg.driver,
+          site_name: process.env.SITE_NAME || process.env.APP_NAME || 'Nanupur Abu Sobhan High School Alumni Association',
+          site_url: process.env.APP_URL || process.env.SITE_URL || 'https://nanupuralumni.org',
+        },
+      };
     }
 
     return { isInstalled: false, installedData: {} };

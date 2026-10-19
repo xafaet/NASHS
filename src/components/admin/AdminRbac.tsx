@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldCheck, Plus, Trash2, Edit2, Key, CheckCircle2, Lock } from 'lucide-react';
-import { Role } from '../../types';
+import { CustomRole } from '../../types';
 import { apiFetch } from '../../utils/api';
 
 interface Props {
@@ -25,9 +25,9 @@ const AVAILABLE_PERMISSIONS = [
 ];
 
 export const AdminRbac: React.FC<Props> = ({ showToast, getHeaders }) => {
-  const [roles, setRoles] = useState<Role[]>([]);
+  const [roles, setRoles] = useState<CustomRole[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingRole, setEditingRole] = useState<Role | null>(null);
+  const [editingRole, setEditingRole] = useState<CustomRole | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
@@ -104,6 +104,7 @@ export const AdminRbac: React.FC<Props> = ({ showToast, getHeaders }) => {
               description: 'Custom administrative delegate with scoped access',
               permissions: ['registrations.view'],
               is_system: false,
+              created_at: new Date().toISOString(),
             });
             setModalOpen(true);
           }}

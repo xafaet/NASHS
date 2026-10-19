@@ -367,7 +367,31 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 );
 
 -- ------------------------------------------------------------
--- 17. DEFAULT SITE SETTINGS (Appearance, Confirmation & Config)
+-- 17. MEDIA LIBRARY (Registration Photos, Banners & Assets)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS media_items (
+    `id` VARCHAR(100) PRIMARY KEY,
+    `name` VARCHAR(255) NOT NULL,
+    `filename` VARCHAR(255),
+    `url` VARCHAR(500) NOT NULL,
+    `type` VARCHAR(100) DEFAULT 'image/jpeg',
+    `size` VARCHAR(50) DEFAULT '1.0 MB',
+    `size_bytes` BIGINT DEFAULT 0,
+    `registration_id` VARCHAR(100),
+    `user_id` VARCHAR(100),
+    `source` VARCHAR(50) DEFAULT 'upload',
+    `attendee_name` VARCHAR(191),
+    `passing_year` INT,
+    `token_code` VARCHAR(100),
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX `idx_media_reg_id` (`registration_id`),
+    INDEX `idx_media_source` (`source`),
+    INDEX `idx_media_created` (`created_at`)
+);
+
+-- ------------------------------------------------------------
+-- 18. DEFAULT SITE SETTINGS (Appearance, Confirmation & Config)
 -- ------------------------------------------------------------
 INSERT INTO site_settings (`key`, `value`) VALUES
 ('animations_config', '{"is_enabled":true,"preset":"smooth","duration":0.5,"default_delay":0,"stagger_delay":0.08,"scroll_triggered":true,"hover_effects":true,"play_mode":"once","intensity":"standard","respect_reduced_motion":true,"enable_homepage":true,"enable_header_nav":true,"enable_hero_animations":true,"enable_stats_cards":true,"enable_notices_news":true,"enable_events_schedule":true,"enable_forms_inputs":true,"enable_member_portal":true,"enable_admin_interface":true,"enable_page_transitions":true,"enable_card_reveals":true,"enable_button_hover":true,"enable_counter_animations":true}'),

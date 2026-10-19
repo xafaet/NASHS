@@ -44,8 +44,10 @@ interface RegistrationItem {
   photo_url?: string;
   fee_amount?: number;
   currency?: string;
-  payment_status: 'paid' | 'pending' | 'failed' | 'refunded';
+  payment_status: 'paid' | 'pending' | 'failed' | 'refunded' | 'verified' | 'payment_submitted' | 'under_review' | 'rejected' | string;
   payment_method?: string;
+  transaction_id?: string;
+  admin_notes?: string;
   token_code?: string;
   qr_code_svg?: string;
   checked_in?: boolean;

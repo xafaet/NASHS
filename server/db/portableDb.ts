@@ -1211,6 +1211,85 @@ export class PortableDatabaseManager {
   }
 
   /**
+   * Persist Media Item to configured database (MySQL & PostgreSQL)
+   */
+  public async saveMediaItem(m: any): Promise<void> {
+    if (!m || !m.id) return;
+
+    if (this.activeDriverType === 'mysql' && this.mysqlPool) {
+      await this.mysqlPool.execute(
+        `INSERT INTO media_items (
+          id, name, filename, url, type, size, size_bytes,
+          registration_id, user_id, source, attendee_name, passing_year, token_code, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+          name = VALUES(name), filename = VALUES(filename), url = VALUES(url),
+          type = VALUES(type), size = VALUES(size), size_bytes = VALUES(size_bytes),
+          registration_id = VALUES(registration_id), user_id = VALUES(user_id),
+          source = VALUES(source), attendee_name = VALUES(attendee_name),
+          passing_year = VALUES(passing_year), token_code = VALUES(token_code)`,
+        [
+          m.id,
+          m.name,
+          m.filename || null,
+          m.url,
+          m.type || 'image/jpeg',
+          m.size || '1.0 MB',
+          m.size_bytes || 0,
+          m.registration_id || null,
+          m.user_id || null,
+          m.source || 'upload',
+          m.attendee_name || null,
+          m.passing_year ? parseInt(m.passing_year, 10) : null,
+          m.token_code || null,
+          m.created_at || new Date().toISOString(),
+        ]
+      );
+    } else if ((this.activeDriverType === 'supabase' || this.activeDriverType === 'postgres') && this.pgPool) {
+      await this.pgPool.query(
+        `INSERT INTO media_items (
+          id, name, filename, url, type, size, size_bytes,
+          registration_id, user_id, source, attendee_name, passing_year, token_code, created_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        ON CONFLICT (id) DO UPDATE SET
+          name = EXCLUDED.name, filename = EXCLUDED.filename, url = EXCLUDED.url,
+          type = EXCLUDED.type, size = EXCLUDED.size, size_bytes = EXCLUDED.size_bytes,
+          registration_id = EXCLUDED.registration_id, user_id = EXCLUDED.user_id,
+          source = EXCLUDED.source, attendee_name = EXCLUDED.attendee_name,
+          passing_year = EXCLUDED.passing_year, token_code = EXCLUDED.token_code`,
+        [
+          m.id,
+          m.name,
+          m.filename || null,
+          m.url,
+          m.type || 'image/jpeg',
+          m.size || '1.0 MB',
+          m.size_bytes || 0,
+          m.registration_id || null,
+          m.user_id || null,
+          m.source || 'upload',
+          m.attendee_name || null,
+          m.passing_year ? parseInt(m.passing_year, 10) : null,
+          m.token_code || null,
+          m.created_at || new Date().toISOString(),
+        ]
+      );
+    }
+  }
+
+  /**
+   * Delete Media Item from configured database
+   */
+  public async deleteMediaItem(id: string): Promise<void> {
+    if (!id) return;
+    if (this.activeDriverType === 'mysql' && this.mysqlPool) {
+      await this.mysqlPool.execute('DELETE FROM media_items WHERE id = ?', [id]).catch(() => {});
+    } else if ((this.activeDriverType === 'supabase' || this.activeDriverType === 'postgres') && this.pgPool) {
+      await this.pgPool.query('DELETE FROM media_items WHERE id = $1', [id]).catch(() => {});
+    }
+  }
+
+  /**
    * Synchronize an entire collection with the database:
    * 1. Upserts each item
    * 2. Deletes records from database whose IDs are no longer in items list
@@ -1231,6 +1310,7 @@ export class PortableDatabaseManager {
         else if (key === 'committee_members') await this.saveCommitteeMember(item);
         else if (key === 'batches') await this.saveBatch(item);
         else if (key === 'offline_centers') await this.saveOfflineCenter(item);
+        else if (key === 'media') await this.saveMediaItem(item);
       } catch (itemErr: any) {
         console.warn(`[portableDb] Item sync notice for ${key} (${item?.id || item?.email || 'unknown'}):`, itemErr.message);
       }
@@ -1249,6 +1329,7 @@ export class PortableDatabaseManager {
       else if (key === 'committee_members') tableName = 'committee_members';
       else if (key === 'batches') tableName = 'batches';
       else if (key === 'offline_centers') tableName = 'offline_centers';
+      else if (key === 'media') tableName = 'media_items';
 
       if (tableName && activeIds.length > 0) {
         if (this.activeDriverType === 'mysql' && this.mysqlPool) {
@@ -1309,6 +1390,9 @@ export class PortableDatabaseManager {
 
         const [centers]: any = await this.mysqlPool.execute('SELECT * FROM offline_centers ORDER BY order_index ASC');
         if (Array.isArray(centers) && centers.length > 0) data.offline_centers = centers;
+
+        const [media]: any = await this.mysqlPool.execute('SELECT * FROM media_items ORDER BY created_at DESC');
+        if (Array.isArray(media) && media.length > 0) data.media = media;
       } catch (err: any) {
         console.warn('[Database] MySQL loadAllEntities note:', err.message);
       }
@@ -1348,6 +1432,9 @@ export class PortableDatabaseManager {
 
         const cRes = await this.pgPool.query('SELECT * FROM offline_centers ORDER BY order_index ASC');
         if (cRes.rows && cRes.rows.length > 0) data.offline_centers = cRes.rows;
+
+        const mRes = await this.pgPool.query('SELECT * FROM media_items ORDER BY created_at DESC');
+        if (mRes.rows && mRes.rows.length > 0) data.media = mRes.rows;
       } catch (err: any) {
         console.warn('[Database] PostgreSQL loadAllEntities note:', err.message);
       }

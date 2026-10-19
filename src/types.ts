@@ -14,7 +14,7 @@ export interface CustomRole {
   description: string;
   permissions: string[];
   is_system: boolean;
-  created_at: string;
+  created_at?: string;
 }
 
 export interface User {
@@ -57,9 +57,10 @@ export interface User {
 
 export interface BatchOverride {
   passing_year: number;
-  override_batch_number: number;
-  batch_name_en: string;
-  batch_name_bn: string;
+  override_batch_number?: number;
+  batch_number?: number;
+  batch_name_en?: string;
+  batch_name_bn?: string;
   reason: string;
   created_by?: string;
   created_at?: string;
@@ -70,7 +71,8 @@ export interface BatchOverride {
 export interface BatchConfig {
   reference_year: number; // 2008
   reference_batch: number; // 65
-  formula_description: string;
+  formula_description?: string;
+  description?: string;
   naming_format: 'batch_number' | 'passing_year';
   overrides: BatchOverride[];
 }
@@ -236,15 +238,15 @@ export interface Committee {
   name_en: string;
   name_bn: string;
   committee_type: CommitteeType;
-  tenure_start: string;
-  tenure_end: string;
+  tenure_start?: string;
+  tenure_end?: string;
   tenure_label: string; // e.g. "2026–2028"
   description_en?: string;
   description_bn?: string;
   is_current: boolean;
   is_active: boolean;
   order_index: number;
-  created_at: string;
+  created_at?: string;
 }
 
 export interface CommitteeMemberItem {
@@ -584,7 +586,7 @@ export interface FooterColumnLink {
   url: string;
   target: '_self' | '_blank';
   order: number;
-  is_active: boolean;
+  is_active?: boolean;
 }
 
 export interface FooterColumn {
@@ -592,7 +594,7 @@ export interface FooterColumn {
   title_en: string;
   title_bn: string;
   order: number;
-  is_active: boolean;
+  is_active?: boolean;
   links: FooterColumnLink[];
 }
 
@@ -805,6 +807,9 @@ export interface RegistrationConfirmationConfig {
   support_title_bn: string;
   support_phone: string;
   support_email: string;
+  support_desc_en?: string;
+  support_desc_bn?: string;
+  support_hours?: string;
   support_hours_en: string;
   support_hours_bn: string;
   support_location_en: string;
@@ -856,6 +861,8 @@ export interface GlobalSettings {
   copyright_bn: string;
   address_en: string;
   address_bn: string;
+  contact_address_en?: string;
+  contact_address_bn?: string;
   contact_phone: string;
   contact_email: string;
   google_maps_url: string;
@@ -920,10 +927,19 @@ export type SiteSettings = GlobalSettings & {
 export interface MediaItem {
   id: string;
   name: string;
+  filename?: string;
   url: string;
-  type: 'image' | 'document';
+  type: string;
   size: string;
+  size_bytes?: number;
+  registration_id?: string;
+  user_id?: string;
+  source?: 'registration' | 'admin_upload' | 'banner' | 'avatar' | string;
+  attendee_name?: string;
+  passing_year?: number;
+  token_code?: string;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface AuditLog {

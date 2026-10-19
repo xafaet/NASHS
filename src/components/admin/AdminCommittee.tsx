@@ -180,10 +180,13 @@ export const AdminCommittee: React.FC<Props> = ({ showToast, getHeaders }) => {
                 name_en: '',
                 name_bn: '',
                 committee_type: 'convening',
+                tenure_start: '2026-01-01',
+                tenure_end: '2027-12-31',
                 tenure_label: '2026–2027',
                 is_current: false,
                 is_active: true,
                 order_index: committees.length + 1,
+                created_at: new Date().toISOString(),
               });
               setCommitteeModalOpen(true);
             }}

@@ -447,7 +447,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({ onGoToPortal
         }
         if (data.field === 'photo_url') {
           setImageError(data.message);
-          setStep('details');
+          setStep('form');
         }
         throw new Error(data.message || 'Registration creation failed.');
       }

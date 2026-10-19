@@ -18,7 +18,7 @@ import {
   X,
   Sparkles,
 } from 'lucide-react';
-import { HeaderConfig, TopBarConfig, NavigationMenuItem, FooterConfig } from '../../types';
+import { HeaderConfig, TopBarConfig, NavigationMenuItem, FooterConfig, FooterColumn, FooterColumnLink } from '../../types';
 import { apiFetch } from '../../utils/api';
 import { AdminHero } from './AdminHero';
 import { AdminAnimations } from './AdminAnimations';
@@ -769,11 +769,12 @@ export const AdminAppearance: React.FC<Props> = ({ showToast, getHeaders }) => {
                 <button
                   type="button"
                   onClick={() => {
-                    const newCol = {
+                    const newCol: FooterColumn = {
                       id: `col-${Date.now()}`,
                       title_en: 'New Column',
                       title_bn: 'নতুন কলাম',
                       order: (footer.columns?.length || 0) + 1,
+                      is_active: true,
                       links: [
                         {
                           id: `lnk-${Date.now()}-1`,
@@ -782,6 +783,7 @@ export const AdminAppearance: React.FC<Props> = ({ showToast, getHeaders }) => {
                           url: 'home',
                           target: '_self',
                           order: 1,
+                          is_active: true,
                         },
                       ],
                     };
@@ -845,13 +847,14 @@ export const AdminAppearance: React.FC<Props> = ({ showToast, getHeaders }) => {
                         <button
                           type="button"
                           onClick={() => {
-                            const newLink = {
+                            const newLink: FooterColumnLink = {
                               id: `lnk-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
                               label_en: 'New Link',
                               label_bn: 'নতুন লিংক',
                               url: 'home',
                               target: '_self',
                               order: (col.links?.length || 0) + 1,
+                              is_active: true,
                             };
                             const updated = [...footer.columns];
                             updated[idx].links = [...(updated[idx].links || []), newLink];

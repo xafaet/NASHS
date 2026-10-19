@@ -59,16 +59,16 @@ function MainLayout() {
       if (res.ok) {
         const data = await res.json();
         setDbReport(data);
-        if (data.state === 'FRESH_INSTALLATION') {
+        if (data?.state === 'FRESH_INSTALLATION' || data?.is_installed === false) {
           clearReadinessCache();
           setIsInstalled(false);
           setAppState('FRESH_INSTALLATION');
           setSetupReason('Welcome! Please complete the first-time setup wizard to configure your database and alumni platform.');
-        } else if (data.state === 'DATABASE_UNAVAILABLE') {
+        } else if (data?.state === 'DATABASE_UNAVAILABLE') {
           clearReadinessCache();
           setIsInstalled(true);
           setAppState('DATABASE_UNAVAILABLE');
-        } else if (data.state === 'SCHEMA_INCOMPLETE') {
+        } else if (data?.state === 'SCHEMA_INCOMPLETE') {
           clearReadinessCache();
           setIsInstalled(true);
           setAppState('SCHEMA_INCOMPLETE');
@@ -180,7 +180,7 @@ function MainLayout() {
   }
 
   // State A: Fresh installation - Display only legitimate setup wizard
-  if (appState === 'FRESH_INSTALLATION' || isInstalled === false) {
+  if (appState === 'FRESH_INSTALLATION' && isInstalled === false) {
     return (
       <SetupWizard
         reason={setupReason}

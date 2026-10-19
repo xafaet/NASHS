@@ -48,7 +48,7 @@ export const AdminDatabase: React.FC<AdminDatabaseProps> = ({ onNotify, getHeade
   const [diagnosticResult, setDiagnosticResult] = useState<any>(null);
   const [deepDiagnostic, setDeepDiagnostic] = useState<any>(null);
   const [runningDeepAudit, setRunningDeepAudit] = useState(false);
-  const [exporting, setExporting] = useState<'sql' | 'json' | 'csv' | null>(null);
+  const [exporting, setExporting] = useState<'sql' | 'json' | 'csv' | 'mysql' | 'postgres' | null>(null);
 
   const getAuthHeaders = () => {
     const base = getHeaders ? getHeaders() : {};

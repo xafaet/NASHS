@@ -76,6 +76,7 @@ import { AdminNews } from './admin/AdminNews';
 import { AdminMailSettings } from './admin/AdminMailSettings';
 import { AdminRegistrationConfirmation } from './admin/AdminRegistrationConfirmation';
 import { AdminSettingsTable } from './admin/AdminSettingsTable';
+import { AdminMedia } from './admin/AdminMedia';
 import { apiFetch } from '../utils/api';
 
 type AdminTab =

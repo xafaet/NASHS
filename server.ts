@@ -4,7 +4,6 @@ import fs from 'fs';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
-import { createServer as createViteServer } from 'vite';
 import { db, portableDb } from './server/db';
 import { initialProgramSchedule, initialRegistrationFields, initialTokenFormatConfig, initialHeroConfig, initialRegistrationConfirmationConfig } from './server/seedData';
 import { AuthService, authenticate, requireRole, requirePermission, AuthRequest } from './server/auth';
@@ -2641,7 +2640,8 @@ async function startServer() {
       const tokenCode = TokenService.generateFormattedTokenCode(year, batchInfo.batch_name);
 
       // Persist photo to disk storage if base64 data URI provided
-      const persistentPhotoUrl = await FileStorageService.processIncomingPhotoUrl(req.body.photo_url, 'photos');
+      const savedPhotoInfo = await FileStorageService.processIncomingPhotoWithMetadata(req.body.photo_url, 'photos');
+      const persistentPhotoUrl = savedPhotoInfo ? savedPhotoInfo.url : undefined;
 
       const newRegistration: Registration = {
         id: regId,
@@ -2727,6 +2727,37 @@ async function startServer() {
       newRegistration.token_id = issuedToken.id;
       newRegistration.qr_code_svg = issuedToken.qr_code_svg;
       db.set('registrations', registrations);
+
+      // 4. Automatically add successfully uploaded registration image to the admin Media Library
+      if (persistentPhotoUrl && savedPhotoInfo) {
+        try {
+          const mediaList = db.get('media') || [];
+          const mediaId = `med-reg-${regId}`;
+          const mediaItem: MediaItem = {
+            id: mediaId,
+            name: `Photo - ${newRegistration.full_name} (${batchInfo.batch_name})`,
+            filename: savedPhotoInfo.filename,
+            url: persistentPhotoUrl,
+            type: savedPhotoInfo.mimeType || 'image/jpeg',
+            size: `${(savedPhotoInfo.sizeBytes / 1024).toFixed(1)} KB`,
+            size_bytes: savedPhotoInfo.sizeBytes,
+            registration_id: regId,
+            user_id: user.id,
+            source: 'registration',
+            attendee_name: newRegistration.full_name,
+            passing_year: newRegistration.passing_year,
+            token_code: tokenCode,
+            created_at: new Date().toISOString(),
+          };
+          mediaList.unshift(mediaItem);
+          db.set('media', mediaList);
+          portableDb.saveMediaItem(mediaItem).catch(err => {
+            console.warn('[Database] Media item persistence notice:', err.message);
+          });
+        } catch (mediaErr: any) {
+          console.warn('[MediaSync] Registration photo sync notice:', mediaErr.message);
+        }
+      }
 
       // Retrieve CMS-configured manual payment accounts (bKash & Nagad)
       const allGateways = db.get('payment_gateways') || [];
@@ -3464,7 +3495,8 @@ async function startServer() {
       ? req.body.t_shirt_size.toString().trim().toUpperCase()
       : 'L';
 
-    const persistentAdminPhoto = await FileStorageService.processIncomingPhotoUrl(photo_url, 'photos');
+    const savedAdminPhoto = await FileStorageService.processIncomingPhotoWithMetadata(photo_url, 'photos');
+    const persistentAdminPhoto = savedAdminPhoto ? savedAdminPhoto.url : undefined;
 
     const newReg: Registration = {
       id: regId,
@@ -3498,6 +3530,31 @@ async function startServer() {
 
     registrations.unshift(newReg);
     db.set('registrations', registrations);
+
+    if (persistentAdminPhoto && savedAdminPhoto) {
+      try {
+        const mediaList = db.get('media') || [];
+        const mediaId = `med-reg-${regId}`;
+        const mediaItem: MediaItem = {
+          id: mediaId,
+          name: `Photo - ${full_name} (${batchInfo.batch_name})`,
+          filename: savedAdminPhoto.filename,
+          url: persistentAdminPhoto,
+          type: savedAdminPhoto.mimeType || 'image/jpeg',
+          size: `${(savedAdminPhoto.sizeBytes / 1024).toFixed(1)} KB`,
+          size_bytes: savedAdminPhoto.sizeBytes,
+          registration_id: regId,
+          source: 'registration',
+          attendee_name: full_name,
+          passing_year: yearNum,
+          token_code: tokenCode,
+          created_at: new Date().toISOString(),
+        };
+        mediaList.unshift(mediaItem);
+        db.set('media', mediaList);
+        portableDb.saveMediaItem(mediaItem).catch(() => {});
+      } catch {}
+    }
 
     db.logAudit(
       req.user?.name || 'Admin',
@@ -3584,9 +3641,37 @@ async function startServer() {
       }
     }
 
-    // If photo_url is provided, persist it to disk storage
-    if (updates.photo_url !== undefined) {
-      updates.photo_url = await FileStorageService.processIncomingPhotoUrl(updates.photo_url, 'photos');
+    // If photo_url is provided, persist it to disk storage and sync Media Library
+    if (updates.photo_url !== undefined && updates.photo_url !== existing.photo_url) {
+      const savedUpdatedPhoto = await FileStorageService.processIncomingPhotoWithMetadata(updates.photo_url, 'photos');
+      if (savedUpdatedPhoto) {
+        updates.photo_url = savedUpdatedPhoto.url;
+        try {
+          const mediaList = db.get('media') || [];
+          const mediaId = `med-reg-${existing.id}`;
+          const mIdx = mediaList.findIndex(m => m.registration_id === existing.id || m.id === mediaId);
+          const mediaItem: MediaItem = {
+            id: mediaId,
+            name: `Photo - ${updates.full_name || existing.full_name} (${updates.batch_name || existing.batch_name})`,
+            filename: savedUpdatedPhoto.filename,
+            url: savedUpdatedPhoto.url,
+            type: savedUpdatedPhoto.mimeType || 'image/jpeg',
+            size: `${(savedUpdatedPhoto.sizeBytes / 1024).toFixed(1)} KB`,
+            size_bytes: savedUpdatedPhoto.sizeBytes,
+            registration_id: existing.id,
+            user_id: existing.user_id,
+            source: 'registration',
+            attendee_name: updates.full_name || existing.full_name,
+            passing_year: updates.passing_year || existing.passing_year,
+            token_code: updates.token_code || existing.token_code,
+            created_at: new Date().toISOString(),
+          };
+          if (mIdx !== -1) mediaList[mIdx] = mediaItem;
+          else mediaList.unshift(mediaItem);
+          db.set('media', mediaList);
+          portableDb.saveMediaItem(mediaItem).catch(() => {});
+        } catch {}
+      }
     }
 
     const updated = {
@@ -3935,41 +4020,258 @@ async function startServer() {
     }
   });
 
-  // Media Library
-  app.get('/api/admin/media', authenticate, requireRole(['super_admin', 'admin', 'content_manager']), (req, res) => {
-    res.json(db.get('media') || []);
-  });
-
-  app.post('/api/admin/media', authenticate, requireRole(['super_admin', 'admin', 'content_manager']), async (req: AuthRequest, res) => {
+  // ==========================================
+  // MEDIA LIBRARY (WordPress-Style Media Management)
+  // ==========================================
+  app.get('/api/admin/media', authenticate, requireRole(['super_admin', 'admin', 'content_manager']), async (req, res) => {
     try {
-      const media = db.get('media') || [];
-      let finalUrl = req.body.url;
-      let finalSize = req.body.size || '1.0 MB';
-      let mimeType = req.body.type || 'image';
+      const mediaList: MediaItem[] = db.get('media') || [];
+      const registrations: Registration[] = db.get('registrations') || [];
 
-      if (req.body.data || (req.body.url && req.body.url.startsWith('data:image/'))) {
-        const saved = await FileStorageService.saveBase64Image(req.body.data || req.body.url, 'media');
-        if (saved) {
-          finalUrl = saved.url;
-          finalSize = `${(saved.sizeBytes / 1024).toFixed(1)} KB`;
-          mimeType = saved.mimeType;
+      // Auto-index: Ensure any registration with a photo is represented in the Media Library
+      let addedAny = false;
+      for (const reg of registrations) {
+        if (reg.photo_url && (reg.photo_url.startsWith('/uploads/') || reg.photo_url.startsWith('data:image/'))) {
+          const existingMedia = mediaList.find(m => m.registration_id === reg.id || m.url === reg.photo_url);
+          if (!existingMedia) {
+            const filename = path.basename(reg.photo_url.split('?')[0]);
+            let sizeStr = '120.0 KB';
+            let sizeBytes = 122880;
+            try {
+              const fullDiskPath = path.join(process.cwd(), 'public', reg.photo_url.replace(/^\//, ''));
+              if (fs.existsSync(fullDiskPath)) {
+                sizeBytes = fs.statSync(fullDiskPath).size;
+                sizeStr = `${(sizeBytes / 1024).toFixed(1)} KB`;
+              }
+            } catch {}
+
+            const newMedia: MediaItem = {
+              id: `med-reg-${reg.id}`,
+              name: `Photo - ${reg.full_name} (${reg.batch_name || reg.passing_year})`,
+              filename,
+              url: reg.photo_url,
+              type: reg.photo_url.endsWith('.png') ? 'image/png' : reg.photo_url.endsWith('.webp') ? 'image/webp' : 'image/jpeg',
+              size: sizeStr,
+              size_bytes: sizeBytes,
+              registration_id: reg.id,
+              user_id: reg.user_id,
+              source: 'registration',
+              attendee_name: reg.full_name,
+              passing_year: reg.passing_year,
+              token_code: reg.token_code,
+              created_at: reg.created_at || new Date().toISOString(),
+            };
+            mediaList.unshift(newMedia);
+            portableDb.saveMediaItem(newMedia).catch(() => {});
+            addedAny = true;
+          }
         }
       }
 
-      const newItem = {
-        id: `med-${Date.now()}`,
-        name: req.body.name || 'uploaded-file.jpg',
-        url: finalUrl || '/uploads/photos/default.jpg',
+      if (addedAny) {
+        db.set('media', mediaList);
+      }
+
+      // Sort by created_at descending
+      const sorted = [...mediaList].sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+      res.json(sorted);
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: 'Failed to retrieve media library: ' + err.message });
+    }
+  });
+
+  // Admin Media Upload (Manual Add)
+  app.post('/api/admin/media', authenticate, requireRole(['super_admin', 'admin', 'content_manager']), async (req: AuthRequest, res) => {
+    try {
+      const media = db.get('media') || [];
+      const { name, data, image, url, folder = 'media', source = 'admin_upload' } = req.body;
+      const rawPayload = data || image || url;
+
+      if (!rawPayload) {
+        return res.status(400).json({ message: 'No media content or image data provided.' });
+      }
+
+      let finalUrl = url;
+      let finalFilename = 'media-file.jpg';
+      let finalSize = '1.0 MB';
+      let sizeBytes = 1048576;
+      let mimeType = 'image/jpeg';
+
+      if (rawPayload.startsWith('data:image/')) {
+        const saved = await FileStorageService.saveBase64Image(rawPayload, folder);
+        if (!saved) {
+          return res.status(400).json({ message: 'Invalid image format or data.' });
+        }
+        finalUrl = saved.url;
+        finalFilename = saved.filename;
+        finalSize = `${(saved.sizeBytes / 1024).toFixed(1)} KB`;
+        sizeBytes = saved.sizeBytes;
+        mimeType = saved.mimeType;
+      }
+
+      const newItem: MediaItem = {
+        id: `med-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
+        name: name || finalFilename,
+        filename: finalFilename,
+        url: finalUrl,
         type: mimeType,
         size: finalSize,
+        size_bytes: sizeBytes,
+        source,
         created_at: new Date().toISOString(),
       };
+
       media.unshift(newItem);
       db.set('media', media);
-      db.logAudit(req.user?.name || 'Admin', req.user?.email || '', 'UPLOAD_MEDIA', 'Media', `Uploaded media item: ${newItem.name}`);
+      portableDb.saveMediaItem(newItem).catch(() => {});
+
+      db.logAudit(
+        req.user?.name || 'Admin',
+        req.user?.email || '',
+        'UPLOAD_MEDIA',
+        'Media',
+        `Uploaded media item "${newItem.name}" (${newItem.url})`
+      );
+
       res.status(201).json(newItem);
     } catch (err: any) {
       res.status(400).json({ message: err.message || 'Failed to save media item' });
+    }
+  });
+
+  // Replace / Update Media Item
+  app.put('/api/admin/media/:id', authenticate, requireRole(['super_admin', 'admin', 'content_manager']), async (req: AuthRequest, res) => {
+    try {
+      const media = db.get('media') || [];
+      const index = media.findIndex(m => m.id === req.params.id);
+      if (index === -1) {
+        return res.status(404).json({ message: 'Media item not found.' });
+      }
+
+      const existing = media[index];
+      const { name, data, image } = req.body;
+      const rawPayload = data || image;
+
+      let updated = { ...existing };
+      if (name) updated.name = name;
+
+      // Handle file replacement
+      if (rawPayload && typeof rawPayload === 'string' && rawPayload.startsWith('data:image/')) {
+        const folder = existing.source === 'registration' ? 'photos' : 'media';
+        const saved = await FileStorageService.saveBase64Image(rawPayload, folder);
+        if (saved) {
+          // Safely delete previous file from disk if it was stored locally
+          if (existing.url && existing.url.startsWith('/uploads/')) {
+            await FileStorageService.deleteFile(existing.url);
+          }
+
+          updated.url = saved.url;
+          updated.filename = saved.filename;
+          updated.size = `${(saved.sizeBytes / 1024).toFixed(1)} KB`;
+          updated.size_bytes = saved.sizeBytes;
+          updated.type = saved.mimeType;
+          updated.updated_at = new Date().toISOString();
+
+          // If linked to a registration, update the registration record as well!
+          if (existing.registration_id) {
+            const registrations = db.get('registrations') || [];
+            const rIdx = registrations.findIndex(r => r.id === existing.registration_id);
+            if (rIdx !== -1) {
+              registrations[rIdx].photo_url = saved.url;
+              db.set('registrations', registrations);
+            }
+          }
+        }
+      }
+
+      media[index] = updated;
+      db.set('media', media);
+      portableDb.saveMediaItem(updated).catch(() => {});
+
+      db.logAudit(
+        req.user?.name || 'Admin',
+        req.user?.email || '',
+        'UPDATE_MEDIA',
+        'Media',
+        `Updated media item "${updated.name}" (${updated.id})`
+      );
+
+      res.json(updated);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message || 'Failed to update media item.' });
+    }
+  });
+
+  // Delete Media Item
+  app.delete('/api/admin/media/:id', authenticate, requireRole(['super_admin', 'admin', 'content_manager']), async (req: AuthRequest, res) => {
+    try {
+      const media = db.get('media') || [];
+      const item = media.find(m => m.id === req.params.id);
+      if (!item) {
+        return res.status(404).json({ message: 'Media item not found.' });
+      }
+
+      // Safely delete file from disk storage
+      if (item.url && item.url.startsWith('/uploads/')) {
+        await FileStorageService.deleteFile(item.url);
+      }
+
+      // If linked to a registration, clear the photo reference cleanly so no broken links remain
+      if (item.registration_id) {
+        const registrations = db.get('registrations') || [];
+        const rIdx = registrations.findIndex(r => r.id === item.registration_id);
+        if (rIdx !== -1) {
+          registrations[rIdx].photo_url = undefined;
+          db.set('registrations', registrations);
+        }
+      }
+
+      // Remove from database and memory
+      const updatedMedia = media.filter(m => m.id !== req.params.id);
+      db.set('media', updatedMedia);
+      await portableDb.deleteMediaItem(req.params.id);
+
+      db.logAudit(
+        req.user?.name || 'Admin',
+        req.user?.email || '',
+        'DELETE_MEDIA',
+        'Media',
+        `Deleted media item "${item.name}" (${item.url})`
+      );
+
+      res.json({ success: true, message: 'Media item deleted successfully from storage and database.' });
+    } catch (err: any) {
+      res.status(500).json({ message: 'Failed to delete media item: ' + err.message });
+    }
+  });
+
+  // Download Media Item
+  app.get('/api/admin/media/:id/download', authenticate, requireRole(['super_admin', 'admin', 'content_manager']), (req, res) => {
+    try {
+      const media: MediaItem[] = db.get('media') || [];
+      const item = media.find(m => m.id === req.params.id);
+      if (!item) {
+        return res.status(404).json({ message: 'Media item not found.' });
+      }
+
+      if (!item.url || !item.url.startsWith('/uploads/')) {
+        return res.status(400).json({ message: 'This media item cannot be downloaded directly.' });
+      }
+
+      const relative = item.url.replace(/^\/uploads\//, '').split('?')[0];
+      const diskPath = path.join(process.cwd(), 'public', 'uploads', relative);
+
+      if (!fs.existsSync(diskPath)) {
+        return res.status(404).json({ message: 'Media file does not exist on server storage.' });
+      }
+
+      const filename = item.filename || path.basename(diskPath);
+      res.setHeader('Content-Type', item.type || 'image/jpeg');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      const fileStream = fs.createReadStream(diskPath);
+      fileStream.pipe(res);
+    } catch (err: any) {
+      res.status(500).json({ message: 'Download error: ' + err.message });
     }
   });
 
@@ -4348,20 +4650,36 @@ async function startServer() {
   app.use(express.static(publicPath));
 
   const hasDist = fs.existsSync(path.join(process.cwd(), 'dist', 'index.html'));
-  const isProduction = process.env.NODE_ENV === 'production' || (!process.env.NODE_ENV && hasDist);
+  const isProduction = process.env.NODE_ENV === 'production';
 
   if (!isProduction) {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
+    try {
+      const { createServer: createViteServer } = await import('vite');
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: 'spa',
+      });
+      app.use(vite.middlewares);
+    } catch (viteErr: any) {
+      console.warn('[Vite Middleware] Could not load vite dynamic import, falling back to static/dist:', viteErr.message);
+      if (hasDist) {
+        const distPath = path.join(process.cwd(), 'dist');
+        app.use(express.static(distPath));
+        app.get('*', (req, res) => {
+          res.sendFile(path.join(distPath, 'index.html'));
+        });
+      }
+    }
   } else {
     const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
+    if (fs.existsSync(distPath)) {
+      app.use(express.static(distPath));
+      app.get('*', (req, res) => {
+        res.sendFile(path.join(distPath, 'index.html'));
+      });
+    } else {
+      console.error('[Production Server] dist directory not found! Run npm run build before starting in production.');
+    }
   }
 
   if (process.env.VERCEL !== '1') {
