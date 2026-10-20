@@ -2123,17 +2123,17 @@
       }
     ],
     "currency": "BDT",
-    "end_date": "2026-12-31",
+    "end_date": "2026-10-25",
     "event_id": "event-85th-anniversary",
     "terms_bn": "আমি প্রত্যয়ন করছি যে প্রদত্ত তথ্য সত্য ও সঠিক এবং উৎসব চলাকালে শৃঙ্খলা বজায় রাখতে অঙ্গীকারাবদ্ধ।",
     "terms_en": "I certify that the information provided is accurate and I agree to adhere to the code of conduct during the celebration.",
-    "fee_amount": 1000,
+    "fee_amount": 1020,
     "is_enabled": true,
     "start_date": "2026-01-01",
     "max_capacity": 5000,
     "instructions_bn": "আপনার পূর্ণ নাম, জন্ম তারিখ, লিঙ্গ ও পাসের সাল লিখুন। আপনার ব্যাচ স্বয়ংক্রিয়ভাবে নির্ধারিত হবে।",
     "instructions_en": "Fill in your name, date of birth, gender, and passing year. Your batch will be computed automatically.",
-    "max_image_size_mb": 1.5,
+    "max_image_size_mb": 1,
     "success_message_bn": "আপনার নিবন্ধন সফল হয়েছে! নিচে আপনার ডিজিটাল প্রবেশ পাস ডাউনলোড করুন।",
     "success_message_en": "Your registration is confirmed! Download your Entry Pass below.",
     "image_accepted_formats": [
@@ -2397,8 +2397,8 @@
     "background_color": "#f8fafc",
     "current_event_id": "event-85th-anniversary",
     "default_language": "en",
-    "registration_fee": 1000,
-    "payment_test_mode": true,
+    "registration_fee": 1020,
+    "payment_test_mode": false,
     "registration_open": true,
     "seo_default_title": "NASH Alumni Association & 85th Anniversary Reunion 2027",
     "available_languages": [
@@ -2410,7 +2410,7 @@
     "seo_meta_description": "Register online for the 85th Anniversary Celebration of Nanupur Abu Sobhan High School (16 Jan 2027). Instant bKash/Nagad payment & secure QR entry pass.",
     "payment_bkash_enabled": true,
     "payment_nagad_enabled": true,
-    "registration_deadline": "2026-12-31",
+    "registration_deadline": "2026-10-25",
     "search_engine_indexing": true,
     "payment_sslcommerz_enabled": true
   },
@@ -2468,7 +2468,7 @@
       "business_website": "",
       "address": "",
       "bio": "",
-      "created_at": "2026-10-10T08:20:12.440Z"
+      "created_at": "2026-10-20T06:30:51.540Z"
     },
     {
       "id": "user-1790175601194-990",
@@ -2495,7 +2495,7 @@
       "business_website": "",
       "address": "",
       "bio": "",
-      "created_at": "2026-10-10T08:20:12.444Z"
+      "created_at": "2026-10-20T06:30:51.558Z"
     },
     {
       "id": "user-1790866519601",
@@ -2522,7 +2522,7 @@
       "business_website": "",
       "address": "",
       "bio": "",
-      "created_at": "2026-10-10T08:20:12.449Z"
+      "created_at": "2026-10-20T06:30:51.566Z"
     },
     {
       "id": "user-1791016742994",
@@ -2549,7 +2549,7 @@
       "business_website": "",
       "address": "",
       "bio": "",
-      "created_at": "2026-10-10T08:20:12.453Z"
+      "created_at": "2026-10-20T06:30:51.575Z"
     },
     {
       "id": "user-1791016780550",
@@ -2576,7 +2576,7 @@
       "business_website": "",
       "address": "",
       "bio": "",
-      "created_at": "2026-10-10T08:20:12.458Z"
+      "created_at": "2026-10-20T06:30:51.583Z"
     },
     {
       "id": "user-1791016793406",
@@ -2603,7 +2603,7 @@
       "business_website": "",
       "address": "",
       "bio": "",
-      "created_at": "2026-10-10T08:20:12.462Z"
+      "created_at": "2026-10-20T06:30:51.590Z"
     },
     {
       "id": "user-1791217497049",
@@ -2630,7 +2630,7 @@
       "business_website": "",
       "address": "",
       "bio": "",
-      "created_at": "2026-10-10T08:20:12.471Z"
+      "created_at": "2026-10-20T06:30:51.598Z"
     },
     {
       "id": "user-1791521059248",
@@ -2657,7 +2657,7 @@
       "business_website": "",
       "address": "",
       "bio": "",
-      "created_at": "2026-10-10T08:20:12.476Z"
+      "created_at": "2026-10-20T06:30:51.605Z"
     },
     {
       "id": "user-1791616938050",
@@ -2684,7 +2684,7 @@
       "business_website": "",
       "address": "",
       "bio": "",
-      "created_at": "2026-10-10T08:20:12.480Z"
+      "created_at": "2026-10-20T06:30:51.614Z"
     },
     {
       "id": "user-1791616938229",
@@ -2711,7 +2711,7 @@
       "business_website": "",
       "address": "",
       "bio": "",
-      "created_at": "2026-10-10T08:20:12.485Z"
+      "created_at": "2026-10-20T06:30:51.628Z"
     },
     {
       "id": "user-1791616974139",
@@ -2738,7 +2738,7 @@
       "business_website": "",
       "address": "",
       "bio": "",
-      "created_at": "2026-10-10T08:20:12.489Z"
+      "created_at": "2026-10-20T06:30:51.642Z"
     },
     {
       "id": "user-1791616975227",
@@ -2765,7 +2765,7 @@
       "business_website": "",
       "address": "",
       "bio": "",
-      "created_at": "2026-10-10T08:20:12.494Z"
+      "created_at": "2026-10-20T06:30:51.650Z"
     },
     {
       "id": "user-1791959509153",
@@ -2792,7 +2792,7 @@
       "business_website": "",
       "address": "",
       "bio": "",
-      "created_at": "2026-10-14T06:31:49.389Z"
+      "created_at": "2026-10-20T06:30:51.658Z"
     },
     {
       "id": "user-1791963691597",
@@ -2819,41 +2819,128 @@
       "business_website": "",
       "address": "",
       "bio": "",
-      "created_at": "2026-10-14T07:41:32.062Z"
+      "created_at": "2026-10-20T06:30:51.671Z"
+    },
+    {
+      "id": "user-1792434228628",
+      "username": "alumni_446699",
+      "name": "টেস্ট বাবা",
+      "email": "test@sahs.com",
+      "phone": "01711446699",
+      "password_hash": "",
+      "role": "alumni_member",
+      "status": "active",
+      "passing_year": 2005,
+      "batch": "SSC Batch 2005",
+      "dob": "",
+      "gender": "Male",
+      "blood_group": "AB-",
+      "photo_url": "/uploads/photos/photos_1792434228627_a9807a0f42293d142b48fe17.jpg",
+      "occupation": "",
+      "organization": "",
+      "designation": "",
+      "work_location": "",
+      "business_name": "",
+      "business_type": "",
+      "business_address": "",
+      "business_website": "",
+      "address": "",
+      "bio": "",
+      "created_at": "2026-10-20T06:30:51.679Z"
+    },
+    {
+      "id": "user-1792480213045",
+      "username": "alumni_446622",
+      "name": "Test",
+      "email": "sdhjs@fjdf.com",
+      "phone": "01855446622",
+      "password_hash": "",
+      "role": "alumni_member",
+      "status": "active",
+      "passing_year": 2008,
+      "batch": "SSC Batch 2008",
+      "dob": "",
+      "gender": "Male",
+      "blood_group": "AB+",
+      "photo_url": null,
+      "occupation": "",
+      "organization": "",
+      "designation": "",
+      "work_location": "",
+      "business_name": "",
+      "business_type": "",
+      "business_address": "",
+      "business_website": "",
+      "address": "",
+      "bio": "",
+      "created_at": "2026-10-20T07:10:13.257Z"
     }
   ],
   "registrations": [
     {
-      "id": "REG-85-915363",
+      "id": "REG-85-333712",
       "event_id": "event-85th-anniversary",
-      "user_id": "user-1791959509153",
-      "full_name": "Dr. Muktar",
-      "dob": "1990-01-01T00:00:00.000Z",
-      "gender": "Male",
-      "blood_group": "AB-",
-      "t_shirt_size": "L",
-      "phone": "01713225566",
-      "email": "sasas@gmail.com",
-      "passing_year": 2002,
-      "batch_id": "batch-2002",
-      "batch_name": "SSC Batch 2002",
-      "batch_name_bn": "এসএসসি ব্যাচ 2002",
-      "fee_amount": 1000,
+      "full_name": "Audit Verification Alumni",
+      "dob": "1992-04-15",
+      "gender": "male",
+      "blood_group": "O+",
+      "t_shirt_size": "XL",
+      "phone": "01702307329",
+      "email": "alumni_1792507463290@nanupuralumni.org",
+      "passing_year": 2008,
+      "batch_id": "batch-2008",
+      "batch_name": "SSC Batch 2008",
+      "batch_name_bn": "এসএসসি ব্যাচ ২০০৮",
+      "fee_amount": 1020,
       "currency": "BDT",
-      "payment_status": "payment_submitted",
-      "registration_status": "pending",
+      "payment_status": "paid",
+      "registration_status": "confirmed",
+      "token_code": "NASHS-2008-0010",
+      "checked_in": false,
+      "created_at": "2026-10-20T14:44:23.338Z",
+      "updated_at": "2026-10-20T14:44:23.441Z",
+      "user_id": "user-1792507463338",
+      "qr_code_svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 43 43\" shape-rendering=\"crispEdges\"><path fill=\"#ffffff\" d=\"M0 0h43v43H0z\"/><path stroke=\"#0f4d2a\" d=\"M1 1.5h7m4 0h1m1 0h2m7 0h1m4 0h1m2 0h1m3 0h7M1 2.5h1m5 0h1m2 0h1m1 0h1m1 0h4m1 0h3m1 0h2m1 0h1m2 0h2m2 0h1m1 0h1m5 0h1M1 3.5h1m1 0h3m1 0h1m1 0h5m1 0h3m6 0h4m2 0h1m2 0h1m1 0h1m1 0h3m1 0h1M1 4.5h1m1 0h3m1 0h1m1 0h3m7 0h6m4 0h2m1 0h1m2 0h1m1 0h3m1 0h1M1 5.5h1m1 0h3m1 0h1m1 0h1m1 0h2m1 0h1m1 0h1m4 0h2m1 0h1m2 0h1m3 0h3m1 0h1m1 0h3m1 0h1M1 6.5h1m5 0h1m1 0h2m1 0h2m1 0h6m3 0h2m1 0h2m2 0h1m3 0h1m5 0h1M1 7.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M9 8.5h3m2 0h2m5 0h2m4 0h2m3 0h1M1 9.5h1m1 0h5m4 0h3m3 0h1m1 0h1m2 0h2m1 0h3m1 0h1m1 0h1m2 0h5M1 10.5h2m1 0h2m3 0h1m2 0h2m1 0h1m2 0h1m1 0h3m1 0h1m2 0h1m1 0h5m3 0h1m1 0h1M2 11.5h2m1 0h3m3 0h2m2 0h1m1 0h3m1 0h3m2 0h1m1 0h1m1 0h2m1 0h1m1 0h1m5 0h1M1 12.5h2m2 0h1m2 0h2m1 0h1m5 0h1m1 0h5m1 0h1m1 0h3m2 0h2m1 0h1m2 0h1m2 0h1M1 13.5h2m1 0h1m2 0h1m3 0h2m1 0h4m4 0h1m1 0h2m2 0h1m1 0h1m1 0h1m5 0h4M1 14.5h1m3 0h1m3 0h2m1 0h2m3 0h2m2 0h1m3 0h2m3 0h5m1 0h2M5 15.5h1m1 0h1m1 0h3m3 0h1m2 0h1m1 0h1m1 0h2m1 0h2m1 0h1m4 0h2m1 0h2m1 0h1m1 0h1M1 16.5h1m1 0h2m1 0h1m7 0h1m4 0h3m1 0h1m1 0h4m2 0h1m1 0h1m1 0h4m1 0h1M1 17.5h4m2 0h1m2 0h3m1 0h1m1 0h2m2 0h3m2 0h1m2 0h2m3 0h2m1 0h1m2 0h1m1 0h1M1 18.5h4m1 0h1m1 0h1m1 0h1m3 0h1m3 0h2m1 0h3m1 0h7m1 0h1m1 0h3m1 0h3M1 19.5h2m2 0h6m1 0h2m3 0h2m3 0h1m2 0h2m1 0h2m2 0h1m1 0h1m2 0h3M4 20.5h1m3 0h1m1 0h2m1 0h1m1 0h1m2 0h3m1 0h2m2 0h1m1 0h2m3 0h1m3 0h3m1 0h1M2 21.5h1m1 0h4m4 0h3m5 0h3m1 0h2m3 0h1m1 0h4m2 0h2m1 0h1M2 22.5h1m1 0h1m1 0h1m1 0h3m8 0h1m1 0h1m1 0h1m1 0h1m2 0h1m1 0h1m1 0h2m1 0h1m3 0h3M2 23.5h1m2 0h1m1 0h2m1 0h2m3 0h1m1 0h3m2 0h1m2 0h5m1 0h1m2 0h3m2 0h1M2 24.5h2m1 0h2m1 0h3m1 0h1m1 0h4m1 0h1m2 0h1m5 0h2m2 0h2m4 0h2m1 0h1M2 25.5h2m1 0h1m1 0h5m1 0h3m1 0h5m1 0h2m1 0h1m3 0h1m5 0h3M4 26.5h3m2 0h5m1 0h4m1 0h1m2 0h2m4 0h2m1 0h1m4 0h2M3 27.5h5m3 0h1m3 0h2m2 0h1m1 0h2m4 0h3m1 0h1m1 0h5m2 0h1M3 28.5h1m1 0h1m2 0h4m2 0h4m1 0h1m1 0h1m1 0h2m2 0h3m1 0h4m1 0h1m1 0h1M2 29.5h1m4 0h1m3 0h2m3 0h1m4 0h2m2 0h1m4 0h1m1 0h1m1 0h1m1 0h1m1 0h2m1 0h1M1 30.5h6m1 0h2m1 0h4m1 0h4m5 0h6m6 0h1m1 0h1M1 31.5h1m2 0h1m1 0h3m3 0h1m1 0h2m1 0h2m2 0h2m2 0h1m2 0h4m1 0h5M1 32.5h1m1 0h1m2 0h1m1 0h1m3 0h2m1 0h4m3 0h2m1 0h1m4 0h1m1 0h7m2 0h1M1 33.5h1m4 0h2m2 0h1m1 0h3m2 0h1m3 0h3m3 0h1m1 0h1m1 0h11M9 34.5h1m1 0h7m5 0h1m1 0h1m1 0h2m3 0h2m3 0h3m1 0h1M1 35.5h7m4 0h1m1 0h2m1 0h1m1 0h2m2 0h1m1 0h1m7 0h1m1 0h1m1 0h2m1 0h1M1 36.5h1m5 0h1m1 0h1m3 0h1m1 0h1m1 0h1m3 0h1m6 0h2m2 0h2m3 0h2m1 0h2M1 37.5h1m1 0h3m1 0h1m1 0h1m1 0h2m1 0h1m1 0h2m1 0h7m5 0h1m1 0h6M1 38.5h1m1 0h3m1 0h1m1 0h3m1 0h1m1 0h4m3 0h1m2 0h3m3 0h1m2 0h1m1 0h1m2 0h3M1 39.5h1m1 0h3m1 0h1m1 0h2m4 0h3m2 0h3m4 0h5m1 0h6m1 0h1M1 40.5h1m5 0h1m2 0h4m2 0h1m1 0h3m1 0h1m1 0h1m2 0h3m2 0h3m2 0h2m1 0h1M1 41.5h7m1 0h1m3 0h1m2 0h2m2 0h1m2 0h1m2 0h1m1 0h1m1 0h2m3 0h4\"/></svg>\n",
+      "token_id": "tok-1792507463370-66ca51",
       "payment_method": "bKash Manual",
-      "token_id": "tok-1791959509182-47a75d",
-      "token_code": "NASHS-2002-0001",
+      "transaction_id": "TRX48555855",
+      "sender_number": "01702307329",
+      "paid_amount": 1000,
+      "payment_submitted_at": "2026-10-20T14:44:23.402Z",
+      "payment_verified_at": "2026-10-20T14:44:23.441Z",
+      "verified_by": "Safaet Hosen Dhrubo",
+      "admin_notes": "Payment verified after administrative review"
+    },
+    {
+      "id": "REG-85-304588",
+      "event_id": "event-85th-anniversary",
+      "user_id": "user-1792480213045",
+      "full_name": "Test",
+      "dob": "1993-01-01T00:00:00.000Z",
+      "gender": "Male",
+      "blood_group": "AB+",
+      "t_shirt_size": "L",
+      "phone": "01855446622",
+      "email": "sdhjs@fjdf.com",
+      "passing_year": 2008,
+      "batch_id": "batch-2008",
+      "batch_name": "SSC Batch 2008",
+      "batch_name_bn": "এসএসসি ব্যাচ 2008",
+      "fee_amount": 1020,
+      "currency": "BDT",
+      "payment_status": "pending",
+      "registration_status": "pending",
+      "payment_method": "bKash",
+      "token_id": "tok-1792480213081-2b989f",
+      "token_code": "NASHS-2008-0009",
       "checked_in": false,
       "checked_in_at": null,
-      "created_at": "2026-10-14T06:32:01.538Z",
-      "updated_at": "2026-10-19T18:13:15.624Z"
+      "created_at": "2026-10-20T07:10:13.267Z",
+      "updated_at": "2026-10-20T07:10:14.303Z"
     },
     {
       "id": "REG-85-890652",
       "event_id": "event-85th-anniversary",
-      "user_id": "user-1791521059248",
       "full_name": "Safaet Hosen Dhrubo",
       "dob": "1993-01-01T00:00:00.000Z",
       "gender": "male",
@@ -2875,7 +2962,7 @@
       "checked_in": false,
       "checked_in_at": null,
       "created_at": "2026-10-11T14:25:19.026Z",
-      "updated_at": "2026-10-19T18:13:15.639Z"
+      "updated_at": "2026-10-20T07:10:14.313Z"
     }
   ],
   "payments": [
@@ -2894,6 +2981,21 @@
       "notes": "Verified by Admin",
       "verified_at": "2026-10-18T18:47:46.172Z",
       "created_at": "2026-10-18T18:47:46.342Z"
+    },
+    {
+      "id": "pay-1792507463409",
+      "registration_id": "REG-85-333712",
+      "transaction_id": "TRX48555855",
+      "gateway": "bkash",
+      "method": "bKash Manual Transfer",
+      "amount": 1000,
+      "currency": "BDT",
+      "status": "paid",
+      "sender_mobile": "01702307329",
+      "token_code": "NASHS-2008-0010",
+      "created_at": "2026-10-20T14:44:23.402Z",
+      "verified_at": "2026-10-20T14:44:23.441Z",
+      "verified_by": "Safaet Hosen Dhrubo"
     }
   ],
   "tokens": [
@@ -2911,21 +3013,163 @@
       "created_at": "2026-10-11T14:25:19.105Z"
     },
     {
-      "id": "tok-1791959509182-47a75d",
-      "token_code": "NASHS-2002-0001",
-      "registration_id": "REG-85-915363",
+      "id": "tok-1792480213081-2b989f",
+      "token_code": "NASHS-2008-0009",
+      "registration_id": "REG-85-304588",
       "event_id": "event-85th-anniversary",
-      "member_name": "Dr. Muktar",
-      "batch_name": "SSC Batch 2002",
-      "batch_name_bn": "এসএসসি ব্যাচ ২০০২",
-      "qr_code_svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 43 43\" shape-rendering=\"crispEdges\"><path fill=\"#ffffff\" d=\"M0 0h43v43H0z\"/><path stroke=\"#0f4d2a\" d=\"M1 1.5h7m4 0h1m1 0h2m7 0h1m2 0h1m1 0h1m2 0h1m3 0h7M1 2.5h1m5 0h1m2 0h1m1 0h1m3 0h2m1 0h3m1 0h2m1 0h1m2 0h2m2 0h1m1 0h1m5 0h1M1 3.5h1m1 0h3m1 0h1m1 0h1m2 0h2m2 0h2m6 0h4m2 0h1m2 0h1m1 0h1m1 0h3m1 0h1M1 4.5h1m1 0h3m1 0h1m1 0h3m2 0h1m4 0h6m4 0h2m1 0h1m2 0h1m1 0h3m1 0h1M1 5.5h1m1 0h3m1 0h1m1 0h1m2 0h1m1 0h1m1 0h1m4 0h2m1 0h1m2 0h1m3 0h3m1 0h1m1 0h3m1 0h1M1 6.5h1m5 0h1m1 0h2m1 0h2m1 0h6m3 0h2m1 0h2m2 0h1m3 0h1m5 0h1M1 7.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M9 8.5h3m2 0h2m5 0h2m4 0h2m3 0h1M1 9.5h1m1 0h5m4 0h3m3 0h1m1 0h1m2 0h2m1 0h3m1 0h1m1 0h1m2 0h5M1 10.5h2m1 0h1m4 0h1m2 0h2m1 0h1m2 0h1m1 0h3m1 0h1m2 0h1m1 0h5m3 0h1m1 0h1M3 11.5h1m2 0h2m3 0h2m2 0h1m1 0h3m1 0h3m2 0h1m1 0h1m1 0h2m1 0h1m1 0h1m5 0h1M1 12.5h1m3 0h1m2 0h2m1 0h1m5 0h1m1 0h5m1 0h1m1 0h3m2 0h2m1 0h1m2 0h1m2 0h1M1 13.5h2m1 0h1m1 0h2m3 0h7m4 0h1m1 0h2m2 0h1m1 0h1m1 0h1m5 0h4M1 14.5h2m2 0h2m2 0h2m7 0h1m2 0h1m3 0h2m1 0h1m1 0h5m1 0h2M5 15.5h1m1 0h1m1 0h4m2 0h1m2 0h1m1 0h1m1 0h2m1 0h2m1 0h1m4 0h2m1 0h2m1 0h1m1 0h1M1 16.5h1m1 0h2m1 0h1m6 0h2m2 0h1m1 0h3m1 0h1m1 0h4m2 0h1m1 0h1m1 0h4m1 0h1M1 17.5h4m2 0h1m2 0h2m2 0h1m2 0h1m2 0h3m2 0h1m2 0h2m3 0h2m1 0h1m2 0h1m1 0h1M1 18.5h4m1 0h1m1 0h1m9 0h2m1 0h3m1 0h7m1 0h1m1 0h3m1 0h3M1 19.5h2m2 0h11m1 0h2m3 0h1m2 0h2m1 0h2m2 0h1m1 0h1m2 0h3M4 20.5h1m3 0h1m4 0h2m3 0h3m1 0h2m2 0h1m1 0h2m3 0h1m3 0h3m1 0h1M2 21.5h1m2 0h3m1 0h1m2 0h2m6 0h3m1 0h2m3 0h1m1 0h4m2 0h2m1 0h1M2 22.5h2m2 0h1m1 0h1m1 0h1m8 0h1m1 0h1m1 0h1m1 0h1m2 0h1m1 0h1m1 0h2m1 0h1m3 0h3M2 23.5h4m1 0h5m3 0h1m1 0h3m2 0h1m2 0h5m1 0h1m2 0h3m2 0h1M2 24.5h1m1 0h3m1 0h3m1 0h1m1 0h4m1 0h1m2 0h1m5 0h2m2 0h2m4 0h2m1 0h1M2 25.5h2m1 0h1m1 0h5m1 0h3m1 0h5m1 0h2m1 0h1m3 0h1m5 0h3M4 26.5h1m1 0h1m2 0h5m1 0h4m1 0h1m2 0h2m4 0h2m1 0h1m4 0h2M3 27.5h3m1 0h1m3 0h1m3 0h2m2 0h1m1 0h2m4 0h3m1 0h1m1 0h5m2 0h1M1 28.5h3m4 0h4m2 0h4m1 0h1m1 0h1m1 0h2m2 0h3m1 0h4m1 0h1m1 0h1M7 29.5h1m3 0h2m3 0h2m3 0h2m2 0h1m4 0h1m1 0h1m1 0h1m1 0h1m1 0h2m1 0h1M1 30.5h1m1 0h4m1 0h2m1 0h4m2 0h3m6 0h5m6 0h1m1 0h1M1 31.5h1m2 0h1m1 0h3m5 0h5m2 0h2m2 0h1m2 0h4m1 0h5M1 32.5h1m1 0h1m2 0h1m1 0h1m6 0h2m1 0h1m3 0h2m1 0h1m4 0h1m1 0h7m2 0h1M1 33.5h1m4 0h2m2 0h1m2 0h2m2 0h1m3 0h3m3 0h1m1 0h1m1 0h11M9 34.5h5m1 0h3m5 0h1m1 0h1m1 0h2m3 0h2m3 0h3m1 0h1M1 35.5h7m2 0h1m1 0h1m1 0h2m1 0h1m1 0h2m2 0h1m1 0h1m7 0h1m1 0h1m1 0h2m1 0h1M1 36.5h1m5 0h1m1 0h1m1 0h1m1 0h2m2 0h1m3 0h1m6 0h2m2 0h2m3 0h2m1 0h2M1 37.5h1m1 0h3m1 0h1m1 0h2m1 0h1m3 0h2m1 0h7m5 0h1m1 0h6M1 38.5h1m1 0h3m1 0h1m1 0h3m1 0h1m2 0h3m3 0h1m2 0h2m4 0h1m2 0h1m1 0h1m2 0h3M1 39.5h1m1 0h3m1 0h1m1 0h2m4 0h3m2 0h3m4 0h5m1 0h6m1 0h1M1 40.5h1m5 0h1m2 0h4m2 0h1m1 0h3m1 0h1m1 0h1m2 0h3m2 0h3m2 0h2m1 0h1M1 41.5h7m1 0h1m3 0h1m2 0h2m2 0h1m2 0h1m2 0h1m1 0h1m1 0h2m3 0h4\"/></svg>\n",
+      "member_name": "Test",
+      "batch_name": "SSC Batch 2008",
+      "qr_code_svg": "",
       "status": "pending_payment",
       "checked_in": false,
       "checked_in_at": null,
-      "created_at": "2026-10-14T06:32:01.586Z"
+      "created_at": "2026-10-20T07:10:14.295Z"
+    },
+    {
+      "id": "tok-1792507463370-66ca51",
+      "token_code": "NASHS-2008-0010",
+      "registration_id": "REG-85-333712",
+      "event_id": "event-85th-anniversary",
+      "member_name": "Audit Verification Alumni",
+      "batch_name": "SSC Batch 2008",
+      "batch_name_bn": "এসএসসি ব্যাচ ২০০৮",
+      "status": "active",
+      "qr_code_svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 43 43\" shape-rendering=\"crispEdges\"><path fill=\"#ffffff\" d=\"M0 0h43v43H0z\"/><path stroke=\"#0f4d2a\" d=\"M1 1.5h7m4 0h1m1 0h2m7 0h1m4 0h1m2 0h1m3 0h7M1 2.5h1m5 0h1m2 0h1m1 0h1m1 0h4m1 0h3m1 0h2m1 0h1m2 0h2m2 0h1m1 0h1m5 0h1M1 3.5h1m1 0h3m1 0h1m1 0h5m1 0h3m6 0h4m2 0h1m2 0h1m1 0h1m1 0h3m1 0h1M1 4.5h1m1 0h3m1 0h1m1 0h3m7 0h6m4 0h2m1 0h1m2 0h1m1 0h3m1 0h1M1 5.5h1m1 0h3m1 0h1m1 0h1m1 0h2m1 0h1m1 0h1m4 0h2m1 0h1m2 0h1m3 0h3m1 0h1m1 0h3m1 0h1M1 6.5h1m5 0h1m1 0h2m1 0h2m1 0h6m3 0h2m1 0h2m2 0h1m3 0h1m5 0h1M1 7.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M9 8.5h3m2 0h2m5 0h2m4 0h2m3 0h1M1 9.5h1m1 0h5m4 0h3m3 0h1m1 0h1m2 0h2m1 0h3m1 0h1m1 0h1m2 0h5M1 10.5h2m1 0h2m3 0h1m2 0h2m1 0h1m2 0h1m1 0h3m1 0h1m2 0h1m1 0h5m3 0h1m1 0h1M2 11.5h2m1 0h3m3 0h2m2 0h1m1 0h3m1 0h3m2 0h1m1 0h1m1 0h2m1 0h1m1 0h1m5 0h1M1 12.5h2m2 0h1m2 0h2m1 0h1m5 0h1m1 0h5m1 0h1m1 0h3m2 0h2m1 0h1m2 0h1m2 0h1M1 13.5h2m1 0h1m2 0h1m3 0h2m1 0h4m4 0h1m1 0h2m2 0h1m1 0h1m1 0h1m5 0h4M1 14.5h1m3 0h1m3 0h2m1 0h2m3 0h2m2 0h1m3 0h2m3 0h5m1 0h2M5 15.5h1m1 0h1m1 0h3m3 0h1m2 0h1m1 0h1m1 0h2m1 0h2m1 0h1m4 0h2m1 0h2m1 0h1m1 0h1M1 16.5h1m1 0h2m1 0h1m7 0h1m4 0h3m1 0h1m1 0h4m2 0h1m1 0h1m1 0h4m1 0h1M1 17.5h4m2 0h1m2 0h3m1 0h1m1 0h2m2 0h3m2 0h1m2 0h2m3 0h2m1 0h1m2 0h1m1 0h1M1 18.5h4m1 0h1m1 0h1m1 0h1m3 0h1m3 0h2m1 0h3m1 0h7m1 0h1m1 0h3m1 0h3M1 19.5h2m2 0h6m1 0h2m3 0h2m3 0h1m2 0h2m1 0h2m2 0h1m1 0h1m2 0h3M4 20.5h1m3 0h1m1 0h2m1 0h1m1 0h1m2 0h3m1 0h2m2 0h1m1 0h2m3 0h1m3 0h3m1 0h1M2 21.5h1m1 0h4m4 0h3m5 0h3m1 0h2m3 0h1m1 0h4m2 0h2m1 0h1M2 22.5h1m1 0h1m1 0h1m1 0h3m8 0h1m1 0h1m1 0h1m1 0h1m2 0h1m1 0h1m1 0h2m1 0h1m3 0h3M2 23.5h1m2 0h1m1 0h2m1 0h2m3 0h1m1 0h3m2 0h1m2 0h5m1 0h1m2 0h3m2 0h1M2 24.5h2m1 0h2m1 0h3m1 0h1m1 0h4m1 0h1m2 0h1m5 0h2m2 0h2m4 0h2m1 0h1M2 25.5h2m1 0h1m1 0h5m1 0h3m1 0h5m1 0h2m1 0h1m3 0h1m5 0h3M4 26.5h3m2 0h5m1 0h4m1 0h1m2 0h2m4 0h2m1 0h1m4 0h2M3 27.5h5m3 0h1m3 0h2m2 0h1m1 0h2m4 0h3m1 0h1m1 0h5m2 0h1M3 28.5h1m1 0h1m2 0h4m2 0h4m1 0h1m1 0h1m1 0h2m2 0h3m1 0h4m1 0h1m1 0h1M2 29.5h1m4 0h1m3 0h2m3 0h1m4 0h2m2 0h1m4 0h1m1 0h1m1 0h1m1 0h1m1 0h2m1 0h1M1 30.5h6m1 0h2m1 0h4m1 0h4m5 0h6m6 0h1m1 0h1M1 31.5h1m2 0h1m1 0h3m3 0h1m1 0h2m1 0h2m2 0h2m2 0h1m2 0h4m1 0h5M1 32.5h1m1 0h1m2 0h1m1 0h1m3 0h2m1 0h4m3 0h2m1 0h1m4 0h1m1 0h7m2 0h1M1 33.5h1m4 0h2m2 0h1m1 0h3m2 0h1m3 0h3m3 0h1m1 0h1m1 0h11M9 34.5h1m1 0h7m5 0h1m1 0h1m1 0h2m3 0h2m3 0h3m1 0h1M1 35.5h7m4 0h1m1 0h2m1 0h1m1 0h2m2 0h1m1 0h1m7 0h1m1 0h1m1 0h2m1 0h1M1 36.5h1m5 0h1m1 0h1m3 0h1m1 0h1m1 0h1m3 0h1m6 0h2m2 0h2m3 0h2m1 0h2M1 37.5h1m1 0h3m1 0h1m1 0h1m1 0h2m1 0h1m1 0h2m1 0h7m5 0h1m1 0h6M1 38.5h1m1 0h3m1 0h1m1 0h3m1 0h1m1 0h4m3 0h1m2 0h3m3 0h1m2 0h1m1 0h1m2 0h3M1 39.5h1m1 0h3m1 0h1m1 0h2m4 0h3m2 0h3m4 0h5m1 0h6m1 0h1M1 40.5h1m5 0h1m2 0h4m2 0h1m1 0h3m1 0h1m1 0h1m2 0h3m2 0h3m2 0h2m1 0h1M1 41.5h7m1 0h1m3 0h1m2 0h2m2 0h1m2 0h1m2 0h1m1 0h1m1 0h2m3 0h4\"/></svg>\n",
+      "checked_in": false,
+      "created_at": "2026-10-20T14:44:23.370Z"
     }
   ],
   "audit_logs": [
+    {
+      "id": "log-1792507463677-ozxn",
+      "user_name": "Safaet Hosen Dhrubo",
+      "user_email": "admin@nanupuralumni.org",
+      "action": "DELETE_PAGE",
+      "entity": "CMS",
+      "details": "Deleted page page-1792507463653",
+      "ip": "127.0.0.1",
+      "created_at": "2026-10-20T14:44:23.677Z"
+    },
+    {
+      "id": "log-1792507463659-ok98",
+      "user_name": "Safaet Hosen Dhrubo",
+      "user_email": "admin@nanupuralumni.org",
+      "action": "CREATE_PAGE",
+      "entity": "CMS",
+      "details": "Created page: Audit Test Page (/audit-test-1792507463649)",
+      "ip": "127.0.0.1",
+      "created_at": "2026-10-20T14:44:23.659Z"
+    },
+    {
+      "id": "log-1792507463558-s1lv",
+      "user_name": "Automated Mailer",
+      "user_email": "alumni_1792507463290@nanupuralumni.org",
+      "action": "SEND_CONFIRMATION_EMAIL_SIMULATED",
+      "entity": "Registration",
+      "details": "Simulated confirmation email delivery with PDF pass attachment (NASHS-2008-0010) to alumni_1792507463290@nanupuralumni.org (SMTP unconfigured).",
+      "ip": "127.0.0.1",
+      "created_at": "2026-10-20T14:44:23.558Z"
+    },
+    {
+      "id": "log-1792507463391-pj0m",
+      "user_name": "Audit Verification Alumni",
+      "user_email": "alumni_1792507463290@nanupuralumni.org",
+      "action": "REGISTRATION_SUBMITTED",
+      "entity": "Registration",
+      "details": "Submitted registration for SSC Batch 2008 (Token: NASHS-2008-0010, Fee: ৳1020). Awaiting manual payment confirmation.",
+      "ip": "127.0.0.1",
+      "created_at": "2026-10-20T14:44:23.391Z"
+    },
+    {
+      "id": "log-1792507463269-7x5c",
+      "user_name": "Safaet Hosen Dhrubo",
+      "user_email": "admin@nanupuralumni.org",
+      "action": "LOGIN",
+      "entity": "Auth",
+      "details": "User logged in successfully (super_admin)",
+      "ip": "127.0.0.1",
+      "created_at": "2026-10-20T14:44:23.269Z"
+    },
+    {
+      "id": "log-1792480213103-dq0l",
+      "ip": "127.0.0.1",
+      "action": "REGISTRATION_SUBMITTED",
+      "entity": "Registration",
+      "details": "Submitted registration for SSC Batch 2008 (Token: NASHS-2008-0009, Fee: ৳1020). Awaiting manual payment confirmation.",
+      "user_name": "Test",
+      "created_at": "2026-10-20T07:10:13.103Z",
+      "user_email": "sdhjs@fjdf.com"
+    },
+    {
+      "id": "log-1792435230548-31hv",
+      "ip": "127.0.0.1",
+      "action": "SEND_CONFIRMATION_EMAIL_SIMULATED",
+      "entity": "Registration",
+      "details": "Simulated confirmation email delivery with PDF pass attachment (NASHS-2008-0008) to engr.xafa@gmail.com (SMTP unconfigured).",
+      "user_name": "Automated Mailer",
+      "created_at": "2026-10-19T18:40:30.548Z",
+      "user_email": "engr.xafa@gmail.com"
+    },
+    {
+      "id": "log-1792435217730-vhma",
+      "ip": "127.0.0.1",
+      "action": "UPDATE_IMAGE_MAX_SIZE",
+      "entity": "SettingsTable",
+      "details": "Updated registration_image_max_size to 1 MB in settings table",
+      "user_name": "Safaet Hosen Dhrubo",
+      "created_at": "2026-10-19T18:40:17.730Z",
+      "user_email": "admin@nanupuralumni.org"
+    },
+    {
+      "id": "log-1792435175934-iqpu",
+      "ip": "127.0.0.1",
+      "action": "UPDATE_SETTINGS",
+      "entity": "Settings",
+      "details": "Updated registration settings: Fee ৳1020, Open: true",
+      "user_name": "Safaet Hosen Dhrubo",
+      "created_at": "2026-10-19T18:39:35.934Z",
+      "user_email": "admin@nanupuralumni.org"
+    },
+    {
+      "id": "log-1792435139555-q7es",
+      "ip": "127.0.0.1",
+      "action": "DELETE_REGISTRATION",
+      "entity": "Registration",
+      "details": "Deleted registration REG-85-915363 (Dr. Muktar, Batch: SSC Batch 2002)",
+      "user_name": "Safaet Hosen Dhrubo",
+      "created_at": "2026-10-19T18:38:59.555Z",
+      "user_email": "admin@nanupuralumni.org"
+    },
+    {
+      "id": "log-1792435135746-80s3",
+      "ip": "127.0.0.1",
+      "action": "DELETE_REGISTRATION",
+      "entity": "Registration",
+      "details": "Deleted registration REG-85-862642 (টেস্ট বাবা, Batch: SSC Batch 2005)",
+      "user_name": "Safaet Hosen Dhrubo",
+      "created_at": "2026-10-19T18:38:55.746Z",
+      "user_email": "admin@nanupuralumni.org"
+    },
+    {
+      "id": "log-1792434280021-4j9g",
+      "ip": "127.0.0.1",
+      "action": "DATABASE_DIAGNOSTIC_TEST",
+      "entity": "Database",
+      "details": "Ran live database connection test on driver: supabase (Success: true, Latency: 62ms)",
+      "user_name": "Safaet Hosen Dhrubo",
+      "created_at": "2026-10-19T18:24:40.021Z",
+      "user_email": "admin@nanupuralumni.org"
+    },
+    {
+      "id": "log-1792434228680-vlf6",
+      "ip": "127.0.0.1",
+      "action": "REGISTRATION_SUBMITTED",
+      "entity": "Registration",
+      "details": "Submitted registration for SSC Batch 2005 (Token: NASHS-2005-0001, Fee: ৳1000). Awaiting manual payment confirmation.",
+      "user_name": "টেস্ট বাবা",
+      "created_at": "2026-10-19T18:23:48.680Z",
+      "user_email": "test@sahs.com"
+    },
     {
       "id": "log-1792433594502-lsuz",
       "ip": "127.0.0.1",
@@ -5795,156 +6039,6 @@
       "user_name": "Taher Hoq",
       "created_at": "2026-10-09T04:46:26.718Z",
       "user_email": "engr.xafa@gmail.com"
-    },
-    {
-      "id": "log-1791522151130",
-      "ip": "127.0.0.1",
-      "action": "PAYMENT_VERIFIED",
-      "entity": "Payment",
-      "details": "Admin Safaet Hosen Dhrubo approved and verified payment for Taher Hoq (REG-85-437052). Token NASHS-2000-0001 activated. Automated PDF Pass email dispatched. Notes: Verified by Admin",
-      "user_name": "Safaet Hosen Dhrubo",
-      "created_at": "2026-10-09T05:02:31.035Z",
-      "user_email": "admin@nanupuralumni.org"
-    },
-    {
-      "id": "log-1791617967642",
-      "ip": "127.0.0.1",
-      "action": "PAYMENT_CONFIRMATION_SUBMITTED",
-      "entity": "Payment",
-      "details": "Submitted manual payment confirmation via BKASH (TrxID: TRX26817260, Sender: 01702667755, Amount: ৳1000) for Token NASHS-2008-0001",
-      "user_name": "Audit Verification Alumni",
-      "created_at": "2026-10-10T07:39:27.631Z",
-      "user_email": "alumni_1791617967506@nanupuralumni.org"
-    },
-    {
-      "id": "log-1791617967779",
-      "ip": "127.0.0.1",
-      "action": "PAYMENT_VERIFIED",
-      "entity": "Payment",
-      "details": "Admin Safaet Hosen Dhrubo approved and verified payment for Audit Verification Alumni (REG-85-755494). Token NASHS-2008-0001 activated. Automated PDF Pass email dispatched. Notes: N/A",
-      "user_name": "Safaet Hosen Dhrubo",
-      "created_at": "2026-10-10T07:39:27.652Z",
-      "user_email": "admin@nanupuralumni.org"
-    },
-    {
-      "id": "log-1791618039066",
-      "ip": "127.0.0.1",
-      "action": "PAYMENT_CONFIRMATION_SUBMITTED",
-      "entity": "Payment",
-      "details": "Submitted manual payment confirmation via BKASH (TrxID: TRX10715086, Sender: 01702162864, Amount: ৳1000) for Token NASHS-2008-0002",
-      "user_name": "Audit Verification Alumni",
-      "created_at": "2026-10-10T07:40:39.054Z",
-      "user_email": "alumni_1791618038962@nanupuralumni.org"
-    },
-    {
-      "id": "log-1791618039192",
-      "ip": "127.0.0.1",
-      "action": "PAYMENT_VERIFIED",
-      "entity": "Payment",
-      "details": "Admin Safaet Hosen Dhrubo approved and verified payment for Audit Verification Alumni (REG-85-900532). Token NASHS-2008-0002 activated. Automated PDF Pass email dispatched. Notes: N/A",
-      "user_name": "Safaet Hosen Dhrubo",
-      "created_at": "2026-10-10T07:40:39.085Z",
-      "user_email": "admin@nanupuralumni.org"
-    },
-    {
-      "id": "log-1791618174828",
-      "ip": "127.0.0.1",
-      "action": "PAYMENT_CONFIRMATION_SUBMITTED",
-      "entity": "Payment",
-      "details": "Submitted manual payment confirmation via BKASH (TrxID: TRX39341782, Sender: 01702733849, Amount: ৳1000) for Token NASHS-2008-0003",
-      "user_name": "Audit Verification Alumni",
-      "created_at": "2026-10-10T07:42:54.798Z",
-      "user_email": "alumni_1791618174716@nanupuralumni.org"
-    },
-    {
-      "id": "log-1791620378267",
-      "ip": "127.0.0.1",
-      "action": "PAYMENT_CONFIRMATION_SUBMITTED",
-      "entity": "Payment",
-      "details": "Submitted manual payment confirmation via BKASH (TrxID: TRX18688215, Sender: 01702509466, Amount: ৳1000) for Token NASHS-2008-0004",
-      "user_name": "Audit Verification Alumni",
-      "created_at": "2026-10-10T08:19:38.254Z",
-      "user_email": "alumni_1791620378094@nanupuralumni.org"
-    },
-    {
-      "id": "log-1791624126228",
-      "ip": "127.0.0.1",
-      "action": "PAYMENT_CONFIRMATION_SUBMITTED",
-      "entity": "Payment",
-      "details": "Submitted manual payment confirmation via BKASH (TrxID: TRX81662973, Sender: 01702336994, Amount: ৳1000) for Token NASHS-2008-0005",
-      "user_name": "Audit Verification Alumni",
-      "created_at": "2026-10-10T09:22:06.203Z",
-      "user_email": "alumni_1791624126107@nanupuralumni.org"
-    },
-    {
-      "id": "log-1791709554362",
-      "ip": "127.0.0.1",
-      "action": "PAYMENT_CONFIRMATION_SUBMITTED",
-      "entity": "Payment",
-      "details": "Submitted manual payment confirmation via BKASH (TrxID: TRX52543992, Sender: 01702663907, Amount: ৳1000) for Token NASHS-2008-0006",
-      "user_name": "Audit Verification Alumni",
-      "created_at": "2026-10-11T09:05:54.352Z",
-      "user_email": "alumni_1791709554237@nanupuralumni.org"
-    },
-    {
-      "id": "log-1791714858256",
-      "ip": "127.0.0.1",
-      "action": "PAYMENT_CONFIRMATION_SUBMITTED",
-      "entity": "Payment",
-      "details": "Submitted manual payment confirmation via BKASH (TrxID: TRX75789598, Sender: 01702966776, Amount: ৳1000) for Token NASHS-2008-0007",
-      "user_name": "Audit Verification Alumni",
-      "created_at": "2026-10-11T10:34:18.228Z",
-      "user_email": "alumni_1791714858136@nanupuralumni.org"
-    },
-    {
-      "id": "log-1791807255176",
-      "ip": "127.0.0.1",
-      "action": "PAYMENT_CONFIRMATION_SUBMITTED",
-      "entity": "Payment",
-      "details": "Submitted manual payment confirmation via BKASH (TrxID: TRX69686882, Sender: 01702389215, Amount: ৳1000) for Token NASHS-2008-0009",
-      "user_name": "Audit Verification Alumni",
-      "created_at": "2026-10-12T12:14:15.166Z",
-      "user_email": "alumni_1791807255050@nanupuralumni.org"
-    },
-    {
-      "id": "log-1791808679058",
-      "ip": "127.0.0.1",
-      "action": "PAYMENT_CONFIRMATION_SUBMITTED",
-      "entity": "Payment",
-      "details": "Submitted manual payment confirmation via BKASH (TrxID: TRX93254168, Sender: 01702158478, Amount: ৳1000) for Token NASHS-2008-0010",
-      "user_name": "Audit Verification Alumni",
-      "created_at": "2026-10-12T12:37:59.047Z",
-      "user_email": "alumni_1791808678904@nanupuralumni.org"
-    },
-    {
-      "id": "log-1791809239365",
-      "ip": "127.0.0.1",
-      "action": "PAYMENT_CONFIRMATION_SUBMITTED",
-      "entity": "Payment",
-      "details": "Submitted manual payment confirmation via BKASH (TrxID: TRX63140180, Sender: 01702339129, Amount: ৳1000) for Token NASHS-2008-0011",
-      "user_name": "Audit Verification Alumni",
-      "created_at": "2026-10-12T12:47:19.325Z",
-      "user_email": "alumni_1791809239213@nanupuralumni.org"
-    },
-    {
-      "id": "log-1791809239521",
-      "ip": "::ffff:127.0.0.1",
-      "action": "PAYMENT_VERIFIED",
-      "entity": "Payment",
-      "details": "Admin Safaet Hosen Dhrubo approved and verified payment for Audit Verification Alumni (REG-85-926075). Token NASHS-2008-0011 activated. Automated PDF Pass email dispatched. Notes: N/A",
-      "user_name": "Safaet Hosen Dhrubo",
-      "created_at": "2026-10-12T12:47:19.381Z",
-      "user_email": "admin@nanupuralumni.org"
-    },
-    {
-      "id": "log-1792433594355",
-      "ip": "::ffff:127.0.0.1",
-      "action": "PAYMENT_VERIFIED",
-      "entity": "Payment",
-      "details": "Admin Safaet Hosen Dhrubo approved and verified payment for Audit Verification Alumni (REG-85-409839). Token NASHS-2008-0009 activated. Automated PDF Pass email dispatched. Notes: N/A",
-      "user_name": "Safaet Hosen Dhrubo",
-      "created_at": "2026-10-19T18:13:14.222Z",
-      "user_email": "admin@nanupuralumni.org"
     }
   ],
   "program_schedule": {

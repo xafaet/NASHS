@@ -159,11 +159,27 @@ if ($parsedPath !== '/' && file_exists($distCandidate) && !is_dir($distCandidate
     return serveStaticFile($distCandidate);
 }
 
+// Explicit check for /assets/ bundle files
+if (strpos($parsedPath, '/assets/') === 0) {
+    $distAssetCandidate = BASE_PATH . '/dist' . $parsedPath;
+    if (file_exists($distAssetCandidate) && !is_dir($distAssetCandidate)) {
+        return serveStaticFile($distAssetCandidate);
+    }
+    $rootAssetCandidate = BASE_PATH . $parsedPath;
+    if (file_exists($rootAssetCandidate) && !is_dir($rootAssetCandidate)) {
+        return serveStaticFile($rootAssetCandidate);
+    }
+}
+
 // Check if request points to public/uploads/ or uploads/
 if (strpos($parsedPath, '/uploads/') === 0) {
     $uploadCandidate = BASE_PATH . '/public' . $parsedPath;
     if (file_exists($uploadCandidate) && !is_dir($uploadCandidate)) {
         return serveStaticFile($uploadCandidate);
+    }
+    $storageUploadCandidate = BASE_PATH . '/storage/app/public' . $parsedPath;
+    if (file_exists($storageUploadCandidate) && !is_dir($storageUploadCandidate)) {
+        return serveStaticFile($storageUploadCandidate);
     }
 }
 
@@ -291,6 +307,7 @@ function serveStaticFile(string $filePath): void
     $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
     $mimes = [
         'js'    => 'application/javascript; charset=UTF-8',
+        'mjs'   => 'application/javascript; charset=UTF-8',
         'css'   => 'text/css; charset=UTF-8',
         'html'  => 'text/html; charset=UTF-8',
         'json'  => 'application/json; charset=UTF-8',

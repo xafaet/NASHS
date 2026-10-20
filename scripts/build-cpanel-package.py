@@ -17,7 +17,6 @@ INCLUDE_FILES = [
     ".htaccess",
     "htaccess-backup.txt",
     "index.php",
-    "index.html",
     "app.js",
     "server.js",
     "database_setup.sql",
@@ -25,7 +24,6 @@ INCLUDE_FILES = [
     "CPANEL_DEPLOYMENT_GUIDE.md",
     "composer.json",
     "package.json",
-    "server.ts",
 ]
 
 INCLUDE_DIRS = [
@@ -104,6 +102,23 @@ def build_package():
                         zipf.write(full_path, arcname)
                         total_files += 1
                         total_uncompressed_bytes += os.path.getsize(full_path)
+
+        # Write compiled production index.html to zip root (Prevents loading uncompiled main.tsx)
+        if os.path.exists("dist/index.html"):
+            zipf.write("dist/index.html", "index.html")
+            total_files += 1
+            total_uncompressed_bytes += os.path.getsize("dist/index.html")
+            print("  + Added compiled production index.html to package root (replacing dev source)")
+
+        # Mirror compiled production assets to root assets/ so both /assets/* and dist/assets/* resolve directly
+        if os.path.exists("dist/assets"):
+            for asset_file in os.listdir("dist/assets"):
+                full_asset = os.path.join("dist/assets", asset_file)
+                if os.path.isfile(full_asset):
+                    zipf.write(full_asset, f"assets/{asset_file}")
+                    total_files += 1
+                    total_uncompressed_bytes += os.path.getsize(full_asset)
+                    print(f"  + Mirrored compiled asset: assets/{asset_file}")
 
         # Add empty data and uploads placeholder structure
         zipf.writestr("data/.gitkeep", "")

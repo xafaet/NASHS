@@ -3,14 +3,30 @@
 # Nanupur Abu Sobhan High School Alumni Platform & 85th Reunion
 # ==============================================================================
 
+# 1. MIME Type Registrations (Prevents application/octet-stream module errors)
+<IfModule mod_mime.c>
+    AddType application/javascript .js .mjs
+    AddType text/css .css
+    AddType image/svg+xml .svg
+    AddType application/json .json
+    AddType application/wasm .wasm
+    AddType font/woff .woff
+    AddType font/woff2 .woff2
+    AddType image/webp .webp
+</IfModule>
+
+# 2. Directory Index Priority (Prioritize index.php router)
+DirectoryIndex index.php index.html
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # Prevent direct access to sensitive system files and directories
+    # Prevent direct access to sensitive system files, directories, and uncompiled source
     RewriteRule ^\.env.*$ - [F,L,NC]
     RewriteRule ^data/.*$ - [F,L,NC]
     RewriteRule ^database/.*$ - [F,L,NC]
     RewriteRule ^server/.*$ - [F,L,NC]
+    RewriteRule ^src/.*$ - [F,L,NC]
     RewriteRule ^storage/.*$ - [F,L,NC]
     RewriteRule ^node_modules/.*$ - [F,L,NC]
     RewriteRule ^package(-lock)?\.json$ - [F,L,NC]
@@ -21,6 +37,14 @@
     RewriteCond %{HTTPS} off
     RewriteCond %{HTTP:X-Forwarded-Proto} !https
     RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # Serve pre-compiled frontend assets directly from dist/assets/
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^assets/(.*)$ dist/assets/$1 [L]
+
+    # Serve uploaded media files directly from public/uploads/
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^uploads/(.*)$ public/uploads/$1 [L]
 
     # Serve pre-compiled frontend assets directly from dist/ if present
     RewriteCond %{DOCUMENT_ROOT}/dist%{REQUEST_URI} -f

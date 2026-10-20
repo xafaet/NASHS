@@ -1244,32 +1244,7 @@ export const AdminPortal: React.FC<{ onExit?: () => void }> = ({ onExit }) => {
 
           {/* TAB 9: MEDIA LIBRARY */}
           {activeTab === 'media' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
-                    WordPress-Style Media Library
-                  </h2>
-                  <p className="text-slate-500 text-sm mt-0.5">
-                    Manage images, event banners, and promotional media.
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {media.map(item => (
-                  <div key={item.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm group">
-                    <div className="h-32 bg-slate-100 overflow-hidden">
-                      <img src={item.url} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition" />
-                    </div>
-                    <div className="p-2.5 text-xs">
-                      <span className="font-semibold text-slate-800 truncate block">{item.name}</span>
-                      <span className="text-slate-400 text-[10px]">{item.size}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <AdminMedia showToast={showToast} getHeaders={getHeaders} />
           )}
 
           {/* CMS & APPEARANCE MODULES */}

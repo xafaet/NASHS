@@ -34,6 +34,7 @@ import {
   NewsPost,
   GateItem,
   HeroConfig,
+  MediaItem,
 } from './src/types';
 import PDFDocument from 'pdfkit';
 import QRCode from 'qrcode';
